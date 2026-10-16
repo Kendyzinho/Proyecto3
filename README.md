@@ -100,6 +100,16 @@ Con la base encendida (MySQL en XAMPP, o `sudo systemctl start mariadb` en Linux
 corriendo `php artisan serve` en `backend` y `npm start` en `frontend`, cada uno en su terminal.
 Después de hacer pull de cambios en la base de datos, correr `php artisan migrate` en `backend`.
 
+## Tests
+
+Los tests del backend usan una base aparte, `practicas_test`, para no borrar los datos de
+desarrollo. Hay que crearla una vez, igual que `practicas` (en phpMyAdmin o por consola), y luego:
+
+```bash
+cd backend && php artisan test
+cd frontend && npx ng test --watch=false
+```
+
 ## Usuarios de prueba
 
 Los crea `php artisan migrate --seed`. Contraseña de todos: `password`.

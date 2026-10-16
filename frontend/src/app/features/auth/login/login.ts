@@ -53,6 +53,8 @@ function mensajeDeError(status: number): string {
       return 'No se pudo conectar con el servidor.';
     case 403:
       return 'Tu cuenta está desactivada. Escribe a la Secretaría de Jefatura.';
+    case 429:
+      return 'Demasiados intentos. Espera un minuto antes de volver a intentarlo.';
     case 401:
     case 422:
       return 'Correo o contraseña incorrectos. Revisa tus datos e inténtalo de nuevo.';
