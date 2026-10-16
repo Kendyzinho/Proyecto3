@@ -100,6 +100,25 @@ Con la base encendida (MySQL en XAMPP, o `sudo systemctl start mariadb` en Linux
 corriendo `php artisan serve` en `backend` y `npm start` en `frontend`, cada uno en su terminal.
 Después de hacer pull de cambios en la base de datos, correr `php artisan migrate` en `backend`.
 
+## Ver la base de datos
+
+- **Windows:** phpMyAdmin, en http://localhost/phpmyadmin (con Apache y MySQL encendidos en XAMPP).
+- **Desde VS Code (cualquier sistema):** extensión **MySQL** de *Database Client* (`cweijan.vscode-mysql-client2`).
+  Crear una conexión con estos datos:
+
+  | Campo | Valor |
+  |---|---|
+  | Server Type | MariaDB |
+  | Host | `127.0.0.1` |
+  | Port | `3306` |
+  | Username | `root` |
+  | Password | vacío |
+  | Database | `practicas` |
+
+Las contraseñas se guardan cifradas en `users.password`. Cada inicio de sesión crea una fila en
+`personal_access_tokens` y el cierre de sesión la borra. La base `practicas_test` es de los tests:
+se vacía en cada ejecución, así que no conviene guardar nada ahí.
+
 ## Tests
 
 Los tests del backend usan una base aparte, `practicas_test`, para no borrar los datos de
