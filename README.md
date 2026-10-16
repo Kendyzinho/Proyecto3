@@ -74,6 +74,13 @@ php artisan migrate --seed
 php artisan serve             # http://localhost:8000
 ```
 
+**El archivo `.env`** es la configuración de cada computador y no se sube al repo. Después de
+copiarlo de `.env.example` solo falta `php artisan key:generate`, que crea la llave propia de
+cada computador (`APP_KEY`). Con eso funciona con XAMPP y con el MariaDB de la sección de
+instalación. Solo hay que editarlo si la base es distinta: otra clave de `root` (`DB_PASSWORD`)
+u otro puerto (`DB_PORT`). Quien agregue una variable nueva debe ponerla también en `.env.example`,
+porque es el único que ven los demás.
+
 Los correos se envían en cola y las alertas se calculan con el scheduler. En desarrollo,
 cada uno en su propia terminal:
 
