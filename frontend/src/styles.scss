@@ -12,6 +12,11 @@ html {
     typography: Inter,
     density: 0,
   ));
+
+  // Azul exacto de la Intranet para botones y elementos principales
+  @include mat.theme-overrides((
+    primary: #355085,
+  ));
 }
 
 html,

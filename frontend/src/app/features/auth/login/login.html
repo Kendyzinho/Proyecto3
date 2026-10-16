@@ -1,0 +1,55 @@
+<main class="login">
+  <section class="login__formulario">
+    <div class="marca">
+      <span class="marca__logo">UTA</span>
+      <div>
+        <p class="marca__nombre">Prácticas</p>
+        <p class="marca__detalle">Diseño Multimedia, Universidad de Tarapacá</p>
+      </div>
+    </div>
+
+    <form class="campos" [formGroup]="form" (ngSubmit)="ingresar()" novalidate>
+      <h1>Iniciar sesión</h1>
+
+      @if (error(); as mensaje) {
+        <div class="aviso" role="alert">
+          <mat-icon>error</mat-icon>
+          <span>{{ mensaje }}</span>
+        </div>
+      }
+
+      <mat-form-field>
+        <mat-label>Correo institucional</mat-label>
+        <input matInput type="email" formControlName="email" autocomplete="username" />
+        @if (form.controls.email.hasError('required')) {
+          <mat-error>Ingresa tu correo.</mat-error>
+        } @else if (form.controls.email.hasError('email')) {
+          <mat-error>El correo no es válido.</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field>
+        <mat-label>Contraseña</mat-label>
+        <input matInput [type]="verClave() ? 'text' : 'password'" formControlName="password" autocomplete="current-password" />
+        <button mat-icon-button matSuffix type="button" (click)="verClave.set(!verClave())"
+                [attr.aria-label]="verClave() ? 'Ocultar contraseña' : 'Mostrar contraseña'">
+          <mat-icon>{{ verClave() ? 'visibility_off' : 'visibility' }}</mat-icon>
+        </button>
+        @if (form.controls.password.hasError('required')) {
+          <mat-error>Ingresa tu contraseña.</mat-error>
+        }
+      </mat-form-field>
+
+      <a class="olvido" matButton routerLink="/auth/recuperar">¿Olvidaste tu contraseña?</a>
+
+      <button class="ingresar" matButton="filled" type="submit" [disabled]="enviando()">
+        {{ enviando() ? 'Ingresando…' : 'Ingresar' }}
+      </button>
+    </form>
+  </section>
+
+  <section class="login__panel" aria-hidden="true">
+    <p class="panel__escuela">Escuela de Diseño e Innovación Tecnológica</p>
+    <p class="panel__titulo">Sistema de Gestión de Prácticas</p>
+  </section>
+</main>

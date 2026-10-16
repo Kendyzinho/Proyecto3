@@ -1,13 +1,16 @@
 import { Routes } from '@angular/router';
 
+import { authGuard, invitadoGuard } from './core/guards/auth-guard';
+
 // Una funcionalidad por rol, cargada bajo demanda (lazy loading).
-// Los guards por rol se agregan en core/guards cuando exista la autenticación (HU-01).
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'auth' },
-  { path: 'auth', loadChildren: () => import('./features/auth/auth.routes') },
-  { path: 'coordinacion', loadChildren: () => import('./features/coordinacion/coordinacion.routes') },
-  { path: 'estudiante', loadChildren: () => import('./features/estudiante/estudiante.routes') },
-  { path: 'secretaria', loadChildren: () => import('./features/secretaria/secretaria.routes') },
-  { path: 'jefatura', loadChildren: () => import('./features/jefatura/jefatura.routes') },
+  { path: 'auth', canMatch: [invitadoGuard], loadChildren: () => import('./features/auth/auth.routes') },
+  { path: 'coordinacion', canMatch: [authGuard], data: { rol: 'coordinadora' }, loadChildren: () => import('./features/coordinacion/coordinacion.routes') },
+  { path: 'estudiante', canMatch: [authGuard], data: { rol: 'estudiante' }, loadChildren: () => import('./features/estudiante/estudiante.routes') },
+  { path: 'secretaria', canMatch: [authGuard], data: { rol: 'secretaria' }, loadChildren: () => import('./features/secretaria/secretaria.routes') },
+  { path: 'jefatura', canMatch: [authGuard], data: { rol: 'jefe' }, loadChildren: () => import('./features/jefatura/jefatura.routes') },
+  // El supervisor no tiene cuenta: entra con el enlace que le llega por correo (HU-19, HU-26)
   { path: 'supervisor', loadChildren: () => import('./features/supervisor/supervisor.routes') },
+  { path: '**', redirectTo: '' },
 ];

@@ -1,0 +1,4 @@
+@if (auth.usuario(); as usuario) {
+  <p>Sesión iniciada como <strong>{{ usuario.name }}</strong> ({{ usuario.rol }}).</p>
+}
+<button matButton="outlined" type="button" (click)="auth.logout()">Cerrar sesión</button>
