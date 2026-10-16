@@ -26,18 +26,44 @@ frontend/   Aplicación en Angular
 - PHP 8.2 o superior y Composer 2
 - Node.js 20.19 o superior (o 22.12 o superior)
 - MariaDB 10.4 o superior (XAMPP 8.2.12 ya trae PHP 8.2 y MariaDB)
+- Extensiones de PHP: `pdo_mysql`, `gd`, `intl` y `zip`
+
+## Instalación
+
+### Windows (XAMPP)
+
+1. Instalar **XAMPP 8.2.12** (apachefriends.org), **Composer** (getcomposer.org) y **Node.js 22 LTS**
+   (nodejs.org). Cuando el instalador de Composer pregunte por PHP, elegir `C:\xampp\php\php.exe`
+   y dejar marcada la opción de agregarlo al PATH.
+2. Abrir `C:\xampp\php\php.ini` y quitar el `;` del principio de estas líneas:
+
+   ```
+   extension=gd
+   extension=intl
+   extension=zip
+   ```
+
+3. En el panel de XAMPP, encender **Apache** y **MySQL**. En http://localhost/phpmyadmin, crear la
+   base `practicas` con el cotejamiento `utf8mb4_unicode_ci`.
+
+El usuario `root` de XAMPP no tiene clave, que es lo que espera `.env.example`.
+
+### Linux (Arch / CachyOS)
+
+```bash
+sudo pacman -S php composer nodejs npm mariadb php-gd
+sudo sed -i 's/^;extension=pdo_mysql/extension=pdo_mysql/; s/^;extension=mysqli/extension=mysqli/; s/^;extension=gd/extension=gd/; s/^;extension=iconv/extension=iconv/' /etc/php/php.ini
+sudo mariadb-install-db --user=mysql --basedir=/usr --datadir=/var/lib/mysql
+sudo systemctl start mariadb
+sudo mariadb -e "ALTER USER root@localhost IDENTIFIED VIA unix_socket OR mysql_native_password USING PASSWORD(''); CREATE DATABASE practicas CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+```
+
+El último comando deja a `root` sin clave, igual que en XAMPP, y crea la base. MariaDB solo
+corre cuando se enciende con `sudo systemctl start mariadb`.
 
 ## Puesta en marcha
 
-### 1. Base de datos
-
-Crear una base vacía llamada `practicas` (desde phpMyAdmin o por consola):
-
-```sql
-CREATE DATABASE practicas CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-```
-
-### 2. Backend
+### 1. Backend
 
 ```bash
 cd backend
@@ -56,7 +82,7 @@ php artisan queue:work
 php artisan schedule:work
 ```
 
-### 3. Frontend
+### 2. Frontend
 
 ```bash
 cd frontend
@@ -64,8 +90,15 @@ npm ci
 npm start                     # http://localhost:4200
 ```
 
-`npm ci` instala exactamente lo que dice `package-lock.json`. Las llamadas a `/api` se
-redirigen al backend en el puerto 8000.
+`npm ci` instala exactamente lo que dice `package-lock.json`. Si falla con un error que dice
+`edgesOut` (bug de npm 10), usar `npx npm@11 ci`. Las llamadas a `/api` se redirigen al
+backend en el puerto 8000.
+
+### Para trabajar
+
+Con la base encendida (MySQL en XAMPP, o `sudo systemctl start mariadb` en Linux), dejar
+corriendo `php artisan serve` en `backend` y `npm start` en `frontend`, cada uno en su terminal.
+Después de hacer pull de cambios en la base de datos, correr `php artisan migrate` en `backend`.
 
 ## Usuarios de prueba
 
