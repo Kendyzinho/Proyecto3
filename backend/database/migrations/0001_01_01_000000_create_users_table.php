@@ -12,11 +12,17 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('users', function (Blueprint $table) {
+            // USUARIO del ER. Se mantienen name, email y password porque el login,
+            // la recuperación de contraseña y Sanctum esperan esos nombres.
             $table->id();
+            $table->string('rut', 12)->nullable()->unique();
             $table->string('name');
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            $table->enum('rol', ['secretaria', 'coordinadora', 'jefe'])->nullable(); // vacío = estudiante
+            $table->date('fecha_baja')->nullable(); // vacía = activo
+            $table->string('motivo_baja')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });
