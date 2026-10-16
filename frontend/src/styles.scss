@@ -1,0 +1,27 @@
+@use '@angular/material' as mat;
+@use './styles/theme-colors' as uta;
+
+// Tema Material 3 con los colores de la Intranet UTA (azul #355085 y dorado #edb01c)
+html {
+  color-scheme: light;
+  @include mat.theme((
+    color: (
+      primary: uta.$primary-palette,
+      tertiary: uta.$tertiary-palette,
+    ),
+    typography: Inter,
+    density: 0,
+  ));
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: Inter, sans-serif;
+  background: #f1f5f9;
+  color: var(--mat-sys-on-surface);
+}
