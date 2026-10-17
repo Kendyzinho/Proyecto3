@@ -11,6 +11,21 @@
     <form class="campos" [formGroup]="form" (ngSubmit)="ingresar()" novalidate>
       <h1>Iniciar sesión</h1>
 
+      @if (auth.estadoCierre() === 'solo_local') {
+        <div class="aviso" role="alert">
+          <mat-icon>warning</mat-icon>
+          <span>Sesión cerrada en este navegador. No pudimos confirmar el cierre en el servidor; el acceso anterior podría seguir activo.</span>
+        </div>
+      } @else if (auth.estadoCierre() !== 'ninguno') {
+        <p role="status" aria-live="polite">
+          @switch (auth.estadoCierre()) {
+            @case ('pendiente') { Sesión cerrada en este navegador. Confirmando el cierre en el servidor… }
+            @case ('revocado') { Sesión cerrada correctamente. }
+            @case ('invalido') { Sesión cerrada. El servidor ya no acepta el acceso anterior. }
+          }
+        </p>
+      }
+
       @if (error(); as mensaje) {
         <div class="aviso" role="alert">
           <mat-icon>error</mat-icon>
