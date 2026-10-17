@@ -16,7 +16,7 @@ class UsuarioSeeder extends Seeder
         User::factory()->create(['name' => 'Jefe de Carrera de prueba', 'email' => 'jefe@uta.cl', 'rol' => 'jefe']);
 
         $estudiante = User::factory()->create([
-            'rut' => '20.456.789-3',
+            'rut' => '20.456.789-1',
             'name' => 'Matías Herrera Lillo',
             'email' => 'estudiante@alumnos.uta.cl',
             'rol' => null,
