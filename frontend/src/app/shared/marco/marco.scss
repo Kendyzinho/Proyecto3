@@ -112,6 +112,7 @@
   position: sticky;
   top: 0;
   z-index: 2;
+  flex-shrink: 0; // sin esto, en páginas largas el flex la aplasta de 64 a 40 px
   display: flex;
   align-items: center;
   justify-content: space-between;
