@@ -1,12 +1,6 @@
 <main class="login">
   <section class="login__formulario">
-    <div class="marca">
-      <span class="marca__logo">UTA</span>
-      <div>
-        <p class="marca__nombre">Prácticas</p>
-        <p class="marca__detalle">Diseño Multimedia, Universidad de Tarapacá</p>
-      </div>
-    </div>
+    <img class="marca" src="logos/dm-oscuro.svg" alt="Diseño Multimedia UTarapacá" width="138" height="56" />
 
     <form class="campos" [formGroup]="form" (ngSubmit)="ingresar()" novalidate>
       <h1>Iniciar sesión</h1>
@@ -49,7 +43,11 @@
   </section>
 
   <section class="login__panel" aria-hidden="true">
-    <p class="panel__escuela">Escuela de Diseño e Innovación Tecnológica</p>
+    <div class="panel__logos">
+      <img src="logos/uta-blanco.png" alt="Universidad de Tarapacá" width="82" height="56" />
+      <span class="panel__separador"></span>
+      <img src="logos/edit-blanco.svg" alt="Escuela de Diseño e Innovación Tecnológica" width="193" height="44" />
+    </div>
     <p class="panel__titulo">Sistema de Gestión de Prácticas</p>
   </section>
 </main>
