@@ -1,0 +1,15 @@
+<div class="encabezado-pagina">
+  <h1>Inicio</h1>
+</div>
+
+<div class="resumen">
+  <section class="tarjeta resumen__tarjeta">
+    <div class="resumen__cuerpo">
+      <h2>Nómina {{ periodo() }}</h2>
+      <p class="resumen__numero">{{ habilitados() ?? '—' }} {{ habilitados() === 1 ? 'habilitado' : 'habilitados' }}</p>
+    </div>
+    <div class="resumen__pie">
+      <a matButton routerLink="nomina">Ver nómina</a>
+    </div>
+  </section>
+</div>

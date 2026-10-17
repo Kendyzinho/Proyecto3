@@ -7,3 +7,11 @@ export interface Usuario {
   email: string;
   rol: Rol;
 }
+
+// Nombre oficial de cada rol (Art. 5 del reglamento), como se muestra bajo el nombre del usuario
+export const NOMBRE_ROL: Record<Rol, string> = {
+  secretaria: 'Secretaria de Jefatura',
+  coordinadora: 'Coordinadora de Prácticas',
+  jefe: 'Jefe de Carrera',
+  estudiante: 'Estudiante Practicante',
+};

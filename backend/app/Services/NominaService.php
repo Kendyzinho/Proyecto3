@@ -128,11 +128,13 @@ class NominaService
             $revisada = $this->revisarFila($fila, $periodo, $tipos);
 
             // Un RUT solo puede venir una vez en la planilla
-            if ($revisada['rut'] !== null && isset($vistos[$revisada['rut']])) {
-                $revisada['errores']['rut'] = "RUT repetido en la planilla (fila {$vistos[$revisada['rut']]})";
-                $revisada['resultado'] = 'error';
-            } elseif ($revisada['rut'] !== null) {
-                $vistos[$revisada['rut']] = $fila['fila'];
+            if (! isset($revisada['errores']['rut'])) {
+                if (isset($vistos[$revisada['rut']])) {
+                    $revisada['errores']['rut'] = "RUT repetido en la planilla (fila {$vistos[$revisada['rut']]})";
+                    $revisada['resultado'] = 'error';
+                } else {
+                    $vistos[$revisada['rut']] = $fila['fila'];
+                }
             }
 
             return ['fila' => $fila['fila']] + $revisada;
@@ -191,11 +193,12 @@ class NominaService
             }
         }
 
+        // Lo inválido se devuelve tal como venía, para mostrarlo y para la planilla de filas con error
         return [
-            'rut' => $rut,
+            'rut' => $rut ?? $fila['rut'],
             'nombre' => $nombre,
             'correo' => $correo,
-            'anio_ingreso' => $anio === false ? null : $anio,
+            'anio_ingreso' => $anio === false ? $fila['anio_ingreso'] : $anio,
             'tipo_practica_id' => $tipo?->id,
             'practica' => $tipo?->nombre ?? $fila['practica'],
             'prerrequisito' => $tipo?->prerrequisito,

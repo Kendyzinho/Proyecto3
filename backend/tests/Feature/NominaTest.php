@@ -67,6 +67,7 @@ class NominaTest extends TestCase
             ->assertJsonPath('filas.2.resultado', 'error');
 
         $this->assertSame(['rut' => 'RUT inválido', 'correo' => 'Correo no institucional'], $respuesta->json('filas.2.errores'));
+        $this->assertSame('21.448.09-2', $respuesta->json('filas.2.rut')); // se devuelve tal como venía
         $this->assertDatabaseCount('habilitaciones', 0);
         $this->assertDatabaseCount('cargas_nomina', 0);
     }

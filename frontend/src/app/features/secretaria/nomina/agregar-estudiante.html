@@ -1,0 +1,79 @@
+<h2 mat-dialog-title>Agregar un estudiante</h2>
+
+<form [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+  <mat-dialog-content class="campos">
+    <div class="fila">
+      <mat-form-field class="ancho">
+        <mat-label>Nombre completo</mat-label>
+        <input matInput formControlName="nombre" />
+        @if (form.controls.nombre.hasError('required')) {
+          <mat-error>Ingresa el nombre.</mat-error>
+        } @else if (form.controls.nombre.getError('servidor'); as mensaje) {
+          <mat-error>{{ mensaje }}</mat-error>
+        }
+      </mat-form-field>
+      <mat-form-field class="angosto">
+        <mat-label>RUT</mat-label>
+        <input matInput formControlName="rut" />
+        @if (form.controls.rut.hasError('required')) {
+          <mat-error>Ingresa el RUT.</mat-error>
+        } @else if (form.controls.rut.getError('servidor'); as mensaje) {
+          <mat-error>{{ mensaje }}</mat-error>
+        }
+      </mat-form-field>
+    </div>
+
+    <mat-form-field>
+      <mat-label>Correo institucional</mat-label>
+      <input matInput type="email" formControlName="correo" />
+      @if (form.controls.correo.hasError('required')) {
+        <mat-error>Ingresa el correo.</mat-error>
+      } @else if (form.controls.correo.hasError('email')) {
+        <mat-error>El correo no es válido.</mat-error>
+      } @else if (form.controls.correo.getError('servidor'); as mensaje) {
+        <mat-error>{{ mensaje }}</mat-error>
+      }
+    </mat-form-field>
+
+    <div class="fila">
+      <mat-form-field class="ancho">
+        <mat-label>Práctica</mat-label>
+        <mat-select formControlName="tipo_practica_id">
+          @for (practica of datos.practicas; track practica.id) {
+            <mat-option [value]="practica.id">{{ practica.nombre }}</mat-option>
+          }
+        </mat-select>
+        @if (form.controls.tipo_practica_id.hasError('min')) {
+          <mat-error>Elige la práctica.</mat-error>
+        } @else if (form.controls.tipo_practica_id.getError('servidor'); as mensaje) {
+          <mat-error>{{ mensaje }}</mat-error>
+        }
+      </mat-form-field>
+      <mat-form-field class="angosto">
+        <mat-label>Año de ingreso</mat-label>
+        <input matInput type="number" formControlName="anio_ingreso" />
+        @if (form.controls.anio_ingreso.hasError('required')) {
+          <mat-error>Ingresa el año.</mat-error>
+        } @else if (form.controls.anio_ingreso.getError('servidor'); as mensaje) {
+          <mat-error>{{ mensaje }}</mat-error>
+        }
+      </mat-form-field>
+    </div>
+
+    <div class="prerrequisito">
+      <span>Cumple el prerrequisito</span>
+      <mat-slide-toggle formControlName="cumple_prerrequisito" aria-label="Cumple el prerrequisito" />
+    </div>
+
+    @if (errorGeneral(); as mensaje) {
+      <p class="error-general" role="alert">{{ mensaje }}</p>
+    }
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button matButton type="button" mat-dialog-close>Cancelar</button>
+    <button matButton="filled" type="submit" [disabled]="enviando()">
+      {{ enviando() ? 'Agregando…' : 'Agregar estudiante' }}
+    </button>
+  </mat-dialog-actions>
+</form>

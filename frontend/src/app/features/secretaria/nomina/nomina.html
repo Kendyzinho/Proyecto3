@@ -1,0 +1,141 @@
+<div class="encabezado-pagina">
+  <h1>Cargar nómina de estudiantes</h1>
+  <button matButton="outlined" type="button" [disabled]="!periodo()" (click)="agregarEstudiante()">
+    <mat-icon>person_add</mat-icon>
+    Agregar un estudiante
+  </button>
+</div>
+
+<section class="tarjeta">
+  <div class="tarjeta__cabecera">
+    <h2>1. Planilla</h2>
+    <button matButton type="button" (click)="descargarPlantilla()">
+      <mat-icon>download</mat-icon>
+      Descargar plantilla
+    </button>
+  </div>
+
+  <div class="tarjeta__cuerpo planilla">
+    <mat-form-field class="planilla__periodo" subscriptSizing="dynamic">
+      <mat-label>Período</mat-label>
+      <mat-select [value]="periodoId()" (selectionChange)="cambiarPeriodo($event.value)" [disabled]="ocupado()">
+        @for (periodo of catalogo()?.periodos ?? []; track periodo.id) {
+          <mat-option [value]="periodo.id">{{ periodo.nombre }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <input #selector class="oculto" type="file" accept=".xlsx,.csv" (change)="elegirArchivo($event)" />
+
+    <div class="archivo" (dragover)="$event.preventDefault()" (drop)="soltarArchivo($event)">
+      <mat-icon class="archivo__icono">table_view</mat-icon>
+      @if (archivo(); as actual) {
+        <span class="archivo__nombre">{{ actual.name }}</span>
+        <button matButton type="button" [disabled]="ocupado()" (click)="quitarArchivo()">Quitar</button>
+        <button matButton="outlined" type="button" [disabled]="ocupado()" (click)="selector.click()">Cambiar archivo</button>
+      } @else {
+        <button matButton="outlined" type="button" [disabled]="!periodo()" (click)="selector.click()">Subir planilla</button>
+      }
+    </div>
+  </div>
+
+  @if (errorArchivo(); as mensaje) {
+    <div class="aviso" role="alert">
+      <mat-icon>error</mat-icon>
+      <span>{{ mensaje }}</span>
+    </div>
+  }
+</section>
+
+<section class="tarjeta">
+  <div class="tarjeta__cabecera">
+    @if (revision()) {
+      <h2>2. Resultado de la revisión</h2>
+    } @else {
+      <h2>Nómina del {{ periodo()?.nombre }}</h2>
+    }
+  </div>
+
+  @if (revision(); as actual) {
+    <div class="resumen">
+      <span class="estado estado--exito">{{ actual.resumen.habilitados }} {{ actual.resumen.habilitados === 1 ? 'habilitado' : 'habilitados' }}</span>
+      <span class="estado estado--error">{{ actual.resumen.bloqueados }} sin prerrequisito</span>
+      <span class="estado estado--advertencia">
+        {{ actual.resumen.con_error }} {{ actual.resumen.con_error === 1 ? 'fila con error' : 'filas con error' }}
+      </span>
+    </div>
+  }
+
+  @if (ocupado() && !revision()) {
+    <p class="vacio">Revisando la planilla…</p>
+  } @else if (filas.data.length === 0) {
+    <p class="vacio">Todavía no hay estudiantes en la nómina de este período.</p>
+  } @else {
+    <table mat-table class="tabla" [dataSource]="filas">
+      <ng-container matColumnDef="rut">
+        <th mat-header-cell *matHeaderCellDef>RUT</th>
+        <td mat-cell *matCellDef="let fila">{{ fila.rut }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="estudiante">
+        <th mat-header-cell *matHeaderCellDef>Estudiante</th>
+        <td mat-cell *matCellDef="let fila">
+          <div class="persona">
+            <span class="avatar">{{ iniciales(fila.nombre) }}</span>
+            <div>
+              <div class="persona__nombre">{{ fila.nombre }}</div>
+              <div class="persona__correo">{{ fila.correo }}</div>
+            </div>
+          </div>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="practica">
+        <th mat-header-cell *matHeaderCellDef>Práctica</th>
+        <td mat-cell *matCellDef="let fila">{{ fila.practica }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="prerrequisito">
+        <th mat-header-cell *matHeaderCellDef>Prerrequisito</th>
+        <td mat-cell *matCellDef="let fila">{{ textoPrerrequisito(fila.prerrequisito, fila.cumple) }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="resultado">
+        <th mat-header-cell *matHeaderCellDef>Resultado</th>
+        <td mat-cell *matCellDef="let fila">
+          @switch (fila.resultado) {
+            @case ('habilitado') {
+              <span class="estado estado--exito">Habilitado</span>
+            }
+            @case ('bloqueado') {
+              <span class="estado estado--error">Bloqueado</span>
+            }
+            @default {
+              <span class="estado estado--advertencia con-motivo" [matTooltip]="fila.errores" tabindex="0">Con error</span>
+            }
+          }
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+      <tr mat-row *matRowDef="let fila; columns: columnas"></tr>
+    </table>
+  }
+
+  <div class="pie" [hidden]="filas.data.length === 0">
+    <mat-paginator [pageSize]="10" [hidePageSize]="true" />
+    @if (revision(); as actual) {
+      <div class="pie__acciones">
+        @if (actual.resumen.con_error > 0) {
+          <button matButton="outlined" type="button" (click)="descargarErrores()">
+            <mat-icon>download</mat-icon>
+            Descargar filas con error
+          </button>
+        }
+        <button matButton="filled" type="button" [disabled]="ocupado() || porGuardar() === 0" (click)="confirmar()">
+          {{ ocupado() ? 'Guardando…' : 'Confirmar carga de ' + porGuardar() }}
+        </button>
+      </div>
+    }
+  </div>
+</section>
