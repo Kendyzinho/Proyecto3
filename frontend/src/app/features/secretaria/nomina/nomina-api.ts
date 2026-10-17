@@ -54,6 +54,7 @@ export interface EstudianteNomina {
   rut: string;
   nombre: string;
   correo: string;
+  anio_ingreso: number;
   practica: string;
   prerrequisito: string | null;
   cumple: boolean;
@@ -82,6 +83,10 @@ export class NominaApi {
 
   listar(periodoId: number): Observable<{ data: EstudianteNomina[] }> {
     return this.http.get<{ data: EstudianteNomina[] }>('/api/nomina', { params: { periodo_id: periodoId } });
+  }
+
+  exportar(periodoId: number): Observable<Blob> {
+    return this.http.get('/api/nomina/exportar', { params: { periodo_id: periodoId }, responseType: 'blob' });
   }
 
   plantilla(): Observable<Blob> {

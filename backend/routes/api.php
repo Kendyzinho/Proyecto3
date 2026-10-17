@@ -16,6 +16,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/', [NominaController::class, 'index']);
         Route::get('/catalogo', [NominaController::class, 'catalogo']);
         Route::get('/plantilla', [NominaController::class, 'plantilla']);
+        Route::get('/exportar', [NominaController::class, 'exportar']);
         Route::post('/revisar', [NominaController::class, 'revisar']);
         Route::post('/confirmar', [NominaController::class, 'confirmar']);
         Route::post('/estudiantes', [NominaController::class, 'agregar']);

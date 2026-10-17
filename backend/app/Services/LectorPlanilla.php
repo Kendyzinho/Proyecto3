@@ -55,10 +55,23 @@ class LectorPlanilla
     // Plantilla vacía con los encabezados, para que la Secretaria la complete
     public function crearPlantilla(): string
     {
-        $ruta = tempnam(sys_get_temp_dir(), 'plantilla').'.xlsx';
+        return $this->crearPlanilla([]);
+    }
+
+    /**
+     * Excel con las columnas de la plantilla; cada fila va en el mismo orden que ENCABEZADOS
+     *
+     * @param  list<list<string|int>>  $filas
+     */
+    public function crearPlanilla(array $filas): string
+    {
+        $ruta = tempnam(sys_get_temp_dir(), 'planilla').'.xlsx';
         $escritor = new EscritorXlsx;
         $escritor->openToFile($ruta);
         $escritor->addRow(Row::fromValues(self::ENCABEZADOS, (new Style)->setFontBold()));
+        foreach ($filas as $fila) {
+            $escritor->addRow(Row::fromValues($fila));
+        }
         $escritor->close();
 
         return $ruta;

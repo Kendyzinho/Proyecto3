@@ -22,6 +22,9 @@ html {
   @include mat.paginator-overrides((
     container-background-color: transparent,
   ));
+  @include mat.table-overrides((
+    background-color: transparent,
+  ));
   @include mat.dialog-overrides((
     subhead-size: 18px,
     subhead-weight: 600,

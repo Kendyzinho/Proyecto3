@@ -53,6 +53,12 @@
       <h2>2. Resultado de la revisión</h2>
     } @else {
       <h2>Nómina del {{ periodo()?.nombre }}</h2>
+      @if (nomina().length > 0) {
+        <button matButton type="button" (click)="descargarNomina()">
+          <mat-icon>download</mat-icon>
+          Descargar nómina
+        </button>
+      }
     }
   </div>
 

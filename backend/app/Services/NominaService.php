@@ -101,12 +101,23 @@ class NominaService
                 'rut' => $h->estudiante->usuario->rut,
                 'nombre' => $h->estudiante->usuario->name,
                 'correo' => $h->estudiante->usuario->email,
+                'anio_ingreso' => $h->estudiante->anio_ingreso,
                 'practica' => $h->tipoPractica->nombre,
                 'prerrequisito' => $h->tipoPractica->prerrequisito,
                 'cumple' => $h->cumple_prerrequisito,
                 'resultado' => $h->cumple_prerrequisito ? 'habilitado' : 'bloqueado',
                 'origen' => $h->carga_id ? 'planilla' : 'manual',
             ]);
+    }
+
+    // Excel de la nómina guardada del período, con las columnas de la plantilla
+    public function exportar(Periodo $periodo): string
+    {
+        $filas = $this->listar($periodo)->map(fn (array $e) => [
+            $e['rut'], $e['nombre'], $e['correo'], $e['anio_ingreso'], $e['practica'], $e['cumple'] ? 'Sí' : 'No',
+        ])->all();
+
+        return $this->lector->crearPlanilla($filas);
     }
 
     // Prácticas de la malla vigente que se pueden habilitar

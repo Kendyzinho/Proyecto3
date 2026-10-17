@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Habilitacion;
 use App\Models\Periodo;
 use App\Models\User;
+use App\Services\LectorPlanilla;
 use App\Support\Rut;
 use Database\Seeders\CatalogoSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -223,6 +224,23 @@ class NominaTest extends TestCase
         $this->actingAs($this->secretaria)->get('/api/nomina/plantilla')
             ->assertOk()
             ->assertDownload('plantilla_nomina.xlsx');
+    }
+
+    public function test_descarga_la_nomina_guardada_con_las_columnas_de_la_plantilla(): void
+    {
+        $this->actingAs($this->secretaria)
+            ->post('/api/nomina/confirmar', ['archivo' => $this->planillaDeEjemplo(), 'periodo_id' => $this->periodo->id]);
+
+        $respuesta = $this->actingAs($this->secretaria)->get('/api/nomina/exportar?periodo_id='.$this->periodo->id)
+            ->assertOk()
+            ->assertDownload('nomina_2026-2.xlsx');
+
+        // El Excel descargado se puede volver a leer como planilla
+        $ruta = $respuesta->baseResponse->getFile()->getPathname();
+        $filas = app(LectorPlanilla::class)->leer(new UploadedFile($ruta, 'nomina.xlsx', null, null, true));
+        $this->assertCount(2, $filas);
+        $this->assertSame(['Benjamín Castro Ríos', 'No'], [$filas[0]['nombre'], $filas[0]['cumple']]);
+        $this->assertSame(['Ignacia Muñoz Vega', '2025', 'Sí'], [$filas[1]['nombre'], $filas[1]['anio_ingreso'], $filas[1]['cumple']]);
     }
 
     public function test_solo_la_secretaria_puede_cargar_la_nomina(): void

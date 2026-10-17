@@ -41,6 +41,15 @@ class NominaController extends Controller
         return response()->json(['data' => $this->nomina->listar($periodo)]);
     }
 
+    public function exportar(Request $request): BinaryFileResponse
+    {
+        $periodo = Periodo::findOrFail($request->integer('periodo_id'));
+
+        return response()
+            ->download($this->nomina->exportar($periodo), "nomina_{$periodo->anio}-{$periodo->semestre}.xlsx")
+            ->deleteFileAfterSend();
+    }
+
     public function plantilla(LectorPlanilla $lector): BinaryFileResponse
     {
         return response()->download($lector->crearPlantilla(), 'plantilla_nomina.xlsx')->deleteFileAfterSend();

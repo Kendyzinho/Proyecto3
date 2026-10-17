@@ -106,6 +106,15 @@ export class Nomina {
     }
   }
 
+  // Excel de la nómina guardada, con las columnas de la plantilla
+  protected descargarNomina(): void {
+    const periodo = this.periodo();
+    if (periodo) {
+      const nombre = periodo.nombre.normalize('NFD').replace(/[^\w\s]/g, '').trim().replace(/\s+/g, '_').toLowerCase();
+      this.api.exportar(periodo.id).subscribe((contenido) => descargar(contenido, `nomina_${nombre}.xlsx`));
+    }
+  }
+
   protected descargarPlantilla(): void {
     this.api.plantilla().subscribe((contenido) => descargar(contenido, 'plantilla_nomina.xlsx'));
   }
