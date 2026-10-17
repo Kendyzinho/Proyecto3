@@ -10,6 +10,10 @@
       <span>{{ roles[usuario.rol] }}</span>
     </div>
     <mat-divider />
+    <a mat-menu-item routerLink="/perfil" routerLinkActive="perfil-activo" ariaCurrentWhenActive="page">
+      <mat-icon>person</mat-icon>
+      <span>Mi perfil</span>
+    </a>
     <button mat-menu-item class="cerrar" (click)="auth.logout()">
       <mat-icon>logout</mat-icon>
       <span>Cerrar sesión</span>

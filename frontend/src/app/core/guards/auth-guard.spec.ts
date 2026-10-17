@@ -28,7 +28,7 @@ describe('authGuard', () => {
   });
 
   it('con otro rol manda al inicio de su propio rol', () => {
-    const estudiante: Usuario = { id: 4, name: 'Matías', email: 'estudiante@alumnos.uta.cl', rol: 'estudiante' };
+    const estudiante: Usuario = { id: 4, name: 'Matías', rut: null, email: 'estudiante@alumnos.uta.cl', rol: 'estudiante' };
     localStorage.setItem('usuario', JSON.stringify(estudiante));
     localStorage.setItem('token', 'token-de-prueba');
 
