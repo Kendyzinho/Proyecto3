@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 // Un estudiante habilitado (o bloqueado por prerrequisito) para un tipo de práctica en un período
 class Habilitacion extends Model
@@ -36,6 +37,11 @@ class Habilitacion extends Model
     public function periodo(): BelongsTo
     {
         return $this->belongsTo(Periodo::class);
+    }
+
+    public function practicas(): HasMany
+    {
+        return $this->hasMany(Practica::class);
     }
 
     public function carga(): BelongsTo

@@ -22,12 +22,10 @@ class NominaController extends Controller
     public function catalogo(): JsonResponse
     {
         $periodos = Periodo::orderByDesc('anio')->orderByDesc('semestre')->get();
-        $semestreActual = now()->month >= 7 ? 2 : 1;
-        $actual = $periodos->first(fn ($p) => $p->anio === (int) now()->year && $p->semestre === $semestreActual) ?? $periodos->first();
 
         return response()->json([
             'periodos' => $periodos->map(fn ($p) => ['id' => $p->id, 'nombre' => $p->nombre()]),
-            'periodo_actual_id' => $actual?->id,
+            'periodo_actual_id' => Periodo::actual()?->id,
             'practicas' => $this->nomina->tiposVigentes()->map(fn ($t) => [
                 'id' => $t->id, 'nombre' => $t->nombre, 'prerrequisito' => $t->prerrequisito,
             ])->values(),

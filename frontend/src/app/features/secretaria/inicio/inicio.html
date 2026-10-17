@@ -12,4 +12,14 @@
       <a matButton routerLink="nomina">Ver nómina</a>
     </div>
   </section>
+
+  <section class="tarjeta resumen__tarjeta">
+    <div class="resumen__cuerpo">
+      <h2>Prácticas por formalizar</h2>
+      <p class="resumen__numero">{{ porFormalizar() ?? '—' }} {{ porFormalizar() === 1 ? 'práctica' : 'prácticas' }}</p>
+    </div>
+    <div class="resumen__pie">
+      <a matButton routerLink="documentos">Ver documentos</a>
+    </div>
+  </section>
 </div>

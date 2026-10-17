@@ -32,8 +32,14 @@ html {
 }
 
 html,
-body {
+body,
+app-root {
   height: 100%;
+}
+
+// Solo se desplaza el contenido de la página; el menú y la barra superior quedan fijos
+app-root {
+  display: block;
 }
 
 body {
@@ -106,6 +112,14 @@ body {
 
 .estado--advertencia {
   color: #b45309;
+}
+
+.estado--info {
+  color: #355085;
+}
+
+.estado--neutro {
+  color: #5b6b80;
 }
 
 // Iniciales de una persona

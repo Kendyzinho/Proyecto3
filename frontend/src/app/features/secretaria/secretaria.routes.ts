@@ -2,10 +2,11 @@ import { Routes } from '@angular/router';
 
 import { Marco, OpcionMenu } from '../../shared/marco/marco';
 
-// Las opciones de Usuarios (HU-05) y Documentos (HU-10) se suman cuando existan sus pantallas
+// La opción de Usuarios (HU-05) se suma cuando exista su pantalla
 const MENU: OpcionMenu[] = [
   { texto: 'Inicio', icono: 'home', ruta: '/secretaria' },
   { texto: 'Nómina de estudiantes', icono: 'table_view', ruta: '/secretaria/nomina' },
+  { texto: 'Documentos', icono: 'description', ruta: '/secretaria/documentos' },
 ];
 
 export default [
@@ -16,6 +17,7 @@ export default [
     children: [
       { path: '', title: 'Inicio', loadComponent: () => import('./inicio/inicio').then((m) => m.Inicio) },
       { path: 'nomina', title: 'Nómina de estudiantes', loadComponent: () => import('./nomina/nomina').then((m) => m.Nomina) },
+      { path: 'documentos', title: 'Documentos', loadComponent: () => import('./documentos/documentos').then((m) => m.Documentos) },
     ],
   },
 ] satisfies Routes;
