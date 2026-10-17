@@ -106,6 +106,11 @@ class DocumentoTest extends TestCase
             && $correo->hasTo('cmamani@fundacionuta.cl')
             && count($correo->attachments()) === 2);
         $this->assertSame(2, Documento::where('practica_id', $practica->id)->whereNotNull('fecha_envio')->count());
+
+        // El texto del correo nombra el tipo de práctica y el centro, sin datos internos
+        (new DocumentosPractica($practica->fresh(), []))
+            ->assertSeeInHtml('para su Práctica Profesional en Fundación UTA')
+            ->assertDontSeeInHtml('habilitacion_id');
     }
 
     public function test_registrar_el_acuerdo_firmado_habilita_al_centro(): void

@@ -30,9 +30,10 @@ class DocumentosPractica extends Mailable
 
     public function content(): Content
     {
+        // Ojo: las propiedades públicas del Mailable también llegan a la vista; por eso no se usa "practica"
         return new Content(view: 'correos.documentos', with: [
             'estudiante' => $this->practica->habilitacion->estudiante->usuario->name,
-            'practica' => $this->practica->habilitacion->tipoPractica->nombre,
+            'tipoPractica' => $this->practica->habilitacion->tipoPractica->nombre,
             'centro' => $this->practica->supervisor->centro->nombre,
         ]);
     }
