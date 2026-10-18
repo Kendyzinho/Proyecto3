@@ -1,0 +1,63 @@
+<form class="acuerdo" [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+  @if (acuerdo(); as actual) {
+    <div class="acuerdo__estado">
+      <span>Estado</span>
+      <span class="estado" [class.estado--exito]="actual.estado === 'vigente'"
+            [class.estado--advertencia]="actual.estado === 'en_tramite'" [class.estado--error]="actual.estado === 'vencido'">
+        {{ textoAcuerdo[actual.estado] }}
+      </span>
+    </div>
+  }
+
+  <div class="fila">
+    <mat-form-field class="ancho">
+      <mat-label>Tipo</mat-label>
+      <mat-select formControlName="tipo">
+        <mat-option value="tradicional">Tradicional</mat-option>
+        <mat-option value="con_equipamiento">Con equipamiento</mat-option>
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field class="ancho">
+      <mat-label>Representante legal</mat-label>
+      <input matInput formControlName="representante_legal" />
+      @if (form.controls.representante_legal.hasError('required')) {
+        <mat-error>Ingresa el representante legal.</mat-error>
+      }
+    </mat-form-field>
+  </div>
+
+  <div class="fila">
+    <mat-form-field class="ancho">
+      <mat-label>Inicio de la vigencia</mat-label>
+      <input matInput type="date" formControlName="fecha_inicio" />
+    </mat-form-field>
+    <mat-form-field class="ancho">
+      <mat-label>Término de la vigencia</mat-label>
+      <input matInput type="date" formControlName="fecha_termino" />
+    </mat-form-field>
+  </div>
+
+  <input #selector class="oculto" type="file" accept=".pdf" (change)="elegirArchivo($event)" />
+  <div class="archivo">
+    <mat-icon class="archivo__icono">picture_as_pdf</mat-icon>
+    <span class="archivo__nombre">
+      {{ archivo()?.name ?? (acuerdo()?.tiene_archivo ? 'Acuerdo de colaboración.pdf' : 'Sin acuerdo firmado') }}
+    </span>
+    @if (acuerdo()?.tiene_archivo && !archivo()) {
+      <button matButton type="button" (click)="verPdf()">Ver PDF</button>
+    }
+    <button matButton="outlined" type="button" (click)="selector.click()">
+      {{ acuerdo()?.tiene_archivo || archivo() ? 'Cambiar PDF' : 'Subir PDF' }}
+    </button>
+  </div>
+
+  @if (error(); as mensaje) {
+    <p class="error" role="alert">{{ mensaje }}</p>
+  }
+
+  <div class="acciones">
+    <button matButton="filled" type="submit" [disabled]="guardando()">
+      {{ guardando() ? 'Guardando…' : 'Guardar acuerdo' }}
+    </button>
+  </div>
+</form>

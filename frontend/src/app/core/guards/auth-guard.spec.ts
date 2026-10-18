@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { Route, Router, UrlTree, provideRouter } from '@angular/router';
+import { Route, Router, UrlTree, provideRouter, withComponentInputBinding } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 
 import { Usuario } from '../models/usuario';
@@ -14,7 +14,7 @@ describe('authGuard', () => {
 
   beforeEach(() => {
     localStorage.clear();
-    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter(routes)] });
+    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter(routes, withComponentInputBinding())] });
   });
 
   afterEach(() => {
@@ -43,7 +43,17 @@ describe('authGuard', () => {
     localStorage.setItem('token', 'token-de-prueba');
     localStorage.setItem('usuario', JSON.stringify({ id: 1, name: 'Usuario', email: 'usuario@uta.cl', rol }));
     const harness = await RouterTestingHarness.create(ruta);
-    expect(harness.routeNativeElement?.textContent).toContain('Sesión iniciada');
+    if (rol === 'secretaria') {
+      TestBed.inject(HttpTestingController).expectOne('/api/nomina/catalogo').flush({
+        periodos: [{ id: 1, nombre: '2º semestre 2026' }], periodo_actual_id: 1, practicas: [],
+      });
+      TestBed.inject(HttpTestingController).expectOne('/api/nomina?periodo_id=1').flush({ data: [] });
+      TestBed.inject(HttpTestingController).expectOne('/api/documentos?periodo_id=1').flush({ data: [] });
+      await harness.fixture.whenStable();
+      expect(harness.routeNativeElement?.textContent).toContain('Nómina de estudiantes');
+    } else {
+      expect(harness.routeNativeElement?.textContent).toContain('Sesión iniciada');
+    }
     expect(harness.routeNativeElement?.querySelector('[aria-label="Menú de usuario"]')).not.toBeNull();
 
     TestBed.inject(Auth).logout();

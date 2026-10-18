@@ -1,0 +1,40 @@
+.resumen {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+.resumen__tarjeta {
+  margin: 0;
+}
+
+.resumen__cuerpo {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 24px;
+
+  h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+  }
+}
+
+.resumen__numero {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+// El margen interno del botón (16 px) más 8 px deja la etiqueta alineada con el texto
+.resumen__pie {
+  padding: 4px 8px;
+  border-top: 1px solid #e2e8f0;
+}
+
+@media (max-width: 1024px) {
+  .resumen {
+    grid-template-columns: 1fr;
+  }
+}

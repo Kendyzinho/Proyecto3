@@ -115,4 +115,7 @@ return [
         'name' => env('MAIL_FROM_NAME', env('APP_NAME', 'Laravel')),
     ],
 
+    // En desarrollo, todos los correos llegan a esta dirección y no a los destinatarios reales
+    'siempre_a' => env('MAIL_SIEMPRE_A'),
+
 ];

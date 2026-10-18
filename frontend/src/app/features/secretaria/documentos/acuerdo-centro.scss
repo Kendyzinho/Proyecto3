@@ -1,0 +1,62 @@
+.acuerdo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.acuerdo__estado {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  font-size: 14px;
+
+  span:first-child {
+    color: #5b6b80;
+  }
+}
+
+.fila {
+  display: flex;
+  gap: 16px;
+}
+
+.ancho {
+  flex: 1;
+}
+
+.oculto {
+  display: none;
+}
+
+.archivo {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 64px;
+  padding: 0 16px;
+  border: 1px dashed #7c8aa0;
+  border-radius: 12px;
+  background: #f7f9fc;
+}
+
+.archivo__icono {
+  color: #355085;
+}
+
+.archivo__nombre {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.error {
+  margin: 12px 0 0;
+  color: #b91c1c;
+  font-size: 14px;
+}
+
+.acciones {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 20px;
+}

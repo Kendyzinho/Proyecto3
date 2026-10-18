@@ -11,7 +11,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 
-import { NOMBRE_POR_ROL, Usuario } from '../../core/models/usuario';
+import { NOMBRE_ROL, Usuario } from '../../core/models/usuario';
 import { Auth } from '../../core/services/auth';
 import { CambioContrasena, PerfilApi } from '../../core/services/perfil-api';
 import { MenuUsuario } from '../../shared/menu-usuario/menu-usuario';
@@ -32,7 +32,7 @@ export class Perfil implements OnInit, OnDestroy {
   protected readonly auth = inject(Auth);
   private readonly api = inject(PerfilApi);
   private readonly destroyRef = inject(DestroyRef);
-  protected readonly roles = NOMBRE_POR_ROL;
+  protected readonly roles = NOMBRE_ROL;
   protected readonly usuario = signal<Usuario | null>(null);
   protected readonly cargando = signal(false);
   protected readonly errorCarga = signal<string | null>(null);

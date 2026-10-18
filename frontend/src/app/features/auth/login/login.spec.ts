@@ -56,7 +56,10 @@ describe('Login', () => {
     expect(TestBed.inject(Auth).autenticado()).toBe(false);
   });
 
-  it('permite iniciar sesión de nuevo desde el formulario después del cierre', () => {
+  it.each([
+    ['coordinadora', '/coordinacion'], ['secretaria', '/secretaria'],
+    ['jefe', '/jefatura'], ['estudiante', '/estudiante'],
+  ])('permite iniciar sesión como %s después del cierre', (rol, inicio) => {
     localStorage.setItem('token', 'sesion-anterior');
     TestBed.inject(Auth).logout();
     const http = TestBed.inject(HttpTestingController);
@@ -72,9 +75,9 @@ describe('Login', () => {
     correo.dispatchEvent(new Event('input'));
     clave.dispatchEvent(new Event('input'));
     el.querySelector('form')!.dispatchEvent(new Event('submit'));
-    http.expectOne('/api/login').flush({ token: 'sesion-nueva', usuario: { id: 2, name: 'Coordinadora', email: correo.value, rol: 'coordinadora' } });
+    http.expectOne('/api/login').flush({ token: 'sesion-nueva', usuario: { id: 2, name: 'Usuario de prueba', email: correo.value, rut: null, rol } });
     expect(TestBed.inject(Auth).autenticado()).toBe(true);
     expect(TestBed.inject(Auth).estadoCierre()).toBe('ninguno');
-    expect(TestBed.inject(Router).navigateByUrl).toHaveBeenLastCalledWith('/coordinacion');
+    expect(TestBed.inject(Router).navigateByUrl).toHaveBeenLastCalledWith(inicio);
   });
 });

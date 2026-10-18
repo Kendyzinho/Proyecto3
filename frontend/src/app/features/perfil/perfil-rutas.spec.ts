@@ -3,7 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestbedHarnessEnvironment } from '@angular/cdk/testing/testbed';
 import { TestBed } from '@angular/core/testing';
 import { MatMenuHarness } from '@angular/material/menu/testing';
-import { Router, provideRouter } from '@angular/router';
+import { Router, provideRouter, withComponentInputBinding } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 
 import { routes } from '../../app.routes';
@@ -14,7 +14,7 @@ describe('Navegación del perfil', () => {
   beforeEach(() => {
     localStorage.clear();
     TestBed.configureTestingModule({
-      providers: [provideRouter(routes), provideHttpClient(withInterceptors([authInterceptor])), provideHttpClientTesting()],
+      providers: [provideRouter(routes, withComponentInputBinding()), provideHttpClient(withInterceptors([authInterceptor])), provideHttpClientTesting()],
     });
   });
 
@@ -37,11 +37,22 @@ describe('Navegación del perfil', () => {
     localStorage.setItem('token', 'token-perfil');
     localStorage.setItem('usuario', JSON.stringify(usuario));
     const harness = await RouterTestingHarness.create(inicio);
+    const http = TestBed.inject(HttpTestingController);
+    const cargarInicio = () => {
+      if (rol === 'secretaria') {
+        http.expectOne('/api/nomina/catalogo').flush({
+          periodos: [{ id: 1, nombre: '2º semestre 2026' }], periodo_actual_id: 1, practicas: [],
+        });
+        http.expectOne('/api/nomina?periodo_id=1').flush({ data: [] });
+        http.expectOne('/api/documentos?periodo_id=1').flush({ data: [] });
+      }
+    };
+    cargarInicio();
+    expect(harness.routeNativeElement?.querySelectorAll('app-menu-usuario')).toHaveLength(1);
     const menu = await TestbedHarnessEnvironment.loader(harness.fixture).getHarness(MatMenuHarness);
     await menu.open();
     const [perfil] = await menu.getItems({ text: /Mi perfil/ });
     await perfil.click();
-    const http = TestBed.inject(HttpTestingController);
     http.expectOne('/api/me').flush({ data: usuario });
     await harness.fixture.whenStable();
     expect(TestBed.inject(Router).url).toBe('/perfil');
@@ -51,6 +62,7 @@ describe('Navegación del perfil', () => {
     harness.routeNativeElement!.querySelector<HTMLAnchorElement>(`a[href="${inicio}"]`)!.click();
     await harness.fixture.whenStable();
     expect(TestBed.inject(Router).url).toBe(inicio);
+    cargarInicio();
 
     await harness.navigateByUrl('/perfil');
     http.expectOne('/api/me').flush({ data: usuario });
