@@ -10,6 +10,17 @@ class AutenticacionTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function beforeRefreshingDatabase(): void
+    {
+        $conexion = $this->app['db']->connection();
+        if (! $this->app->environment('testing')
+            || $this->app->configurationIsCached()
+            || $conexion->getDatabaseName() !== 'practicas_test'
+            || $conexion->selectOne('SELECT DATABASE() AS nombre')->nombre !== 'practicas_test') {
+            throw new \LogicException('Las pruebas de autenticación requieren exclusivamente practicas_test.');
+        }
+    }
+
     public function test_inicia_sesion_con_credenciales_validas_y_devuelve_el_rol(): void
     {
         User::factory()->create(['email' => 'coordinadora@uta.cl', 'rol' => 'coordinadora']);
@@ -67,5 +78,57 @@ class AutenticacionTest extends TestCase
     public function test_sin_token_no_entrega_datos(): void
     {
         $this->getJson('/api/me')->assertUnauthorized();
+    }
+
+    public function test_logout_sin_token_no_revoca_ninguna_sesion(): void
+    {
+        $usuario = User::factory()->create();
+        $token = $usuario->createToken('otro-dispositivo');
+
+        $this->postJson('/api/logout')->assertUnauthorized();
+        $this->assertDatabaseHas('personal_access_tokens', ['id' => $token->accessToken->id]);
+    }
+
+    public function test_logout_solo_revoca_el_token_actual_y_permite_un_nuevo_login(): void
+    {
+        $usuario = User::factory()->create(['email' => 'sesiones@uta.cl', 'rol' => 'jefe']);
+        $actual = $usuario->createToken('web');
+        $otro = $usuario->createToken('otro-dispositivo');
+
+        $this->withToken($actual->plainTextToken)->postJson('/api/logout')->assertNoContent();
+        $this->assertDatabaseMissing('personal_access_tokens', ['id' => $actual->accessToken->id]);
+        $this->assertDatabaseHas('personal_access_tokens', ['id' => $otro->accessToken->id]);
+
+        $this->app['auth']->forgetGuards();
+        $this->withToken($actual->plainTextToken)->getJson('/api/me')->assertUnauthorized();
+        $this->withToken($actual->plainTextToken)->postJson('/api/logout')->assertUnauthorized();
+
+        $this->app['auth']->forgetGuards();
+        $this->withToken($otro->plainTextToken)->getJson('/api/me')->assertOk();
+
+        $this->app['auth']->forgetGuards();
+        $nuevo = $this->postJson('/api/login', ['email' => $usuario->email, 'password' => 'password'])
+            ->assertOk()->json('token');
+        $this->app['auth']->forgetGuards();
+        $this->withToken($nuevo)->getJson('/api/me')->assertOk();
+    }
+
+    public function test_las_respuestas_no_exponen_la_contrasena_ni_tokens_almacenados(): void
+    {
+        $usuario = User::factory()->create(['email' => 'privacidad@uta.cl', 'rol' => 'jefe']);
+        $login = $this->postJson('/api/login', ['email' => $usuario->email, 'password' => 'password'])->assertOk();
+        $datos = ['id' => $usuario->id, 'name' => $usuario->name, 'email' => $usuario->email, 'rol' => 'jefe'];
+        $this->assertSame($datos, $login->json('usuario'));
+
+        $this->withToken($login->json('token'))->getJson('/api/me')->assertExactJson(['data' => $datos]);
+        $this->withToken($login->json('token'))->postJson('/api/logout')->assertNoContent();
+    }
+
+    public function test_un_token_expirado_no_permite_me_ni_logout(): void
+    {
+        $usuario = User::factory()->create();
+        $token = $usuario->createToken('expirado', ['*'], now()->subMinute());
+        $this->withToken($token->plainTextToken)->getJson('/api/me')->assertUnauthorized();
+        $this->withToken($token->plainTextToken)->postJson('/api/logout')->assertUnauthorized();
     }
 }

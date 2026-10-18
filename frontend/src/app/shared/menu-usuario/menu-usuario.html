@@ -1,0 +1,18 @@
+@if (auth.usuario(); as usuario) {
+  <button matButton type="button" class="usuario" [matMenuTriggerFor]="menu" aria-label="Menú de usuario">
+    <span class="avatar" aria-hidden="true">{{ iniciales() }}</span>
+    <span class="nombre">{{ usuario.name }}</span>
+    <mat-icon iconPositionEnd>expand_more</mat-icon>
+  </button>
+  <mat-menu #menu="matMenu" xPosition="before">
+    <div class="datos">
+      <strong>{{ usuario.name }}</strong>
+      <span>{{ roles[usuario.rol] }}</span>
+    </div>
+    <mat-divider />
+    <button mat-menu-item class="cerrar" (click)="auth.logout()">
+      <mat-icon>logout</mat-icon>
+      <span>Cerrar sesión</span>
+    </button>
+  </mat-menu>
+}

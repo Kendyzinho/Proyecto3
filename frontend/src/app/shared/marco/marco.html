@@ -28,19 +28,7 @@
       <button mat-icon-button type="button" aria-label="Mostrar u ocultar el menú" (click)="menuAbierto.set(!menuAbierto())">
         <mat-icon>menu</mat-icon>
       </button>
-      @if (auth.usuario(); as usuario) {
-        <button class="barra__usuario" type="button" [matMenuTriggerFor]="menuUsuario">
-          <span class="barra__avatar">{{ iniciales() }}</span>
-          <span>{{ usuario.name }}</span>
-          <mat-icon>expand_more</mat-icon>
-        </button>
-      }
-      <mat-menu #menuUsuario="matMenu" xPosition="before">
-        <button mat-menu-item type="button" (click)="auth.logout()">
-          <mat-icon>logout</mat-icon>
-          <span>Cerrar sesión</span>
-        </button>
-      </mat-menu>
+      <app-menu-usuario />
     </header>
 
     <main class="pagina">

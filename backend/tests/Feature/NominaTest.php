@@ -8,17 +8,17 @@ use App\Models\User;
 use App\Services\LectorPlanilla;
 use App\Support\Rut;
 use Database\Seeders\CatalogoSeeder;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use OpenSpout\Common\Entity\Row;
 use OpenSpout\Writer\XLSX\Writer;
+use Tests\Concerns\BaseDeDatosAislada;
 use Tests\TestCase;
 
 // HU-07: carga de la nómina y verificación de prerrequisitos
 class NominaTest extends TestCase
 {
-    use RefreshDatabase;
+    use BaseDeDatosAislada;
 
     private const ENCABEZADO = "RUT,Nombre,Correo,Año de ingreso,Práctica,Cumple prerrequisito\n";
 
