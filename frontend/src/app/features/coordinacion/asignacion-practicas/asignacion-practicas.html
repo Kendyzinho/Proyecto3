@@ -1,0 +1,63 @@
+<main class="page">
+  <div class="breadcrumb"><span>Prácticas</span><span aria-hidden="true">/</span><span>{{ categoriaActiva() === 'Laboral' ? 'Laborales' : 'Profesionales' }} sin centro</span></div>
+  <h1>Asignar centro de práctica</h1>
+
+  <div class="category-picker" role="group" aria-label="Tipo de práctica">
+    <span class="picker-label">TIPO DE PRÁCTICA</span>
+    <div class="category-options">
+      <button type="button" class="category-option" [attr.aria-pressed]="categoriaActiva() === 'Laboral'" [class.category-option--active]="categoriaActiva() === 'Laboral'" (click)="cambiarCategoria('Laboral')">
+        <span class="category-icon"><mat-icon aria-hidden="true">work_outline</mat-icon></span>
+        <span class="category-copy"><strong>Práctica laboral</strong><small>Estudiantes habilitados sin centro</small></span>
+        <span class="category-count">{{ cantidadLaborales() }}</span>
+      </button>
+      <button type="button" class="category-option" [attr.aria-pressed]="categoriaActiva() === 'Profesional'" [class.category-option--active]="categoriaActiva() === 'Profesional'" (click)="cambiarCategoria('Profesional')">
+        <span class="category-icon"><mat-icon aria-hidden="true">work</mat-icon></span>
+        <span class="category-copy"><strong>Práctica profesional</strong><small>Estudiantes habilitados sin centro</small></span>
+        <span class="category-count">{{ cantidadProfesionales() }}</span>
+      </button>
+    </div>
+  </div>
+
+  @if (aviso()) {
+    <div class="notice" [class.notice--success]="avisoExitoso()" role="status">{{ aviso() }}</div>
+  }
+
+  <div class="assignment-layout">
+    <section class="panel student-panel" aria-labelledby="students-title">
+      <header class="panel-heading"><h2 id="students-title">Sin centro</h2><span class="student-count">{{ estudiantesSinCentro().length }}</span></header>
+      <div class="student-list">
+        @for (item of estudiantesSinCentro(); track item.id) {
+          <button class="student-row" type="button" [class.student-row--selected]="estudianteId() === item.id" [attr.aria-pressed]="estudianteId() === item.id" (click)="seleccionarEstudiante(item.id)">
+            <span class="avatar">{{ iniciales(item.nombre) }}</span>
+            <span class="student-content"><span class="student-name">{{ item.nombre }}</span><span class="area-chips">@for (area of item.areas; track area) { <span class="chip">{{ area }}</span> }</span></span>
+          </button>
+        } @empty { <p class="empty">No hay estudiantes habilitados pendientes de asignación.</p> }
+      </div>
+    </section>
+
+    <section class="panel centers-panel" aria-labelledby="centers-title">
+      @if (estudiante(); as seleccionado) {
+        <header class="panel-heading centers-heading"><h2 id="centers-title">Centros para {{ seleccionado.nombre }}</h2><p>{{ seleccionado.periodo }} · {{ seleccionado.categoria }}</p></header>
+        <div class="center-list" role="radiogroup" aria-label="Centros compatibles">
+          @for (centro of centrosCompatibles(); track centro.id) {
+            <button class="center-row" type="button" role="radio" [attr.aria-checked]="centroId() === centro.id" [class.center-row--selected]="centroId() === centro.id" (click)="centroId.set(centro.id); aviso.set('')">
+              <span class="radio" [class.radio--checked]="centroId() === centro.id" aria-hidden="true"></span>
+              <span class="center-name">{{ centro.nombre }}</span>
+              <span class="match" [class.match--complete]="contarCoincidencias(centro) === seleccionado.areas.length">coincide en {{ contarCoincidencias(centro) }} de {{ seleccionado.areas.length }} áreas</span>
+              <span class="center-extra">{{ centro.rut }} · Acuerdo vigente</span>
+              @for (cupo of centro.cupos; track cupo.periodo + cupo.categoria) {
+                @if (cupo.periodo === seleccionado.periodo && cupo.categoria === seleccionado.categoria) {
+                  <span class="capacity">{{ cupo.total - cupo.ocupados }} cupos disponibles</span>
+                }
+              }
+            </button>
+          } @empty { <p class="empty centers-empty">No hay centros activos con acuerdo vigente, áreas coincidentes y cupos disponibles para este período y categoría.</p> }
+        </div>
+        <footer class="panel-footer"><button class="assign-button" type="button" [disabled]="!centroId()" (click)="asignar()"><mat-icon aria-hidden="true">how_to_reg</mat-icon>Asignar y notificar</button></footer>
+      } @else {
+        <div class="no-selection"><span class="empty-icon"><mat-icon>person_search</mat-icon></span><h2>Selecciona un estudiante</h2><p>Verás los centros compatibles con sus áreas y habilitación.</p></div>
+      }
+    </section>
+  </div>
+  <p class="assignment-note">La asignación es 1 a 1: cada estudiante puede tener una sola práctica asignada. Se consideran áreas coincidentes, acuerdo vigente y cupos por período y categoría.</p>
+</main>

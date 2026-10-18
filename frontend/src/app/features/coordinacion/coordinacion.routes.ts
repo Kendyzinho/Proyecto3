@@ -1,6 +1,11 @@
 import { Routes } from '@angular/router';
 
-// Inicio provisorio hasta que exista el inicio real de este rol
 export default [
-  { path: '', title: 'Inicio', loadComponent: () => import('../../shared/inicio-temporal/inicio-temporal').then((m) => m.InicioTemporal) },
+  { path: '', pathMatch: 'full', redirectTo: 'asignaciones' },
+  {
+    path: 'asignaciones',
+    title: 'Asignación de prácticas',
+    loadComponent: () =>
+      import('./asignacion-practicas/asignacion-practicas').then((m) => m.AsignacionPracticas),
+  },
 ] satisfies Routes;
