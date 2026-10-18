@@ -3,23 +3,12 @@
 namespace Tests\Feature;
 
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\BaseDeDatosAislada;
 use Tests\TestCase;
 
 class AutenticacionTest extends TestCase
 {
-    use RefreshDatabase;
-
-    protected function beforeRefreshingDatabase(): void
-    {
-        $conexion = $this->app['db']->connection();
-        if (! $this->app->environment('testing')
-            || $this->app->configurationIsCached()
-            || $conexion->getDatabaseName() !== 'practicas_test'
-            || $conexion->selectOne('SELECT DATABASE() AS nombre')->nombre !== 'practicas_test') {
-            throw new \LogicException('Las pruebas de autenticación requieren exclusivamente practicas_test.');
-        }
-    }
+    use BaseDeDatosAislada;
 
     public function test_inicia_sesion_con_credenciales_validas_y_devuelve_el_rol(): void
     {
@@ -117,7 +106,7 @@ class AutenticacionTest extends TestCase
     {
         $usuario = User::factory()->create(['email' => 'privacidad@uta.cl', 'rol' => 'jefe']);
         $login = $this->postJson('/api/login', ['email' => $usuario->email, 'password' => 'password'])->assertOk();
-        $datos = ['id' => $usuario->id, 'name' => $usuario->name, 'email' => $usuario->email, 'rol' => 'jefe'];
+        $datos = ['id' => $usuario->id, 'name' => $usuario->name, 'rut' => $usuario->rut, 'email' => $usuario->email, 'rol' => 'jefe'];
         $this->assertSame($datos, $login->json('usuario'));
 
         $this->withToken($login->json('token'))->getJson('/api/me')->assertExactJson(['data' => $datos]);

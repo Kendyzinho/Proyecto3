@@ -33,6 +33,18 @@ class AutenticacionService
         ];
     }
 
+    public function cambiarContrasena(User $usuario, #[\SensitiveParameter] string $actual, #[\SensitiveParameter] string $nueva): void
+    {
+        if (! Hash::check($actual, $usuario->password)) {
+            throw ValidationException::withMessages([
+                'current_password' => 'La contraseña actual no es correcta.',
+            ]);
+        }
+
+        $usuario->password = Hash::make($nueva);
+        $usuario->save();
+    }
+
     // HU-03: invalida el token con que se hizo la petición
     public function cerrarSesion(User $usuario): void
     {

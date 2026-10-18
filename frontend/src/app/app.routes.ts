@@ -6,6 +6,7 @@ import { authGuard, invitadoGuard } from './core/guards/auth-guard';
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'auth' },
   { path: 'auth', canMatch: [invitadoGuard], loadChildren: () => import('./features/auth/auth.routes') },
+  { path: 'perfil', canMatch: [authGuard], title: 'Mi perfil', loadComponent: () => import('./features/perfil/perfil').then((m) => m.Perfil) },
   { path: 'coordinacion', canMatch: [authGuard], data: { rol: 'coordinadora' }, loadChildren: () => import('./features/coordinacion/coordinacion.routes') },
   { path: 'estudiante', canMatch: [authGuard], data: { rol: 'estudiante' }, loadChildren: () => import('./features/estudiante/estudiante.routes') },
   { path: 'secretaria', canMatch: [authGuard], data: { rol: 'secretaria' }, loadChildren: () => import('./features/secretaria/secretaria.routes') },

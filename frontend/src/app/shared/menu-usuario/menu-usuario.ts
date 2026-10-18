@@ -3,13 +3,14 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
+import { RouterLink, RouterLinkActive } from '@angular/router';
 
 import { NOMBRE_ROL } from '../../core/models/usuario';
 import { Auth } from '../../core/services/auth';
 
 @Component({
   selector: 'app-menu-usuario',
-  imports: [MatButtonModule, MatDividerModule, MatIconModule, MatMenuModule],
+  imports: [MatButtonModule, MatDividerModule, MatIconModule, MatMenuModule, RouterLink, RouterLinkActive],
   templateUrl: './menu-usuario.html',
   styleUrl: './menu-usuario.scss',
 })
