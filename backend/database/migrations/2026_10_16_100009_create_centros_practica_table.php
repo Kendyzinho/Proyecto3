@@ -15,8 +15,8 @@ return new class extends Migration
             $table->string('razon_social');
             $table->string('nombre');
             $table->string('direccion')->nullable();
+            $table->string('telefono', 30)->nullable();
             $table->boolean('es_interno')->default(false); // la UTA es un solo centro interno
-            $table->smallInteger('cupos')->unsigned()->default(0); // por período
             $table->date('fecha_alta')->nullable(); // vacía = propuesto
             $table->date('fecha_baja')->nullable(); // vacía = activo
             $table->string('motivo_baja')->nullable();

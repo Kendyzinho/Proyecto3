@@ -17,11 +17,29 @@ html {
   @include mat.theme-overrides((
     primary: #355085,
   ));
+
+  // Paginador sin fondo propio y títulos de diálogo como "Editar usuario" en las plantillas
+  @include mat.paginator-overrides((
+    container-background-color: transparent,
+  ));
+  @include mat.table-overrides((
+    background-color: transparent,
+  ));
+  @include mat.dialog-overrides((
+    subhead-size: 18px,
+    subhead-weight: 600,
+  ));
 }
 
 html,
-body {
+body,
+app-root {
   height: 100%;
+}
+
+// Solo se desplaza el contenido de la página; el menú y la barra superior quedan fijos
+app-root {
+  display: block;
 }
 
 body {
@@ -29,4 +47,133 @@ body {
   font-family: Inter, sans-serif;
   background: #f1f5f9;
   color: var(--mat-sys-on-surface);
+}
+
+// Piezas compartidas de las pantallas (mismos valores que las plantillas de Figma)
+
+// Encabezado de página: título a la izquierda y acciones a la derecha
+.encabezado-pagina {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+
+  h1 {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+}
+
+// Tarjeta blanca con cabecera, como en las plantillas
+.tarjeta {
+  margin-bottom: 24px;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+.tarjeta__cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 64px;
+  padding: 8px 24px;
+  border-bottom: 1px solid #e2e8f0;
+
+  h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+  }
+}
+
+.tarjeta__cuerpo {
+  padding: 20px 24px;
+}
+
+// Estado en texto de color, sin fondo (Éxito, Error, Advertencia)
+.estado {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.estado--exito {
+  color: #15803d;
+}
+
+.estado--error {
+  color: #b91c1c;
+}
+
+.estado--advertencia {
+  color: #b45309;
+}
+
+.estado--info {
+  color: #355085;
+}
+
+.estado--neutro {
+  color: #5b6b80;
+}
+
+// Iniciales de una persona
+.avatar {
+  display: inline-grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #e1edf8;
+  color: #212d4a;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+// Tablas de las plantillas: encabezado gris claro y filas con borde fino
+.tabla {
+  width: 100%;
+
+  .mat-mdc-header-row {
+    background: #f7f9fc;
+  }
+
+  .mat-mdc-header-cell {
+    color: #5b6b80;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .mat-mdc-cell,
+  .mat-mdc-header-cell {
+    border-bottom-color: #e2e8f0;
+  }
+
+  .mat-mdc-cell:first-child,
+  .mat-mdc-header-cell:first-child {
+    padding-left: 24px;
+  }
+}
+
+// Nombre y correo de una persona en una celda
+.persona {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+}
+
+.persona__nombre {
+  font-size: 14px;
+}
+
+.persona__correo {
+  color: #5b6b80;
+  font-size: 12px;
 }
