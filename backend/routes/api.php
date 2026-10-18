@@ -5,6 +5,8 @@ use App\Http\Controllers\DocumentoController;
 use App\Http\Controllers\NominaController;
 use App\Models\Periodo;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\UsuarioController;
+
 
 // HU-01: máximo 6 intentos por minuto para frenar ataques de fuerza bruta
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:6,1');
@@ -19,6 +21,15 @@ Route::middleware('auth:sanctum')->group(function () {
 
         return response()->json($periodo ? ['id' => $periodo->id, 'nombre' => $periodo->nombre()] : null);
     });
+    // HU-05: cuentas de usuario, solo la Secretaria de Jefatura
+Route::middleware('rol:secretaria')->prefix('usuarios')->group(function () {
+    Route::get('/', [UsuarioController::class, 'index']);
+    Route::post('/', [UsuarioController::class, 'store']);
+    Route::put('/{usuario}', [UsuarioController::class, 'update']);
+    Route::post('/{usuario}/desactivar', [UsuarioController::class, 'desactivar']);
+    Route::post('/{usuario}/reactivar', [UsuarioController::class, 'reactivar']);
+    });
+
 
     // HU-07: nómina de estudiantes, solo la Secretaria de Jefatura
     Route::middleware('rol:secretaria')->prefix('nomina')->group(function () {
