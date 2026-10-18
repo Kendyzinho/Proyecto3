@@ -1,0 +1,712 @@
+<main class="catalog-page">
+  @if (!centroSeleccionado()) {
+    <header class="page-heading">
+      <div>
+        <p class="eyebrow">COORDINACIÓN DE PRÁCTICAS</p>
+        <h1>Centros de práctica</h1>
+        <p class="subtitle">
+          Consulta organizaciones, acuerdos, supervisores e historial de estudiantes.
+        </p>
+      </div>
+      <button class="primary-button" type="button" (click)="abrirFormularioNuevo()">
+        <span aria-hidden="true">＋</span> Nuevo centro
+      </button>
+    </header>
+
+    <section class="catalog-card" aria-label="Catálogo de centros de práctica">
+      <div class="filters">
+        <label class="search-field">
+          <span class="sr-only">Buscar centro, RUT o supervisor</span>
+          <span class="search-icon" aria-hidden="true">⌕</span>
+          <input
+            type="search"
+            placeholder="Buscar centro, RUT o supervisor"
+            [ngModel]="busqueda()"
+            (ngModelChange)="buscar($event)"
+          />
+        </label>
+
+        <div class="agreement-filters" role="group" aria-label="Filtrar por estado de acuerdo">
+          @for (
+            opcion of ['Todos', 'Vigente', 'En trámite', 'Vencido', 'Sin acuerdo'];
+            track opcion
+          ) {
+            <button
+              type="button"
+              class="filter-chip"
+              [class.filter-chip--selected]="filtroAcuerdo() === opcion"
+              (click)="seleccionarFiltroAcuerdo($any(opcion))"
+            >
+              {{ opcion === 'Todos' ? 'Todos' : 'Acuerdo ' + opcion.toLowerCase() }}
+            </button>
+          }
+        </div>
+
+        <label class="select-field">
+          <span class="sr-only">Filtrar por área</span>
+          <select [ngModel]="areaSeleccionada()" (ngModelChange)="areaSeleccionada.set($event)">
+            <option value="Todas">Todas las áreas</option>
+            @for (area of areas(); track area) {
+              <option [value]="area">{{ area }}</option>
+            }
+          </select>
+        </label>
+
+        <button
+          class="inactive-toggle"
+          type="button"
+          [class.inactive-toggle--selected]="mostrarDadosDeBaja()"
+          (click)="mostrarDadosDeBaja.set(!mostrarDadosDeBaja())"
+        >
+          {{ mostrarDadosDeBaja() ? 'Ocultar dados de baja' : 'Ver dados de baja' }}
+        </button>
+      </div>
+
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Centro</th>
+              <th scope="col">Áreas</th>
+              <th scope="col">Acuerdo</th>
+              <th scope="col">Cupos por período/categoría</th>
+              <th scope="col">Supervisor(a)</th>
+              <th scope="col">Estado</th>
+              <th scope="col"><span class="sr-only">Acciones</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (centro of centrosVisibles(); track centro.id) {
+              <tr>
+                <td>
+                  <button class="center-link" type="button" (click)="seleccionarCentro(centro)">
+                    {{ centro.nombre }}
+                  </button>
+                  @if (centro.esInterno) {
+                    <span class="internal-note">Centro interno</span>
+                  }
+                </td>
+                <td>
+                  <div class="area-list">
+                    @for (area of centro.areas; track area) {
+                      <span class="area-tag">{{ area }}</span>
+                    }
+                  </div>
+                </td>
+                <td>
+                  <span class="status-text" [class]="estadoAcuerdoClass(centro.acuerdo)">{{
+                    centro.acuerdo
+                  }}</span>
+                </td>
+                <td class="quota-cell">{{ cuposResumen(centro) }}</td>
+                <td>{{ centro.supervisorPrincipal ?? 'Sin supervisor' }}</td>
+                <td>
+                  <span class="status-text" [class]="estadoCentroClass(centro.estado)">{{
+                    centro.estado
+                  }}</span>
+                </td>
+                <td>
+                  <button class="text-button" type="button" (click)="seleccionarCentro(centro)">
+                    Ver ficha <span aria-hidden="true">›</span>
+                  </button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="7" class="empty-state">
+                  No hay centros que coincidan con los filtros.
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <footer class="table-footer">
+        {{ centrosVisibles().length }}
+        {{ centrosVisibles().length === 1 ? 'centro encontrado' : 'centros encontrados' }}
+      </footer>
+    </section>
+  } @else {
+    <div class="detail-heading">
+      <button class="back-button" type="button" (click)="volverAlCatalogo()">
+        ← Volver al catálogo
+      </button>
+      <div class="detail-title-row">
+        <div>
+          <p class="breadcrumb">Centros de práctica <span>/</span> Ficha</p>
+          <h1>
+            {{ centroSeleccionado()!.nombre }}
+            <span class="status-text" [class]="estadoCentroClass(centroSeleccionado()!.estado)">{{
+              centroSeleccionado()!.estado
+            }}</span>
+          </h1>
+        </div>
+        <div class="detail-actions">
+          <button class="secondary-button action-button" type="button" (click)="editarCentro()">
+            <svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 20h9" />
+              <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z" /></svg
+            >Editar centro
+          </button>
+          <button class="danger-button action-button" type="button" (click)="cambiarEstadoCentro()">
+            @if (centroSeleccionado()!.estado === 'Dado de baja') {
+              Reactivar
+            } @else {
+              <svg class="button-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="9" />
+                <path d="m5.6 5.6 12.8 12.8" /></svg
+              >Dar de baja
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <section class="detail-grid">
+      <div class="detail-column">
+        <article class="detail-card">
+          <h2>Datos del centro</h2>
+          <dl class="data-list">
+            <div>
+              <dt>Razón social</dt>
+              <dd>{{ centroSeleccionado()!.razonSocial }}</dd>
+            </div>
+            <div>
+              <dt>RUT</dt>
+              <dd>{{ centroSeleccionado()!.rut }}</dd>
+            </div>
+            <div>
+              <dt>Dirección</dt>
+              <dd>{{ centroSeleccionado()!.direccion }}</dd>
+            </div>
+            <div>
+              <dt>Teléfono</dt>
+              <dd>{{ centroSeleccionado()!.telefono }}</dd>
+            </div>
+            <div>
+              <dt>Tipo de centro</dt>
+              <dd>{{ centroSeleccionado()!.esInterno ? 'Interno' : 'Externo' }}</dd>
+            </div>
+            <div>
+              <dt>Áreas</dt>
+              <dd class="area-list">
+                @for (area of centroSeleccionado()!.areas; track area) {
+                  <span class="area-tag">{{ area }}</span>
+                }
+              </dd>
+            </div>
+            <div class="quota-detail-row">
+              <dt>Cupos</dt>
+              <dd class="quota-periods">
+                @for (grupo of cuposAgrupados(); track grupo.periodo) {
+                  <section class="quota-period">
+                    <h3>Cupos {{ grupo.periodo }}</h3>
+                    <p>
+                      @for (cupo of grupo.cupos; track cupo.categoria; let last = $last) {
+                        <span
+                          ><strong>{{ cupo.categoria }}:</strong> {{ cupo.libres }} libres de
+                          {{ cupo.total }}</span
+                        >
+                        @if (!last) {
+                          <span class="quota-separator">, </span>
+                        }
+                      }
+                    </p>
+                  </section>
+                } @empty {
+                  <span>No hay cupos definidos.</span>
+                }
+              </dd>
+            </div>
+          </dl>
+          @if (centroSeleccionado()!.motivoBaja) {
+            <p class="deactivation-note">
+              <strong>Motivo de baja:</strong> {{ centroSeleccionado()!.motivoBaja }}
+            </p>
+          }
+        </article>
+
+        <article class="detail-card detail-card--flush">
+          <div class="card-heading">
+            <h2>Acuerdo de colaboración</h2>
+            <button
+              class="text-button pdf-button"
+              type="button"
+              [disabled]="centroSeleccionado()!.acuerdo === 'Sin acuerdo'"
+              title="El PDF se disponibiliza desde HU-10"
+            >
+              <svg class="pdf-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
+                <path
+                  d="M14 2v6h6M7 16h2a1.5 1.5 0 0 0 0-3H7v5m5 0v-5h1a2.5 2.5 0 0 1 0 5Zm5-5v5m0-5h3m-3 2.5h2"
+                /></svg
+              >Ver PDF
+            </button>
+          </div>
+          @if (centroSeleccionado()!.esInterno) {
+            <p class="muted-copy inset-copy">
+              Centro interno UTA; no requiere acuerdo de colaboración.
+            </p>
+          } @else {
+            <dl class="data-list detail-data-list">
+              <div>
+                <dt>Tipo</dt>
+                <dd>{{ centroSeleccionado()!.tipoAcuerdo ?? 'No informado' }}</dd>
+              </div>
+              <div>
+                <dt>Representante legal</dt>
+                <dd>{{ centroSeleccionado()!.representanteLegal ?? 'No informado' }}</dd>
+              </div>
+              <div>
+                <dt>Vigencia</dt>
+                <dd class="agreement-term">
+                  <span>{{ centroSeleccionado()!.vigenciaAcuerdo ?? 'No informada' }}</span
+                  ><span
+                    class="status-text"
+                    [class]="estadoAcuerdoClass(centroSeleccionado()!.acuerdo)"
+                    >{{ centroSeleccionado()!.acuerdo }}</span
+                  >
+                </dd>
+              </div>
+            </dl>
+          }
+        </article>
+      </div>
+
+      <div class="detail-column detail-column--wide">
+        <article class="detail-card detail-card--flush">
+          <div class="card-heading">
+            <h2>Supervisores(as)</h2>
+            <button
+              class="text-button"
+              type="button"
+              disabled
+              title="La gestión de supervisores se habilitará con el flujo de backend"
+            >
+              ＋ Agregar
+            </button>
+          </div>
+          @if (centroSeleccionado()!.supervisores.length) {
+            <div class="table-scroll">
+              <table class="compact-table">
+                <thead>
+                  <tr>
+                    <th>Nombre y cargo</th>
+                    <th>Unidad</th>
+                    <th>Contacto</th>
+                    <th>Estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (supervisor of centroSeleccionado()!.supervisores; track supervisor.correo) {
+                    <tr>
+                      <td>
+                        <strong>{{ supervisor.nombre }}</strong
+                        ><small>{{ supervisor.cargo }}</small>
+                      </td>
+                      <td>{{ supervisor.unidad }}</td>
+                      <td>{{ supervisor.correo }}</td>
+                      <td>
+                        <span
+                          class="status-text"
+                          [class]="
+                            supervisor.estado === 'Activo' ? 'status--active' : 'status--inactive'
+                          "
+                          >{{ supervisor.estado }}</span
+                        >
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          } @else {
+            <p class="muted-copy inset-copy">
+              Este centro todavía no tiene supervisores registrados.
+            </p>
+          }
+        </article>
+
+        <article class="detail-card detail-card--flush">
+          <h2>Estudiantes en este centro</h2>
+          @if (centroSeleccionado()!.estudiantes.length) {
+            <div class="table-scroll">
+              <table class="compact-table">
+                <thead>
+                  <tr>
+                    <th>Estudiante</th>
+                    <th>Período</th>
+                    <th>Resultado</th>
+                    <th><span class="sr-only">Acciones</span></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (
+                    estudiante of centroSeleccionado()!.estudiantes;
+                    track estudiante.nombre + estudiante.periodo
+                  ) {
+                    <tr>
+                      <td>
+                        <div class="student-cell">
+                          @if (estudiante.fotoUrl) {
+                            <img
+                              class="student-avatar"
+                              [src]="estudiante.fotoUrl"
+                              alt=""
+                              loading="lazy"
+                            />
+                          } @else {
+                            <span
+                              class="student-avatar student-avatar--initials"
+                              aria-hidden="true"
+                              >{{ iniciales(estudiante.nombre) }}</span
+                            >
+                          }
+                          <strong>{{ estudiante.nombre }}</strong>
+                        </div>
+                      </td>
+                      <td>{{ estudiante.periodo }}</td>
+                      <td>
+                        <span
+                          class="status-text"
+                          [class]="
+                            estudiante.resultado === 'En curso'
+                              ? 'status--active'
+                              : 'status--neutral'
+                          "
+                          >{{ estudiante.resultado }}</span
+                        >
+                      </td>
+                      <td>
+                        <button
+                          class="text-button"
+                          type="button"
+                          (click)="mostrarFichaEstudiante(estudiante)"
+                        >
+                          Ver ficha
+                        </button>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          } @else {
+            <p class="muted-copy inset-copy">No hay estudiantes asociados a este centro.</p>
+          }
+        </article>
+      </div>
+    </section>
+  }
+</main>
+
+@if (mostrarFormularioNuevo()) {
+  <div
+    class="dialog-backdrop"
+    (click)="cerrarFormularioNuevo()"
+    (keydown.escape)="cerrarFormularioNuevo()"
+  >
+    <section
+      class="dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="new-center-title"
+      (click)="$event.stopPropagation()"
+    >
+      <header class="dialog-header">
+        <div>
+          <p class="eyebrow">CATÁLOGO DE CENTROS</p>
+          <h2 id="new-center-title">{{ tituloFormulario() }}</h2>
+        </div>
+        <button
+          class="close-button"
+          type="button"
+          aria-label="Cerrar"
+          (click)="cerrarFormularioNuevo()"
+        >
+          ×
+        </button>
+      </header>
+      <p class="dialog-intro">
+        Registra los datos de la organización y sus áreas. El acuerdo de colaboración se gestiona
+        desde HU-10.
+      </p>
+      <form (ngSubmit)="guardarCentro()" novalidate>
+        <div class="form-grid">
+          <label
+            >Nombre del centro<input
+              name="nombre"
+              [ngModel]="nuevoCentro.nombre"
+              (ngModelChange)="actualizarCampo('nombre', $event)"
+              [class.input-invalid]="!!errorCampo('nombre')"
+              [attr.aria-invalid]="!!errorCampo('nombre')"
+              required
+            />
+            @if (errorCampo('nombre')) {
+              <small class="field-error">{{ errorCampo('nombre') }}</small>
+            }
+          </label>
+          <label
+            >Razón social<input
+              name="razonSocial"
+              [ngModel]="nuevoCentro.razonSocial"
+              (ngModelChange)="actualizarCampo('razonSocial', $event)"
+              [class.input-invalid]="!!errorCampo('razonSocial')"
+              [attr.aria-invalid]="!!errorCampo('razonSocial')"
+              required
+            />
+            @if (errorCampo('razonSocial')) {
+              <small class="field-error">{{ errorCampo('razonSocial') }}</small>
+            }
+          </label>
+          <label
+            >RUT<input
+              name="rut"
+              [ngModel]="nuevoCentro.rut"
+              (ngModelChange)="actualizarCampo('rut', $event)"
+              (blur)="formatearRut()"
+              placeholder="12.345.678-5"
+              autocomplete="off"
+              [class.input-invalid]="!!errorCampo('rut')"
+              [attr.aria-invalid]="!!errorCampo('rut')"
+              required
+            />
+            @if (errorCampo('rut')) {
+              <small class="field-error">{{ errorCampo('rut') }}</small>
+            }
+          </label>
+          @if (centroEditandoId() === null) {
+            <label
+              >Tipo de centro<select
+                name="tipoCentro"
+                [ngModel]="nuevoCentro.esInterno ? 'Interno' : 'Externo'"
+                (ngModelChange)="cambiarTipoCentro($event)"
+                [class.input-invalid]="!!errorTipoCentro()"
+                [attr.aria-invalid]="!!errorTipoCentro()"
+              >
+                <option value="Externo">Externo</option>
+                <option value="Interno">Interno</option>
+              </select>
+              @if (errorTipoCentro()) {
+                <small class="field-error">{{ errorTipoCentro() }}</small>
+              }
+            </label>
+          } @else {
+            <div class="static-field">
+              <span>Tipo de centro</span
+              ><strong>{{ nuevoCentro.esInterno ? 'Interno' : 'Externo' }}</strong>
+            </div>
+          }
+          <label
+            >Representante legal <span class="hint">Nombre según el acuerdo, si corresponde.</span
+            ><input name="representanteLegal" [(ngModel)]="nuevoCentro.representanteLegal"
+          /></label>
+          <label class="form-grid__wide"
+            >Dirección<input name="direccion" [(ngModel)]="nuevoCentro.direccion"
+          /></label>
+          <label
+            >Teléfono<input
+              name="telefono"
+              type="tel"
+              autocomplete="tel"
+              placeholder="+56 9 1234 5678"
+              [(ngModel)]="nuevoCentro.telefono"
+          /></label>
+          <fieldset class="area-picker form-grid__wide">
+            <legend>
+              Áreas que ofrece <span class="hint">Puedes seleccionar varias y agregar otra.</span>
+            </legend>
+            <div class="area-toggles">
+              @for (area of areasDisponiblesFormulario(); track area) {
+                <button
+                  type="button"
+                  class="area-toggle"
+                  [class.area-toggle--selected]="areasSeleccionadas().includes(area)"
+                  [attr.aria-pressed]="areasSeleccionadas().includes(area)"
+                  (click)="alternarArea(area)"
+                >
+                  {{ areasSeleccionadas().includes(area) ? '✓ ' : '' }}{{ area }}
+                </button>
+              }
+            </div>
+            <div class="custom-area-row">
+              <input
+                name="nuevaArea"
+                [ngModel]="nuevaArea()"
+                (ngModelChange)="nuevaArea.set($event)"
+                placeholder="Agregar un área personalizada"
+                (keydown.enter)="$event.preventDefault(); agregarAreaPersonalizada()"
+              /><button type="button" class="secondary-button" (click)="agregarAreaPersonalizada()">
+                ＋ Agregar área
+              </button>
+            </div>
+            @if (intentoGuardar() && areasSeleccionadas().length === 0) {
+              <small class="field-error">Selecciona o agrega al menos un área.</small>
+            }
+          </fieldset>
+        </div>
+
+        <section class="quota-editor" aria-labelledby="quota-title">
+          <h3 id="quota-title">Cupos por período y categoría</h3>
+          <div class="quota-inputs">
+            <label
+              >Período<input
+                name="periodoCupo"
+                [(ngModel)]="periodoNuevoCupo"
+                placeholder="2° semestre 2026"
+            /></label>
+            <label
+              >Categoría<select name="categoriaCupo" [(ngModel)]="categoriaNuevoCupo">
+                <option value="Laboral">Laboral</option>
+                <option value="Profesional">Profesional</option>
+              </select></label
+            >
+            <label
+              >Cupos<input
+                name="cantidadCupo"
+                type="number"
+                min="1"
+                step="1"
+                [(ngModel)]="cantidadNuevoCupo"
+            /></label>
+            <button class="secondary-button" type="button" (click)="agregarCupo()">
+              ＋ Agregar
+            </button>
+          </div>
+          @if (cuposFormulario().length) {
+            <ul class="quota-chips">
+              @for (cupo of cuposFormulario(); track cupo.periodo + cupo.categoria) {
+                <li>
+                  {{ cupo.periodo }} · {{ cupo.categoria }} · {{ cupo.total }} cupos
+                  <button
+                    type="button"
+                    [attr.aria-label]="'Quitar cupo ' + cupo.periodo + ' ' + cupo.categoria"
+                    (click)="quitarCupo(cupo)"
+                  >
+                    ×
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+        </section>
+        <footer class="dialog-actions">
+          <button class="secondary-button" type="button" (click)="cerrarFormularioNuevo()">
+            Cancelar</button
+          ><button class="primary-button" type="submit">
+            {{ centroEditandoId() === null ? 'Guardar centro' : 'Guardar cambios' }}
+          </button>
+        </footer>
+      </form>
+    </section>
+  </div>
+}
+
+@if (mostrarFormularioBaja()) {
+  <div class="dialog-backdrop" (click)="cerrarBaja()" (keydown.escape)="cerrarBaja()">
+    <section
+      class="dialog dialog--small"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="deactivate-title"
+      (click)="$event.stopPropagation()"
+    >
+      <header class="dialog-header">
+        <div>
+          <p class="eyebrow">ESTADO DEL CENTRO</p>
+          <h2 id="deactivate-title">Dar de baja centro</h2>
+        </div>
+        <button class="close-button" type="button" aria-label="Cerrar" (click)="cerrarBaja()">
+          ×
+        </button>
+      </header>
+      <p class="dialog-intro">
+        Indica el motivo de la baja. Quedará registrado en la ficha del centro.
+      </p>
+      <label class="reason-field"
+        >Motivo de baja<textarea
+          rows="4"
+          [ngModel]="motivoBaja()"
+          (ngModelChange)="motivoBaja.set($event)"
+          name="motivoBaja"
+          required
+        ></textarea>
+      </label>
+      @if (errorBaja()) {
+        <small class="field-error">{{ errorBaja() }}</small>
+      }
+      <footer class="dialog-actions">
+        <button class="secondary-button" type="button" (click)="cerrarBaja()">Cancelar</button
+        ><button class="danger-button" type="button" (click)="confirmarBaja()">
+          Confirmar baja
+        </button>
+      </footer>
+    </section>
+  </div>
+}
+
+@if (estudianteSeleccionado(); as estudiante) {
+  <div
+    class="dialog-backdrop"
+    (click)="cerrarFichaEstudiante()"
+    (keydown.escape)="cerrarFichaEstudiante()"
+  >
+    <section
+      class="dialog dialog--small student-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="student-title"
+      (click)="$event.stopPropagation()"
+    >
+      <header class="dialog-header">
+        <div>
+          <p class="eyebrow">HISTORIAL DEL CENTRO</p>
+          <h2 id="student-title">Ficha del estudiante</h2>
+        </div>
+        <button
+          class="close-button"
+          type="button"
+          aria-label="Cerrar"
+          (click)="cerrarFichaEstudiante()"
+        >
+          ×
+        </button>
+      </header>
+      <div class="student-profile">
+        @if (estudiante.fotoUrl) {
+          <img class="student-avatar student-avatar--large" [src]="estudiante.fotoUrl" alt="" />
+        } @else {
+          <span
+            class="student-avatar student-avatar--initials student-avatar--large"
+            aria-hidden="true"
+            >{{ iniciales(estudiante.nombre) }}</span
+          >
+        }
+        <strong>{{ estudiante.nombre }}</strong>
+      </div>
+      <dl class="student-summary">
+        <div>
+          <dt>Período</dt>
+          <dd>{{ estudiante.periodo }}</dd>
+        </div>
+        <div>
+          <dt>Resultado</dt>
+          <dd>{{ estudiante.resultado }}</dd>
+        </div>
+        <div>
+          <dt>Centro</dt>
+          <dd>{{ centroSeleccionado()?.nombre }}</dd>
+        </div>
+      </dl>
+      <p class="dialog-intro">
+        Esta vista resume el historial asociado al centro. El expediente completo corresponde a
+        HU-17.
+      </p>
+      <footer class="dialog-actions">
+        <button class="secondary-button" type="button" (click)="cerrarFichaEstudiante()">
+          Cerrar
+        </button>
+      </footer>
+    </section>
+  </div>
+}
