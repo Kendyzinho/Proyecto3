@@ -6,6 +6,8 @@ use App\Http\Controllers\NominaController;
 use App\Models\Periodo;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UsuarioController;
+use App\Http\Controllers\MallaController;
+
 
 
 // HU-01: máximo 6 intentos por minuto para frenar ataques de fuerza bruta
@@ -29,7 +31,15 @@ Route::middleware('rol:secretaria')->prefix('usuarios')->group(function () {
     Route::post('/{usuario}/desactivar', [UsuarioController::class, 'desactivar']);
     Route::post('/{usuario}/reactivar', [UsuarioController::class, 'reactivar']);
     });
-
+    // HU-06: mallas y prácticas (Jefe de Carrera)
+Route::middleware('rol:jefe')->group(function () {
+        Route::get('/mallas', [MallaController::class, 'index']);
+        Route::post('/mallas', [MallaController::class, 'store']);
+        Route::post('/mallas/{malla}/publicar', [MallaController::class, 'publicar']);
+        Route::post('/mallas/{malla}/practicas', [MallaController::class, 'agregarPractica']);
+        Route::put('/tipos-practica/{tipo}', [MallaController::class, 'editarPractica']);
+        Route::delete('/tipos-practica/{tipo}', [MallaController::class, 'quitarPractica']);
+    });
 
     // HU-07: nómina de estudiantes, solo la Secretaria de Jefatura
     Route::middleware('rol:secretaria')->prefix('nomina')->group(function () {
