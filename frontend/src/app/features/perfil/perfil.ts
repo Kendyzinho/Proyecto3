@@ -14,7 +14,6 @@ import { finalize } from 'rxjs';
 import { NOMBRE_ROL, Usuario } from '../../core/models/usuario';
 import { Auth } from '../../core/services/auth';
 import { CambioContrasena, PerfilApi } from '../../core/services/perfil-api';
-import { MenuUsuario } from '../../shared/menu-usuario/menu-usuario';
 
 type CampoClave = keyof CambioContrasena;
 const CLAVES_OCULTAS: Record<CampoClave, boolean> = {
@@ -23,7 +22,7 @@ const CLAVES_OCULTAS: Record<CampoClave, boolean> = {
 
 @Component({
   selector: 'app-perfil',
-  imports: [ReactiveFormsModule, RouterLink, MenuUsuario, MatButtonModule, MatFormFieldModule,
+  imports: [ReactiveFormsModule, RouterLink, MatButtonModule, MatFormFieldModule,
     MatIconModule, MatInputModule, MatProgressSpinnerModule],
   templateUrl: './perfil.html',
   styleUrl: './perfil.scss',

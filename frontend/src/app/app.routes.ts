@@ -1,12 +1,17 @@
 import { Routes } from '@angular/router';
 
 import { authGuard, invitadoGuard } from './core/guards/auth-guard';
+import { Marco } from './shared/marco/marco';
 
 // Una funcionalidad por rol, cargada bajo demanda (lazy loading).
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'auth' },
   { path: 'auth', canMatch: [invitadoGuard], loadChildren: () => import('./features/auth/auth.routes') },
-  { path: 'perfil', canMatch: [authGuard], title: 'Mi perfil', loadComponent: () => import('./features/perfil/perfil').then((m) => m.Perfil) },
+  {
+    path: 'perfil', canMatch: [authGuard], component: Marco,
+    data: { perfil: true, adaptable: true },
+    children: [{ path: '', title: 'Mi perfil', loadComponent: () => import('./features/perfil/perfil').then((m) => m.Perfil) }],
+  },
   { path: 'coordinacion', canMatch: [authGuard], data: { rol: 'coordinadora' }, loadChildren: () => import('./features/coordinacion/coordinacion.routes') },
   { path: 'estudiante', canMatch: [authGuard], data: { rol: 'estudiante' }, loadChildren: () => import('./features/estudiante/estudiante.routes') },
   { path: 'secretaria', canMatch: [authGuard], data: { rol: 'secretaria' }, loadChildren: () => import('./features/secretaria/secretaria.routes') },

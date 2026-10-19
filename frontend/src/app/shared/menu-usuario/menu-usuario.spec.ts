@@ -41,4 +41,34 @@ describe('MenuUsuario', () => {
     expect(fixture.nativeElement.textContent).not.toContain('Matías');
     peticion.flush(null, { status: 204, statusText: 'No Content' });
   });
+
+  it('conserva Mi perfil y muestra el panel con clase visual propia', async () => {
+    const fixture = TestBed.createComponent(MenuUsuario);
+    const menu = await TestbedHarnessEnvironment.loader(fixture).getHarness(MatMenuHarness);
+    await menu.open();
+
+    expect(document.body.querySelector('.menu-usuario-panel')).not.toBeNull();
+    const [perfil] = await menu.getItems({ text: /Mi perfil/ });
+    await perfil.click();
+    expect(TestBed.inject(Router).navigateByUrl).toHaveBeenCalled();
+  });
+
+  it.each([
+    ['estudiante', 'Estudiante'],
+    ['coordinadora', 'Coordinadora de Prácticas'],
+    ['secretaria', 'Secretaria de Jefatura'],
+    ['jefe', 'Jefe de Carrera'],
+  ])('muestra únicamente las opciones del menú para rol %s', async (rol, nombreRol) => {
+    localStorage.setItem('usuario', JSON.stringify({ id: 1, name: 'Matías Herrera', email: 'usuario@uta.cl', rol }));
+    const fixture = TestBed.createComponent(MenuUsuario);
+    const menu = await TestbedHarnessEnvironment.loader(fixture).getHarness(MatMenuHarness);
+    await menu.open();
+
+    const panel = document.body.querySelector('.menu-usuario-panel');
+    expect(panel?.querySelector('.datos')).toBeNull();
+    expect(panel?.querySelector('mat-divider')).toBeNull();
+    expect(panel?.textContent).not.toContain('Matías Herrera');
+    expect(panel?.textContent).not.toContain(nombreRol);
+    expect(await menu.getItems()).toHaveLength(2);
+  });
 });

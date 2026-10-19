@@ -4,12 +4,7 @@
     <span class="nombre">{{ usuario.name }}</span>
     <mat-icon iconPositionEnd>expand_more</mat-icon>
   </button>
-  <mat-menu #menu="matMenu" xPosition="before">
-    <div class="datos">
-      <strong>{{ usuario.name }}</strong>
-      <span>{{ roles[usuario.rol] }}</span>
-    </div>
-    <mat-divider />
+  <mat-menu #menu="matMenu" xPosition="before" class="menu-usuario-panel">
     <a mat-menu-item routerLink="/perfil" routerLinkActive="perfil-activo" ariaCurrentWhenActive="page">
       <mat-icon>person</mat-icon>
       <span>Mi perfil</span>

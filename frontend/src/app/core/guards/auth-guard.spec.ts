@@ -51,6 +51,12 @@ describe('authGuard', () => {
       TestBed.inject(HttpTestingController).expectOne('/api/documentos?periodo_id=1').flush({ data: [] });
       await harness.fixture.whenStable();
       expect(harness.routeNativeElement?.textContent).toContain('Nómina de estudiantes');
+    } else if (rol === 'coordinadora') {
+      TestBed.inject(HttpTestingController).expectOne('/api/coordinacion/metricas').flush({
+        periodo: { id: 2, nombre: '2º semestre 2026' }, practicas_registradas: 5,
+      });
+      await harness.fixture.whenStable();
+      expect(harness.routeNativeElement?.textContent).toContain('Prácticas registradas del período');
     } else {
       expect(harness.routeNativeElement?.textContent).toContain('Sesión iniciada');
     }

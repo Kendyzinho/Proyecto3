@@ -1,4 +1,6 @@
 import { Component, computed, inject, input, signal } from '@angular/core';
+import { BreakpointObserver } from '@angular/cdk/layout';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatPaginatorIntl } from '@angular/material/paginator';
@@ -28,14 +30,32 @@ export interface OpcionMenu {
   providers: [{ provide: MatPaginatorIntl, useClass: PaginadorEnEspanol }],
 })
 export class Marco {
-  readonly grupo = input.required<string>();
-  readonly menu = input.required<OpcionMenu[]>();
+  readonly grupo = input('');
+  readonly menu = input<OpcionMenu[] | null>(null);
+  readonly perfil = input(false);
+  readonly adaptable = input(false);
+  private readonly pantalla = toSignal(inject(BreakpointObserver).observe('(max-width: 700px)'));
+  protected readonly movil = computed(() => this.adaptable() && !!this.pantalla()?.matches);
+  protected readonly menuMovil = signal(false);
 
   protected readonly auth = inject(Auth);
   protected readonly menuAbierto = signal(true);
   protected readonly nombreRol = computed(() => {
     const usuario = this.auth.usuario();
     return usuario ? NOMBRE_ROL[usuario.rol] : '';
+  });
+  protected readonly grupoVisible = computed(() => this.perfil() ? `Área personal · ${this.nombreRol()}` : this.grupo());
+  protected readonly menuVisible = computed<OpcionMenu[]>(() => {
+    if (!this.perfil()) return this.menu() ?? [];
+    const inicio = this.auth.inicio();
+    const opciones: OpcionMenu[] = [{ texto: 'Inicio', icono: 'home', ruta: inicio }];
+    if (this.auth.usuario()?.rol === 'secretaria') {
+      opciones.push(
+        { texto: 'Nómina de estudiantes', icono: 'table_view', ruta: '/secretaria/nomina' },
+        { texto: 'Documentos', icono: 'description', ruta: '/secretaria/documentos' },
+      );
+    }
+    return opciones;
   });
 }
 
