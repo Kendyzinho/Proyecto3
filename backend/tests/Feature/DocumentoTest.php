@@ -11,16 +11,16 @@ use App\Models\User;
 use Database\Seeders\CatalogoSeeder;
 use Database\Seeders\DemoSeeder;
 use Database\Seeders\UsuarioSeeder;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
+use Tests\Concerns\BaseDeDatosAislada;
 use Tests\TestCase;
 
 // HU-10: carta de presentación, guía del seguro escolar y acuerdo de colaboración
 class DocumentoTest extends TestCase
 {
-    use RefreshDatabase;
+    use BaseDeDatosAislada;
 
     private User $secretaria;
 

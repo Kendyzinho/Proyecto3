@@ -1,0 +1,22 @@
+<header class="encabezado-pagina">
+  <div><h1>Inicio</h1><p>{{ datos()?.periodo?.nombre || 'Coordinación de Prácticas' }}</p></div>
+  <button matButton="filled" (click)="nueva()" [disabled]="!datos()?.periodo || cargando() || error() || abierto()">
+    <mat-icon>add</mat-icon>Registro excepcional
+  </button>
+</header>
+<section class="tarjeta metrica" aria-label="Resumen del período" aria-live="polite" [attr.aria-busy]="cargando()">
+  <mat-icon class="metrica__icono">work_outline</mat-icon>
+  <div>
+    @if (cargando()) { <p>Cargando métricas…</p> }
+    @else if (error()) {
+      <p role="alert">No se pudo actualizar el total de prácticas.</p>
+      <button matButton (click)="recargar()">Reintentar</button>
+    } @else {
+      <strong class="metrica__numero">{{ datos()?.practicas_registradas }}</strong>
+      <p>Prácticas registradas del período</p>
+    }
+  </div>
+</section>
+@if (!cargando() && !error() && !datos()?.periodo) {
+  <p role="status">No hay un período académico disponible para registrar prácticas.</p>
+}

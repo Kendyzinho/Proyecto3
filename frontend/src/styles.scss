@@ -177,3 +177,79 @@ body {
   color: #5b6b80;
   font-size: 12px;
 }
+
+// El menú de usuario se renderiza en el overlay de Material, fuera del árbol de MenuUsuario.
+.menu-usuario-panel {
+  width: 280px;
+  max-width: calc(100vw - 16px);
+  border: 1px solid #e2e8f0;
+  border-radius: 12px !important;
+  background: #fff !important;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.14) !important;
+  --mat-menu-container-color: #fff;
+  --mat-menu-container-shape: 12px;
+  overflow: hidden;
+}
+
+.menu-usuario-panel .datos {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 14px 16px;
+  color: #1e293b;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.menu-usuario-panel .datos strong {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.menu-usuario-panel .datos span {
+  color: #5b6b80;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.menu-usuario-panel .mat-divider {
+  margin: 0 12px;
+  border-top-color: #e2e8f0;
+}
+
+.menu-usuario-panel .mat-mdc-menu-item {
+  min-height: 48px;
+  padding-inline: 16px;
+}
+
+.menu-usuario-panel .mat-mdc-menu-item:hover,
+.menu-usuario-panel .mat-mdc-menu-item.cdk-focused,
+.menu-usuario-panel .mat-mdc-menu-item.cdk-program-focused {
+  background: #f1f5f9;
+}
+
+.menu-usuario-panel .mat-mdc-menu-item:focus-visible {
+  outline: 2px solid #355085;
+  outline-offset: -2px;
+}
+
+.menu-usuario-panel .mat-mdc-menu-item.perfil-activo,
+.menu-usuario-panel .mat-mdc-menu-item.perfil-activo:hover,
+.menu-usuario-panel .mat-mdc-menu-item.perfil-activo.cdk-focused {
+  background: #fff8df;
+  color: #6d5010;
+}
+
+.menu-usuario-panel .mat-mdc-menu-item.perfil-activo mat-icon {
+  color: #99530f;
+}
+
+.menu-usuario-panel .mat-mdc-menu-item.cerrar,
+.menu-usuario-panel .mat-mdc-menu-item.cerrar mat-icon {
+  color: #b91c1c;
+}
+
+.menu-usuario-panel .mat-mdc-menu-item .mat-icon {
+  margin-inline-end: 12px;
+}

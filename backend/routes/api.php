@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DocumentoController;
 use App\Http\Controllers\NominaController;
+use App\Http\Controllers\PracticaExcepcionalController;
 use App\Models\Periodo;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UsuarioController;
@@ -12,8 +13,14 @@ use App\Http\Controllers\UsuarioController;
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:6,1');
 
 Route::middleware('auth:sanctum')->group(function () {
+    Route::middleware('rol:coordinadora')->prefix('coordinacion')->group(function () {
+        Route::get('/metricas', [PracticaExcepcionalController::class, 'metricas']);
+        Route::get('/practicas-excepcionales/catalogo', [PracticaExcepcionalController::class, 'catalogo']);
+        Route::post('/practicas-excepcionales', [PracticaExcepcionalController::class, 'store']);
+    });
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
+    Route::put('/me/password', [AuthController::class, 'cambiarContrasena'])->middleware('throttle:6,1');
 
     // Período en curso, para las pantallas de cualquier rol
     Route::get('/periodos/actual', function () {

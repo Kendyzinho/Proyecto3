@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\CambiarContrasenaRequest;
 use App\Http\Requests\LoginRequest;
 use App\Http\Resources\UsuarioResource;
 use App\Services\AutenticacionService;
@@ -11,9 +12,7 @@ use Illuminate\Http\Response;
 
 class AuthController extends Controller
 {
-    public function __construct(private readonly AutenticacionService $autenticacion)
-    {
-    }
+    public function __construct(private readonly AutenticacionService $autenticacion) {}
 
     public function login(LoginRequest $request): JsonResponse
     {
@@ -35,5 +34,16 @@ class AuthController extends Controller
     public function me(Request $request): UsuarioResource
     {
         return new UsuarioResource($request->user());
+    }
+
+    public function cambiarContrasena(CambiarContrasenaRequest $request): Response
+    {
+        $this->autenticacion->cambiarContrasena(
+            $request->user(),
+            $request->validated('current_password'),
+            $request->validated('password'),
+        );
+
+        return response()->noContent();
     }
 }
