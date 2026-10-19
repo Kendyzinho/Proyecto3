@@ -1,6 +1,5 @@
 import { Routes } from '@angular/router';
 
-// Inicio provisorio hasta que exista el inicio real de este rol
 export default [
   { path: '', pathMatch: 'full', redirectTo: 'centros' },
   {

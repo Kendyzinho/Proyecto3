@@ -1,226 +1,270 @@
-import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
+import { Observable, concatMap, forkJoin, from, map, of, switchMap, toArray } from 'rxjs';
 
-import { CentroPractica } from './centro-practica.model';
+import {
+  CentroPractica,
+  CupoCentro,
+  EstadoAcuerdo,
+  EstadoCentro,
+  EstadoPractica,
+  ResultadoDictamen,
+  SupervisorCentro,
+} from './centro-practica.model';
 
-// Datos de presentación para construir HU-12 antes de disponer del endpoint del catálogo.
-// Sustituir este origen por HttpClient cuando backend publique el contrato.
-const CENTROS_DEMO: CentroPractica[] = [
-  {
-    id: 1,
-    nombre: 'Municipalidad de Arica',
-    razonSocial: 'Ilustre Municipalidad de Arica',
-    rut: '69.010.100-9',
-    areas: ['Diseño gráfico y diagramación', 'Fotografía'],
-    acuerdo: 'Vigente',
-    cupos: [
-      { periodo: '2° sem 2026', categoria: 'Laboral', total: 4, ocupados: 2, libres: 2 },
-      { periodo: '2° sem 2026', categoria: 'Profesional', total: 2, ocupados: 1, libres: 1 },
-    ],
-    supervisorPrincipal: 'Paula Contreras',
-    estado: 'Activo',
-    direccion: 'Rafael Sotomayor 415, Arica',
-    telefono: '+56 58 220 6000',
-    esInterno: false,
-    representanteLegal: 'Gerardo Espíndola Rojas',
-    tipoAcuerdo: 'Tradicional',
-    vigenciaAcuerdo: '01-2025 al 12-2027',
-    supervisores: [
-      {
-        nombre: 'Paula Contreras',
-        cargo: 'Diseñadora',
-        unidad: 'Comunicaciones',
-        correo: 'pcontreras@municipalidadarica.cl',
-        estado: 'Activo',
-      },
-    ],
-    estudiantes: [
-      { nombre: 'Camila Rojas Pizarro', periodo: '2° sem 2026', resultado: 'En curso' },
-    ],
-  },
-  {
-    id: 2,
-    nombre: 'Productora Norte Visual',
-    razonSocial: 'Productora Norte Visual SpA',
-    rut: '76.543.210-8',
-    areas: ['Producción audiovisual', 'Animación digital', 'Diseño gráfico y diagramación'],
-    acuerdo: 'Vigente',
-    cupos: [
-      { periodo: '2° sem 2026', categoria: 'Laboral', total: 2, ocupados: 2, libres: 0 },
-      { periodo: '2° sem 2026', categoria: 'Profesional', total: 1, ocupados: 0, libres: 1 },
-    ],
-    supervisorPrincipal: 'Sergio Paredes',
-    estado: 'Activo',
-    direccion: 'Av. Santa María 2145, Arica',
-    telefono: '+56 58 225 3210',
-    esInterno: false,
-    representanteLegal: 'Andrea Fuentes M.',
-    tipoAcuerdo: 'Tradicional',
-    vigenciaAcuerdo: '01-2025 al 12-2027',
-    supervisores: [
-      {
-        nombre: 'Sergio Paredes',
-        cargo: 'Director de Arte',
-        unidad: 'Producción',
-        correo: 'sparedes@nortevisual.cl',
-        estado: 'Activo',
-      },
-      {
-        nombre: 'Lorena Ibáñez',
-        cargo: 'Diseñadora',
-        unidad: 'Postproducción',
-        correo: 'libanez@nortevisual.cl',
-        estado: 'Activo',
-      },
-      {
-        nombre: 'Mauricio Rojas',
-        cargo: 'Editor',
-        unidad: 'Producción',
-        correo: 'mrojas@nortevisual.cl',
-        estado: 'De baja',
-      },
-    ],
-    estudiantes: [
-      { nombre: 'Matías Herrera Lillo', periodo: '2° sem 2026', resultado: 'En curso' },
-      { nombre: 'Antonia Vega Muñoz', periodo: '2° sem 2026', resultado: 'En curso' },
-      { nombre: 'Pedro Lagos Rivas', periodo: '1° sem 2026', resultado: 'Aprobada' },
-      { nombre: 'Catalina Muñoz Soto', periodo: '2° sem 2025', resultado: 'Aprobada' },
-    ],
-  },
-  {
-    id: 3,
-    nombre: 'Imprenta Sur',
-    razonSocial: 'Imprenta Sur Limitada',
-    rut: '77.120.450-2',
-    areas: ['Publicidad y marketing digital', 'Diseño gráfico y diagramación'],
-    acuerdo: 'Vigente',
-    cupos: [{ periodo: '2° sem 2026', categoria: 'Laboral', total: 2, ocupados: 1, libres: 1 }],
-    supervisorPrincipal: 'Hernán Vidal',
-    estado: 'Activo',
-    direccion: 'Av. Diego Portales 1220, Arica',
-    telefono: '+56 58 223 4100',
-    esInterno: false,
-    representanteLegal: 'María José Salas',
-    tipoAcuerdo: 'Tradicional',
-    vigenciaAcuerdo: '03-2026 al 03-2028',
-    supervisores: [
-      {
-        nombre: 'Hernán Vidal',
-        cargo: 'Jefe de taller',
-        unidad: 'Impresión',
-        correo: 'hvidal@imprentasur.cl',
-        estado: 'Activo',
-      },
-    ],
-    estudiantes: [],
-  },
-  {
-    id: 4,
-    nombre: 'Universidad de Tarapacá',
-    razonSocial: 'Universidad de Tarapacá',
-    rut: '70.770.800-5',
-    areas: ['Diseño y desarrollo web', 'Diseño gráfico y diagramación', 'Producción audiovisual'],
-    acuerdo: 'Sin acuerdo',
-    cupos: [
-      { periodo: '2° sem 2026', categoria: 'Laboral', total: 4, ocupados: 2, libres: 2 },
-      { periodo: '2° sem 2026', categoria: 'Profesional', total: 2, ocupados: 1, libres: 1 },
-    ],
-    supervisorPrincipal: '4 supervisores',
-    estado: 'Activo',
-    direccion: 'Av. 18 de Septiembre 2222, Arica',
-    telefono: '+56 58 220 5000',
-    esInterno: true,
-    representanteLegal: null,
-    tipoAcuerdo: null,
-    vigenciaAcuerdo: null,
-    supervisores: [
-      {
-        nombre: 'Daniela Rojas',
-        cargo: 'Diseñadora',
-        unidad: 'Escuela de Diseño',
-        correo: 'daniela.rojas@uta.cl',
-        estado: 'Activo',
-      },
-      {
-        nombre: 'Felipe Soto',
-        cargo: 'Encargado web',
-        unidad: 'DAE',
-        correo: 'felipe.soto@uta.cl',
-        estado: 'Activo',
-      },
-    ],
-    estudiantes: [{ nombre: 'Javiera Soto', periodo: '2° sem 2026', resultado: 'En curso' }],
-  },
-  {
-    id: 5,
-    nombre: 'Corfo Arica y Parinacota',
-    razonSocial: 'Corporación de Fomento de la Producción',
-    rut: '60.706.000-2',
-    areas: ['Diseño gráfico y diagramación'],
-    acuerdo: 'En trámite',
-    cupos: [],
-    supervisorPrincipal: null,
-    estado: 'Activo',
-    direccion: 'Arturo Prat 391, Arica',
-    telefono: '+56 58 225 8000',
-    esInterno: false,
-    representanteLegal: 'Claudia Miranda',
-    tipoAcuerdo: 'Tradicional',
-    vigenciaAcuerdo: 'Pendiente de firma',
-    supervisores: [],
-    estudiantes: [],
-  },
-  {
-    id: 6,
-    nombre: 'Estudio Pixel Norte',
-    razonSocial: 'Estudio Pixel Norte SpA',
-    rut: '77.890.120-1',
-    areas: ['Diseño y desarrollo web'],
-    acuerdo: 'Sin acuerdo',
-    cupos: [],
-    supervisorPrincipal: 'Lorena Díaz (propuesta)',
-    estado: 'Propuesto',
-    direccion: 'Av. Chile 1331, Arica',
-    telefono: '+56 9 7788 4400',
-    esInterno: false,
-    representanteLegal: null,
-    tipoAcuerdo: null,
-    vigenciaAcuerdo: null,
-    supervisores: [
-      {
-        nombre: 'Lorena Díaz',
-        cargo: 'Directora de arte',
-        unidad: 'Diseño',
-        correo: 'lorena@pixelnorte.cl',
-        estado: 'Activo',
-      },
-    ],
-    estudiantes: [],
-  },
-  {
-    id: 7,
-    nombre: 'Agencia Costa Brava',
-    razonSocial: 'Agencia Costa Brava Ltda.',
-    rut: '76.334.120-5',
-    areas: ['Publicidad y marketing digital'],
-    acuerdo: 'Vencido',
-    cupos: [],
-    supervisorPrincipal: null,
-    estado: 'Dado de baja',
-    direccion: 'Av. Comandante San Martín 880, Arica',
-    telefono: '+56 58 224 1111',
-    esInterno: false,
-    representanteLegal: 'Rodrigo Núñez',
-    tipoAcuerdo: 'Tradicional',
-    vigenciaAcuerdo: 'Vencido en 12-2025',
-    supervisores: [],
-    estudiantes: [{ nombre: 'Ignacio Soto', periodo: '1° sem 2025', resultado: 'Aprobada' }],
-    motivoBaja: 'Baja por evaluación del centro',
-  },
-];
+interface Respuesta<T> {
+  data: T;
+}
+
+interface AreaApi {
+  id: number;
+  nombre: string;
+}
+
+interface PeriodoApi {
+  id: number;
+  anio: number;
+  semestre: number;
+}
+
+interface CatalogoInicial {
+  centros: CentroPractica[];
+  areas: AreaApi[];
+  periodos: PeriodoApi[];
+}
+
+interface CentroApi {
+  id: number;
+  nombre: string;
+  razon_social: string;
+  rut: string | null;
+  direccion: string | null;
+  telefono: string | null;
+  es_interno: boolean;
+  fecha_alta: string | null;
+  fecha_baja: string | null;
+  motivo_baja: string | null;
+  estado: string;
+  estado_acuerdo: string;
+  areas: AreaApi[];
+  acuerdos: Array<{
+    tipo?: string;
+    representante_legal?: string;
+    fecha_inicio?: string | null;
+    fecha_termino?: string | null;
+    archivo_pdf?: string | null;
+  }>;
+  requerimientos: Array<{
+    periodo_id: number;
+    categoria: string;
+    cupos: number;
+    ocupados: number;
+    disponibles: number;
+    periodo?: PeriodoApi;
+  }>;
+  supervisores: Array<{
+    nombre: string;
+    cargo: string | null;
+    unidad: string | null;
+    correo: string;
+    fecha_alta: string | null;
+    fecha_baja: string | null;
+  }>;
+  estudiantes: Array<{
+    practica_id: number;
+    nombre: string | null;
+    periodo: string | null;
+    estado: string | null;
+    resultado: string | null;
+  }>;
+}
 
 @Injectable({ providedIn: 'root' })
 export class CentrosPracticaService {
-  listar(): CentroPractica[] {
-    return [...CENTROS_DEMO];
+  private readonly http = inject(HttpClient);
+
+  listar(): Observable<CatalogoInicial> {
+    return forkJoin({
+      centros: this.http.get<Respuesta<CentroApi[]>>('/api/centros-practica'),
+      areas: this.http.get<Respuesta<AreaApi[]>>('/api/areas'),
+      periodos: this.http.get<Respuesta<PeriodoApi[]>>('/api/periodos'),
+    }).pipe(
+      map(({ centros, areas, periodos }) => ({
+        centros: centros.data.map((centro) => this.mapearCentro(centro)),
+        areas: areas.data,
+        periodos: periodos.data,
+      })),
+    );
+  }
+
+  guardar(centro: CentroPractica, id?: number): Observable<CentroPractica> {
+    return this.http.get<Respuesta<AreaApi[]>>('/api/areas').pipe(
+      switchMap(({ data: areas }) =>
+        from(centro.areas).pipe(
+          concatMap((nombre) => this.resolverArea(nombre, areas)),
+          toArray(),
+          map((areaIds) => [...new Set(areaIds)]),
+          switchMap((areaIds) => this.payloadCentro(centro, areaIds)),
+          switchMap((payload) =>
+            id
+              ? this.http.put<Respuesta<CentroApi>>(`/api/centros-practica/${id}`, payload)
+              : this.http.post<Respuesta<CentroApi>>('/api/centros-practica', payload),
+          ),
+          map((respuesta) => this.mapearCentro(respuesta.data)),
+        ),
+      ),
+    );
+  }
+
+  darDeBaja(id: number, motivo: string): Observable<CentroPractica> {
+    return this.http
+      .post<Respuesta<CentroApi>>(`/api/centros-practica/${id}/dar-de-baja`, { motivo_baja: motivo })
+      .pipe(map(({ data }) => this.mapearCentro(data)));
+  }
+
+  reactivar(id: number): Observable<CentroPractica> {
+    return this.http
+      .post<Respuesta<CentroApi>>(`/api/centros-practica/${id}/reactivar`, {})
+      .pipe(map(({ data }) => this.mapearCentro(data)));
+  }
+
+  mensajeError(error: unknown): string {
+    const response = error as {
+      error?: { message?: string; errors?: Record<string, string[]> };
+      message?: string;
+    };
+    const firstValidationMessage = Object.values(response?.error?.errors ?? {})[0]?.[0];
+    return firstValidationMessage ?? response?.error?.message ?? response?.message ??
+      'No se pudo completar la operación. Revisa que el backend esté encendido e inténtalo otra vez.';
+  }
+
+  private resolverArea(nombre: string, areas: AreaApi[]): Observable<number> {
+    const existente = areas.find((area) => area.nombre.toLocaleLowerCase('es') === nombre.toLocaleLowerCase('es'));
+    if (existente) return of(existente.id);
+
+    return this.http.post<Respuesta<AreaApi>>('/api/areas', { nombre }).pipe(map(({ data }) => data.id));
+  }
+
+  private payloadCentro(centro: CentroPractica, areaIds: number[]): Observable<Record<string, unknown>> {
+    return this.http.get<Respuesta<PeriodoApi[]>>('/api/periodos').pipe(
+      map(({ data: periodos }) => {
+        const requerimientos = centro.cupos.map((cupo) => {
+          const periodo = periodos.find((item) => item.id === cupo.periodoId) ??
+            periodos.find((item) => this.periodoCoincide(cupo.periodo, item));
+          if (!periodo) {
+            throw new Error(`No existe el período «${cupo.periodo}» en el sistema. Regístralo primero desde la gestión de períodos.`);
+          }
+          return {
+            periodo_id: periodo.id,
+            categoria: cupo.categoria.toLocaleLowerCase('es'),
+            cupos: cupo.total,
+            area_ids: areaIds,
+          };
+        });
+
+        return {
+          nombre: centro.nombre,
+          razon_social: centro.razonSocial,
+          rut: centro.rut,
+          direccion: centro.direccion,
+          telefono: centro.telefono,
+          es_interno: centro.esInterno,
+          fecha_alta: centro.fechaAlta ?? null,
+          area_ids: areaIds,
+          requerimientos,
+        };
+      }),
+    );
+  }
+
+  private periodoCoincide(etiqueta: string, periodo: PeriodoApi): boolean {
+    const match = etiqueta.match(/([12])\D*sem(?:estre)?\D*(\d{4})/i);
+    return !!match && Number(match[1]) === periodo.semestre && Number(match[2]) === periodo.anio;
+  }
+
+  private mapearCentro(centro: CentroApi): CentroPractica {
+    const acuerdo = centro.acuerdos[0];
+    return {
+      id: centro.id,
+      nombre: centro.nombre,
+      razonSocial: centro.razon_social,
+      rut: centro.rut ?? '',
+      areas: (centro.areas ?? []).map((area) => area.nombre),
+      acuerdo: this.mapearEstadoAcuerdo(centro.estado_acuerdo),
+      cupos: (centro.requerimientos ?? []).map((requerimiento) => {
+        const periodo = requerimiento.periodo;
+        const etiquetaPeriodo = periodo
+          ? `${periodo.semestre}° sem ${periodo.anio}`
+          : 'Período sin datos';
+        return {
+          periodo: etiquetaPeriodo,
+          periodoId: requerimiento.periodo_id,
+          categoria: requerimiento.categoria === 'profesional' ? 'Profesional' : 'Laboral',
+          total: requerimiento.cupos,
+          ocupados: requerimiento.ocupados,
+          libres: requerimiento.disponibles,
+        } satisfies CupoCentro;
+      }),
+      supervisorPrincipal: centro.supervisores?.find((supervisor) => !supervisor.fecha_baja)?.nombre ?? null,
+      estado: this.mapearEstadoCentro(centro.estado),
+      direccion: centro.direccion ?? '',
+      telefono: centro.telefono ?? '',
+      esInterno: centro.es_interno,
+      representanteLegal: acuerdo?.representante_legal ?? null,
+      tipoAcuerdo: acuerdo?.tipo ?? null,
+      vigenciaAcuerdo: this.vigencia(acuerdo?.fecha_inicio, acuerdo?.fecha_termino),
+      supervisores: (centro.supervisores ?? []).map((supervisor): SupervisorCentro => ({
+        nombre: supervisor.nombre,
+        cargo: supervisor.cargo ?? '',
+        unidad: supervisor.unidad ?? '',
+        correo: supervisor.correo,
+        estado: supervisor.fecha_baja ? 'De baja' : 'Activo',
+      })),
+      estudiantes: (centro.estudiantes ?? []).flatMap((estudiante) => {
+        if (!estudiante.nombre || !this.esEstadoPractica(estudiante.estado)) return [];
+        return [{
+          id: estudiante.practica_id,
+          nombre: estudiante.nombre,
+          periodo: estudiante.periodo ?? 'Sin período',
+          estado: estudiante.estado,
+          resultado: this.esResultado(estudiante.resultado) ? estudiante.resultado : null,
+        }];
+      }),
+      motivoBaja: centro.motivo_baja ?? undefined,
+      fechaAlta: centro.fecha_alta,
+    };
+  }
+
+  private mapearEstadoCentro(estado: string): EstadoCentro {
+    if (estado === 'propuesto') return 'Propuesto';
+    if (estado === 'dado_de_baja') return 'Dado de baja';
+    // Una baja futura sigue siendo seleccionable hasta la fecha efectiva.
+    return 'Activo';
+  }
+
+  private mapearEstadoAcuerdo(estado: string): EstadoAcuerdo {
+    switch (estado) {
+      case 'vigente': return 'Vigente';
+      case 'en_tramite': return 'En trámite';
+      case 'vencido': return 'Vencido';
+      default: return 'Sin acuerdo';
+    }
+  }
+
+  private esEstadoPractica(estado: string | null): estado is EstadoPractica {
+    return ['por_revisar', 'devuelta', 'confirmada', 'en_curso', 'finalizada', 'cancelada'].includes(estado ?? '');
+  }
+
+  private esResultado(resultado: string | null): resultado is Exclude<ResultadoDictamen, null> {
+    return resultado === 'aprobado' || resultado === 'reprobado';
+  }
+
+  private vigencia(inicio?: string | null, termino?: string | null): string | null {
+    if (!inicio) return null;
+    const formato = (fecha: string) => {
+      const [anio, mes] = fecha.split('-');
+      return `${mes}-${anio}`;
+    };
+    return `${formato(inicio)} al ${termino ? formato(termino) : 'sin término'}`;
   }
 }

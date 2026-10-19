@@ -9,6 +9,18 @@
   padding: 38px 42px 56px;
   color: #243247;
 }
+.api-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 0 0 18px;
+  border: 1px solid #efc4c4;
+  border-radius: 10px;
+  padding: 12px 16px;
+  color: #8b3030;
+  background: #fff5f5;
+}
 .page-heading,
 .detail-title-row,
 .card-heading {

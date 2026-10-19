@@ -1,4 +1,10 @@
 <main class="catalog-page">
+  @if (errorApi()) {
+    <p class="api-error" role="alert">
+      {{ errorApi() }}
+      <button class="text-button" type="button" (click)="reintentarCarga()">Reintentar</button>
+    </p>
+  }
   @if (!centroSeleccionado()) {
     <header class="page-heading">
       <div>
@@ -336,6 +342,7 @@
                   <tr>
                     <th>Estudiante</th>
                     <th>Período</th>
+                    <th>Estado</th>
                     <th>Resultado</th>
                     <th><span class="sr-only">Acciones</span></th>
                   </tr>
@@ -369,13 +376,13 @@
                       <td>
                         <span
                           class="status-text"
-                          [class]="
-                            estudiante.resultado === 'En curso'
-                              ? 'status--active'
-                              : 'status--neutral'
-                          "
-                          >{{ estudiante.resultado }}</span
-                        >
+                          [class]="estudiante.estado === 'en_curso' ? 'status--active' : 'status--neutral'"
+                          >{{ etiquetaEstadoPractica(estudiante.estado) }}</span>
+                      </td>
+                      <td>
+                        <span class="status-text status--neutral">
+                          {{ etiquetaResultado(estudiante.resultado) }}
+                        </span>
                       </td>
                       <td>
                         <button
@@ -497,10 +504,6 @@
               ><strong>{{ nuevoCentro.esInterno ? 'Interno' : 'Externo' }}</strong>
             </div>
           }
-          <label
-            >Representante legal <span class="hint">Nombre según el acuerdo, si corresponde.</span
-            ><input name="representanteLegal" [(ngModel)]="nuevoCentro.representanteLegal"
-          /></label>
           <label class="form-grid__wide"
             >Dirección<input name="direccion" [(ngModel)]="nuevoCentro.direccion"
           /></label>
@@ -547,7 +550,11 @@
         </div>
 
         <section class="quota-editor" aria-labelledby="quota-title">
-          <h3 id="quota-title">Cupos por período y categoría</h3>
+          <h3 id="quota-title">Cupos por período y categoría <span class="hint">Opcional al registrar</span></h3>
+          <p class="muted-copy">Puedes agregar el centro al directorio antes de definir sus cupos. Para asignar una práctica, sí debe tener cupo disponible en el período y categoría correspondientes.</p>
+          @if (periodosCatalogo().length === 0) {
+            <p class="muted-copy">No hay períodos registrados; puedes guardar el centro sin definir cupos por ahora.</p>
+          }
           <div class="quota-inputs">
             <label
               >Período<input
@@ -593,7 +600,7 @@
         <footer class="dialog-actions">
           <button class="secondary-button" type="button" (click)="cerrarFormularioNuevo()">
             Cancelar</button
-          ><button class="primary-button" type="submit">
+          ><button class="primary-button" type="submit" [disabled]="guardando()">
             {{ centroEditandoId() === null ? 'Guardar centro' : 'Guardar cambios' }}
           </button>
         </footer>
@@ -629,6 +636,8 @@
           [ngModel]="motivoBaja()"
           (ngModelChange)="motivoBaja.set($event)"
           name="motivoBaja"
+          maxlength="1000"
+          aria-required="true"
           required
         ></textarea>
       </label>
@@ -637,8 +646,8 @@
       }
       <footer class="dialog-actions">
         <button class="secondary-button" type="button" (click)="cerrarBaja()">Cancelar</button
-        ><button class="danger-button" type="button" (click)="confirmarBaja()">
-          Confirmar baja
+        ><button class="danger-button" type="button" (click)="confirmarBaja()" [disabled]="guardando()">
+          {{ guardando() ? 'Guardando…' : 'Confirmar baja' }}
         </button>
       </footer>
     </section>
@@ -690,8 +699,12 @@
           <dd>{{ estudiante.periodo }}</dd>
         </div>
         <div>
+          <dt>Estado</dt>
+          <dd>{{ etiquetaEstadoPractica(estudiante.estado) }}</dd>
+        </div>
+        <div>
           <dt>Resultado</dt>
-          <dd>{{ estudiante.resultado }}</dd>
+          <dd>{{ etiquetaResultado(estudiante.resultado) }}</dd>
         </div>
         <div>
           <dt>Centro</dt>
