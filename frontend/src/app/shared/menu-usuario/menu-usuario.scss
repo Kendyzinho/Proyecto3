@@ -30,29 +30,6 @@
   }
 }
 
-.datos {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 12px 16px;
-  font-size: 14px;
-  overflow-wrap: anywhere;
-
-  span {
-    color: #5b6b80;
-    font-size: 12px;
-  }
-}
-
-.cerrar,
-.cerrar mat-icon {
-  color: var(--mat-sys-error);
-}
-
-.perfil-activo {
-  background: var(--mat-sys-tertiary-container);
-}
-
 @media (max-width: 600px) {
   .usuario .nombre {
     display: none;

@@ -9,7 +9,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 // La práctica cuelga de la habilitación (estudiante + tipo + período); el centro sale del supervisor
 class Practica extends Model
 {
-    protected $fillable = ['habilitacion_id', 'supervisor_id', 'origen', 'modalidad', 'tareas', 'fecha_inicio', 'fecha_fin'];
+    protected $fillable = ['habilitacion_id', 'supervisor_id', 'origen', 'modalidad', 'tareas', 'fecha_inicio', 'fecha_fin', 'justificacion_excepcional', 'registrada_por'];
+
+    public function autoraRegistro(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'registrada_por');
+    }
 
     protected function casts(): array
     {

@@ -1,6 +1,10 @@
 import { Routes } from '@angular/router';
+import { Marco } from '../../shared/marco/marco';
 
-// Inicio provisorio hasta que exista el inicio real de este rol
 export default [
-  { path: '', title: 'Inicio', loadComponent: () => import('../../shared/inicio-temporal/inicio-temporal').then((m) => m.InicioTemporal) },
+  {
+    path: '', component: Marco,
+    data: { grupo: 'Coordinadora de Prácticas', adaptable: true, menu: [{ texto: 'Inicio', icono: 'home', ruta: '/coordinacion' }] },
+    children: [{ path: '', title: 'Inicio', loadComponent: () => import('./inicio').then((m) => m.InicioCoordinacion) }],
+  },
 ] satisfies Routes;

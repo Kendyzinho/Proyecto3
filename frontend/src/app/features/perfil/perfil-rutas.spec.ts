@@ -39,6 +39,11 @@ describe('Navegación del perfil', () => {
     const harness = await RouterTestingHarness.create(inicio);
     const http = TestBed.inject(HttpTestingController);
     const cargarInicio = () => {
+      if (rol === 'coordinadora') {
+        http.expectOne('/api/coordinacion/metricas').flush({
+          periodo: { id: 2, nombre: '2º semestre 2026' }, practicas_registradas: 5,
+        });
+      }
       if (rol === 'secretaria') {
         http.expectOne('/api/nomina/catalogo').flush({
           periodos: [{ id: 1, nombre: '2º semestre 2026' }], periodo_actual_id: 1, practicas: [],
@@ -58,6 +63,10 @@ describe('Navegación del perfil', () => {
     expect(TestBed.inject(Router).url).toBe('/perfil');
     expect(harness.routeNativeElement?.querySelector('dl')?.textContent).toContain(nombreRol);
     expect(harness.routeNativeElement?.querySelectorAll('app-menu-usuario')).toHaveLength(1);
+    expect(harness.routeNativeElement?.querySelectorAll('header.barra')).toHaveLength(1);
+    expect(harness.routeNativeElement?.querySelector('nav.lateral__menu')?.textContent).toContain('Inicio');
+    expect(harness.routeNativeElement?.querySelector('.lateral__grupo')?.textContent).toContain(nombreRol);
+    expect(harness.routeNativeElement?.querySelectorAll('nav.lateral__menu .opcion')).toHaveLength(rol === 'secretaria' ? 3 : 1);
 
     harness.routeNativeElement!.querySelector<HTMLAnchorElement>(`a[href="${inicio}"]`)!.click();
     await harness.fixture.whenStable();
