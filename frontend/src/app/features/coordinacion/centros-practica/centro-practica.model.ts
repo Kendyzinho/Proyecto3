@@ -24,7 +24,8 @@ export interface SupervisorCentro {
   cargo: string;
   unidad: string;
   correo: string;
-  estado: 'Activo' | 'De baja';
+  telefono?: string;
+  estado: 'Propuesto' | 'Activo' | 'De baja';
 }
 
 export interface EstudianteCentro {

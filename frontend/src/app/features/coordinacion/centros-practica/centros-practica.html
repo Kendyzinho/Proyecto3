@@ -105,7 +105,7 @@
                   }}</span>
                 </td>
                 <td class="quota-cell">{{ cuposResumen(centro) }}</td>
-                <td>{{ centro.supervisorPrincipal ?? 'Sin supervisor' }}</td>
+                <td>{{ supervisoresResumen(centro) }}</td>
                 <td>
                   <span class="status-text" [class]="estadoCentroClass(centro.estado)">{{
                     centro.estado
@@ -315,9 +315,7 @@
                       <td>
                         <span
                           class="status-text"
-                          [class]="
-                            supervisor.estado === 'Activo' ? 'status--active' : 'status--inactive'
-                          "
+                          [class]="supervisor.estado === 'Activo' ? 'status--active' : supervisor.estado === 'Propuesto' ? 'status--proposed' : 'status--inactive'"
                           >{{ supervisor.estado }}</span
                         >
                       </td>
@@ -482,7 +480,7 @@
               <small class="field-error">{{ errorCampo('rut') }}</small>
             }
           </label>
-          @if (centroEditandoId() === null) {
+          @if (centroEditandoId() === null || centroSeleccionado()?.estado === 'Propuesto') {
             <label
               >Tipo de centro<select
                 name="tipoCentro"
@@ -515,6 +513,34 @@
               placeholder="+56 9 1234 5678"
               [(ngModel)]="nuevoCentro.telefono"
           /></label>
+          @if (centroEditandoId() === null) {
+            <fieldset class="area-picker form-grid__wide supervisor-editor">
+              <legend>Supervisores <span class="hint">Agrega al menos uno. Quedarán propuestos hasta que se formalice el centro.</span></legend>
+              @for (supervisor of supervisoresFormulario(); track $index; let indice = $index) {
+                <div class="supervisor-form-row">
+                  <label>Nombre completo
+                    <input [name]="'supervisorNombre' + indice" [ngModel]="supervisor.nombre"
+                      (ngModelChange)="actualizarSupervisorFormulario(indice, 'nombre', $event)" required />
+                    @if (errorSupervisor(indice, 'nombre')) { <small class="field-error">{{ errorSupervisor(indice, 'nombre') }}</small> }
+                  </label>
+                  <label>Correo
+                    <input type="email" [name]="'supervisorCorreo' + indice" [ngModel]="supervisor.correo"
+                      (ngModelChange)="actualizarSupervisorFormulario(indice, 'correo', $event)" required />
+                    @if (errorSupervisor(indice, 'correo')) { <small class="field-error">{{ errorSupervisor(indice, 'correo') }}</small> }
+                  </label>
+                  <label>Cargo<input [name]="'supervisorCargo' + indice" [ngModel]="supervisor.cargo"
+                    (ngModelChange)="actualizarSupervisorFormulario(indice, 'cargo', $event)" /></label>
+                  <label>Unidad o área<input [name]="'supervisorUnidad' + indice" [ngModel]="supervisor.unidad"
+                    (ngModelChange)="actualizarSupervisorFormulario(indice, 'unidad', $event)" /></label>
+                  <label>Teléfono<input type="tel" [name]="'supervisorTelefono' + indice" [ngModel]="supervisor.telefono"
+                    (ngModelChange)="actualizarSupervisorFormulario(indice, 'telefono', $event)" /></label>
+                  <button type="button" class="text-button" aria-label="Quitar supervisor"
+                    (click)="quitarSupervisorFormulario(indice)" [disabled]="supervisoresFormulario().length === 1">Quitar</button>
+                </div>
+              }
+              <button type="button" class="secondary-button" (click)="agregarSupervisorFormulario()">＋ Agregar supervisor(a)</button>
+            </fieldset>
+          }
           <fieldset class="area-picker form-grid__wide">
             <legend>
               Áreas que ofrece <span class="hint">Puedes seleccionar varias y agregar otra.</span>

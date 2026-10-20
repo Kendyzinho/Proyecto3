@@ -63,10 +63,12 @@ interface CentroApi {
     periodo?: PeriodoApi;
   }>;
   supervisores: Array<{
+    id?: number;
     nombre: string;
     cargo: string | null;
     unidad: string | null;
     correo: string;
+    telefono: string | null;
     fecha_alta: string | null;
     fecha_baja: string | null;
   }>;
@@ -104,7 +106,7 @@ export class CentrosPracticaService {
           concatMap((nombre) => this.resolverArea(nombre, areas)),
           toArray(),
           map((areaIds) => [...new Set(areaIds)]),
-          switchMap((areaIds) => this.payloadCentro(centro, areaIds)),
+          switchMap((areaIds) => this.payloadCentro(centro, areaIds, id === undefined)),
           switchMap((payload) =>
             id
               ? this.http.put<Respuesta<CentroApi>>(`/api/centros-practica/${id}`, payload)
@@ -145,7 +147,7 @@ export class CentrosPracticaService {
     return this.http.post<Respuesta<AreaApi>>('/api/areas', { nombre }).pipe(map(({ data }) => data.id));
   }
 
-  private payloadCentro(centro: CentroPractica, areaIds: number[]): Observable<Record<string, unknown>> {
+  private payloadCentro(centro: CentroPractica, areaIds: number[], esNuevo: boolean): Observable<Record<string, unknown>> {
     return this.http.get<Respuesta<PeriodoApi[]>>('/api/periodos').pipe(
       map(({ data: periodos }) => {
         const requerimientos = centro.cupos.map((cupo) => {
@@ -169,9 +171,17 @@ export class CentrosPracticaService {
           direccion: centro.direccion,
           telefono: centro.telefono,
           es_interno: centro.esInterno,
-          fecha_alta: centro.fechaAlta ?? null,
           area_ids: areaIds,
           requerimientos,
+          ...(esNuevo ? {
+            supervisores: centro.supervisores.map((supervisor) => ({
+              nombre: supervisor.nombre,
+              correo: supervisor.correo,
+              cargo: supervisor.cargo || null,
+              unidad: supervisor.unidad || null,
+              telefono: supervisor.telefono || null,
+            })),
+          } : {}),
         };
       }),
     );
@@ -184,6 +194,7 @@ export class CentrosPracticaService {
 
   private mapearCentro(centro: CentroApi): CentroPractica {
     const acuerdo = centro.acuerdos[0];
+    const supervisorPrincipal = centro.supervisores?.find((supervisor) => !supervisor.fecha_baja);
     return {
       id: centro.id,
       nombre: centro.nombre,
@@ -205,7 +216,9 @@ export class CentrosPracticaService {
           libres: requerimiento.disponibles,
         } satisfies CupoCentro;
       }),
-      supervisorPrincipal: centro.supervisores?.find((supervisor) => !supervisor.fecha_baja)?.nombre ?? null,
+      supervisorPrincipal: supervisorPrincipal
+        ? `${supervisorPrincipal.nombre}${supervisorPrincipal.fecha_alta ? '' : ' (Propuesto)'}`
+        : null,
       estado: this.mapearEstadoCentro(centro.estado),
       direccion: centro.direccion ?? '',
       telefono: centro.telefono ?? '',
@@ -218,7 +231,8 @@ export class CentrosPracticaService {
         cargo: supervisor.cargo ?? '',
         unidad: supervisor.unidad ?? '',
         correo: supervisor.correo,
-        estado: supervisor.fecha_baja ? 'De baja' : 'Activo',
+        telefono: supervisor.telefono ?? '',
+        estado: supervisor.fecha_baja ? 'De baja' : supervisor.fecha_alta ? 'Activo' : 'Propuesto',
       })),
       estudiantes: (centro.estudiantes ?? []).flatMap((estudiante) => {
         if (!estudiante.nombre || !this.esEstadoPractica(estudiante.estado)) return [];

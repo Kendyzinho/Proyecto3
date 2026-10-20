@@ -100,9 +100,15 @@ class CentroPracticaController extends Controller
         $this->requireCoordinator($request);
         $data = $this->validateCentro($request, $centroPractica);
 
+        if ($centroPractica->fecha_alta !== null && (bool) $data['es_interno'] !== (bool) $centroPractica->es_interno) {
+            throw ValidationException::withMessages([
+                'es_interno' => 'El tipo de centro solo puede cambiarse mientras está propuesto.',
+            ]);
+        }
+
         DB::transaction(function () use ($centroPractica, $data) {
             $this->assertUniqueInternalCenter($data['es_interno'], $centroPractica->id);
-            $centroPractica->update($this->centerAttributes($data));
+            $centroPractica->update($this->centerAttributes($data, $centroPractica));
             $this->syncRelations($centroPractica, $data);
         });
 
@@ -266,7 +272,8 @@ class CentroPracticaController extends Controller
             'direccion' => ['nullable', 'string', 'max:255'],
             'telefono' => ['nullable', 'string', 'max:30'],
             'es_interno' => ['required', 'boolean'],
-            'fecha_alta' => ['nullable', 'date'],
+            // La activación corresponde al flujo de formalización del acuerdo (HU-10).
+            'fecha_alta' => ['prohibited'],
             'area_ids' => ['sometimes', 'array'],
             'area_ids.*' => ['integer', 'distinct', 'exists:areas,id'],
             'requerimientos' => ['sometimes', 'array'],
@@ -275,6 +282,12 @@ class CentroPracticaController extends Controller
             'requerimientos.*.cupos' => ['required', 'integer', 'min:0', 'max:65535'],
             'requerimientos.*.area_ids' => ['sometimes', 'array'],
             'requerimientos.*.area_ids.*' => ['integer', 'distinct', 'exists:areas,id'],
+            'supervisores' => [$centro ? 'prohibited' : 'required', 'array', 'min:1'],
+            'supervisores.*.nombre' => ['required', 'string', 'max:255'],
+            'supervisores.*.correo' => ['required', 'email', 'max:255'],
+            'supervisores.*.telefono' => ['nullable', 'string', 'max:30'],
+            'supervisores.*.cargo' => ['nullable', 'string', 'max:255'],
+            'supervisores.*.unidad' => ['nullable', 'string', 'max:255'],
         ]);
 
         foreach ($data['requerimientos'] ?? [] as $index => $row) {
@@ -294,7 +307,7 @@ class CentroPracticaController extends Controller
         return $data;
     }
 
-    private function centerAttributes(array $data): array
+    private function centerAttributes(array $data, ?CentroPractica $centro = null): array
     {
         return [
             'rut' => $data['rut'] ?? null,
@@ -303,12 +316,28 @@ class CentroPracticaController extends Controller
             'direccion' => isset($data['direccion']) ? trim($data['direccion']) : null,
             'telefono' => isset($data['telefono']) ? trim($data['telefono']) : null,
             'es_interno' => $data['es_interno'],
-            'fecha_alta' => $data['fecha_alta'] ?? null,
+            // Centros externos quedan propuestos hasta la formalización del acuerdo
+            // (HU-10). El centro interno está exento y puede quedar activo al registrarse.
+            'fecha_alta' => $data['es_interno']
+                ? ($centro?->fecha_alta ?? today()->toDateString())
+                : $centro?->fecha_alta,
         ];
     }
 
     private function syncRelations(CentroPractica $centro, array $data): void
     {
+        foreach ($data['supervisores'] ?? [] as $supervisor) {
+            $centro->supervisores()->create([
+                'nombre' => trim($supervisor['nombre']),
+                'correo' => trim($supervisor['correo']),
+                'telefono' => isset($supervisor['telefono']) ? trim($supervisor['telefono']) : null,
+                'cargo' => isset($supervisor['cargo']) ? trim($supervisor['cargo']) : null,
+                'unidad' => isset($supervisor['unidad']) ? trim($supervisor['unidad']) : null,
+                'fecha_alta' => null,
+                'fecha_baja' => null,
+            ]);
+        }
+
         if (array_key_exists('area_ids', $data)) {
             $centro->areas()->sync($data['area_ids']);
         }

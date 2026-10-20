@@ -15,6 +15,7 @@ import { CentrosPracticaService } from './centros-practica.service';
 type FiltroAcuerdo = 'Todos' | EstadoAcuerdo;
 type CampoCentro = 'nombre' | 'razonSocial' | 'rut';
 type PeriodoCupos = { periodo: string; cupos: CupoCentro[] };
+type SupervisorFormulario = { nombre: string; correo: string; cargo: string; unidad: string; telefono: string };
 
 const AREAS_BASE = [
   'Diseño y desarrollo web',
@@ -56,6 +57,7 @@ export class CentrosPractica {
   protected readonly motivoBaja = signal('');
   protected readonly errorBaja = signal('');
   protected readonly cuposFormulario = signal<CupoCentro[]>([]);
+  protected readonly supervisoresFormulario = signal<SupervisorFormulario[]>([]);
   protected periodoNuevoCupo = '2° semestre 2026';
   protected categoriaNuevoCupo: 'Laboral' | 'Profesional' = 'Laboral';
   protected cantidadNuevoCupo = 1;
@@ -132,6 +134,7 @@ export class CentrosPractica {
 
   protected abrirFormularioNuevo(): void {
     this.limpiarFormulario();
+    this.supervisoresFormulario.set([this.supervisorVacio()]);
     this.centroEditandoId.set(null);
     this.mostrarFormularioNuevo.set(true);
   }
@@ -152,6 +155,37 @@ export class CentrosPractica {
     this.cuposFormulario.set([...centro.cupos]);
     this.centroEditandoId.set(centro.id);
     this.mostrarFormularioNuevo.set(true);
+  }
+
+  protected agregarSupervisorFormulario(): void {
+    this.supervisoresFormulario.update((items) => [...items, this.supervisorVacio()]);
+  }
+
+  protected quitarSupervisorFormulario(indice: number): void {
+    this.supervisoresFormulario.update((items) => items.filter((_, actual) => actual !== indice));
+  }
+
+  protected actualizarSupervisorFormulario(
+    indice: number,
+    campo: keyof SupervisorFormulario,
+    valor: string,
+  ): void {
+    this.supervisoresFormulario.update((items) =>
+      items.map((item, actual) => actual === indice ? { ...item, [campo]: valor } : item),
+    );
+  }
+
+  protected errorSupervisor(indice: number, campo: 'nombre' | 'correo'): string {
+    if (!this.intentoGuardar()) return '';
+    const valor = this.supervisoresFormulario()[indice]?.[campo].trim() ?? '';
+    if (!valor) return 'Este campo es obligatorio.';
+    if (campo === 'correo' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valor)) return 'Ingresa un correo válido.';
+    return '';
+  }
+
+  protected supervisoresResumen(centro: CentroPractica): string {
+    const cantidad = centro.supervisores.length;
+    return cantidad === 0 ? 'Sin supervisores' : `${cantidad} ${cantidad === 1 ? 'supervisor(a)' : 'supervisores'}`;
   }
 
   protected cerrarFormularioNuevo(): void {
@@ -251,7 +285,11 @@ export class CentrosPractica {
     const hayError = (['nombre', 'razonSocial', 'rut'] as CampoCentro[]).some((campo) =>
       this.errorCampo(campo),
     );
-    if (hayError || this.errorTipoCentro() || this.areasSeleccionadas().length === 0) return;
+    const erroresSupervisores = this.centroEditandoId() === null && (
+      this.supervisoresFormulario().length === 0 || this.supervisoresFormulario().some((_, indice) =>
+        !!this.errorSupervisor(indice, 'nombre') || !!this.errorSupervisor(indice, 'correo'))
+    );
+    if (hayError || this.errorTipoCentro() || this.areasSeleccionadas().length === 0 || erroresSupervisores) return;
 
     const centroEditando = this.centroEditandoId();
     const actual = this.centros().find((centro) => centro.id === centroEditando);
@@ -263,15 +301,18 @@ export class CentrosPractica {
       areas: this.areasSeleccionadas(),
       acuerdo: actual?.acuerdo ?? 'Sin acuerdo',
       cupos: this.cuposFormulario(),
-      supervisorPrincipal: actual?.supervisorPrincipal ?? null,
-      estado: actual?.estado ?? 'Activo',
+      supervisorPrincipal: actual?.supervisorPrincipal ?? this.supervisoresFormulario()[0]?.nombre ?? null,
+      estado: actual?.estado ?? 'Propuesto',
       direccion: this.nuevoCentro.direccion.trim(),
       telefono: this.nuevoCentro.telefono.trim(),
       esInterno: this.nuevoCentro.esInterno,
       representanteLegal: actual?.representanteLegal ?? null,
       tipoAcuerdo: actual?.tipoAcuerdo ?? null,
       vigenciaAcuerdo: actual?.vigenciaAcuerdo ?? null,
-      supervisores: actual?.supervisores ?? [],
+      supervisores: actual?.supervisores ?? this.supervisoresFormulario().map((supervisor) => ({
+        ...supervisor,
+        estado: 'Propuesto' as const,
+      })),
       estudiantes: actual?.estudiantes ?? [],
       motivoBaja: actual?.motivoBaja,
       fechaAlta: actual?.fechaAlta ?? null,
@@ -435,11 +476,16 @@ export class CentrosPractica {
     };
   }
 
+  private supervisorVacio(): SupervisorFormulario {
+    return { nombre: '', correo: '', cargo: '', unidad: '', telefono: '' };
+  }
+
   private limpiarFormulario(): void {
     this.nuevoCentro = this.formularioVacio();
     this.areasSeleccionadas.set([]);
     this.nuevaArea.set('');
     this.cuposFormulario.set([]);
+    this.supervisoresFormulario.set([]);
     this.intentoGuardar.set(false);
     this.periodoNuevoCupo = '2° semestre 2026';
     this.categoriaNuevoCupo = 'Laboral';
