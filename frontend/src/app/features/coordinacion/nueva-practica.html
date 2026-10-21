@@ -1,0 +1,68 @@
+<div class="cabecera">
+  <h2 mat-dialog-title>Registrar práctica excepcional</h2>
+  <button matIconButton aria-label="Cerrar formulario" (click)="cancelar()" [disabled]="enviando()"><mat-icon>close</mat-icon></button>
+</div>
+<form [formGroup]="form" (ngSubmit)="guardar()">
+  <mat-dialog-content [attr.aria-busy]="cargando() || enviando()">
+    <p class="periodo">{{ periodo.nombre }}</p>
+    @if (cargando()) { <p role="status">Cargando estudiantes y supervisores…</p> }
+    @else if (errorCarga()) {
+      <p role="alert">No se pudieron cargar las opciones.</p>
+      <button matButton type="button" (click)="cargar()">Reintentar</button>
+    } @else if (catalogo(); as datos) {
+      @if (!datos.habilitaciones.length) {
+        <p role="status" class="aviso">No hay estudiantes habilitados sin práctica registrada en este período.</p>
+      }
+      @if (!datos.supervisores.length) {
+        <p role="status" class="aviso">No hay supervisores activos con un centro admisible.</p>
+      }
+      <fieldset [disabled]="enviando()">
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Estudiante y tipo de práctica</mat-label>
+          <mat-select formControlName="habilitacion_id" required>
+            @for (h of datos.habilitaciones; track h.id) { <mat-option [value]="h.id">{{ h.estudiante }} · {{ h.tipo_practica }}</mat-option> }
+          </mat-select>
+          <mat-hint>Solo estudiantes habilitados sin práctica registrada.</mat-hint>
+          <mat-error>{{ mensaje('habilitacion_id') }}</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Supervisor(a) de prácticas</mat-label>
+          <mat-select formControlName="supervisor_id" required>
+            @for (s of datos.supervisores; track s.id) { <mat-option [value]="s.id">{{ s.nombre }} · {{ s.centro }}</mat-option> }
+          </mat-select>
+          <mat-error>{{ mensaje('supervisor_id') }}</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Centro de práctica</mat-label>
+          <input matInput readonly [value]="centro()" placeholder="Selecciona un supervisor" />
+          <mat-hint>Disponibilidad de cupos no determinada.</mat-hint>
+        </mat-form-field>
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Modalidad</mat-label>
+          <mat-select formControlName="modalidad" required>
+            <mat-option value="presencial">Presencial</mat-option><mat-option value="mixta">Mixta</mat-option>
+          </mat-select>
+          <mat-error>{{ mensaje('modalidad') }}</mat-error>
+        </mat-form-field>
+        <div class="fechas">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic"><mat-label>Fecha de inicio</mat-label><input matInput type="date" formControlName="fecha_inicio" required /><mat-error>{{ mensaje('fecha_inicio') }}</mat-error></mat-form-field>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic"><mat-label>Fecha de término</mat-label><input matInput type="date" formControlName="fecha_fin" required /><mat-error>{{ mensaje('fecha_fin') }}</mat-error></mat-form-field>
+        </div>
+        @if (form.hasError('fechas')) { <p class="error" role="alert">La fecha de término debe ser igual o posterior al inicio.</p> }
+        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+          <mat-label>Justificación</mat-label>
+          <textarea matInput formControlName="justificacion_excepcional" rows="3" maxlength="5000" required></textarea>
+          <mat-error>{{ mensaje('justificacion_excepcional') }}</mat-error>
+        </mat-form-field>
+      </fieldset>
+      <p class="aviso"><mat-icon aria-hidden="true">warning_amber</mat-icon>Quedará marcada como «Registro excepcional», con tu nombre, la fecha y la justificación.</p>
+    }
+    @if (errorGeneral()) { <p class="error" role="alert">{{ errorGeneral() }}</p> }
+  </mat-dialog-content>
+  <mat-dialog-actions align="end">
+    <button matButton type="button" (click)="cancelar()" [disabled]="enviando()">Cancelar</button>
+    <button matButton="filled" type="submit" [disabled]="enviando() || cargando() || errorCarga() || !catalogo()?.habilitaciones?.length || !catalogo()?.supervisores?.length">
+      <mat-icon>check</mat-icon>{{ enviando() ? 'Registrando…' : 'Registrar práctica' }}
+    </button>
+  </mat-dialog-actions>
+</form>

@@ -10,6 +10,12 @@ class Estudiante extends Model
 {
     protected $fillable = ['user_id', 'anio_ingreso'];
 
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    // Alias usado por los recursos de nómina
     public function usuario(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');

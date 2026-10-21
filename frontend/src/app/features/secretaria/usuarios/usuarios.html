@@ -1,0 +1,103 @@
+<div class="encabezado-pagina">
+  <h1>Usuarios</h1>
+  <div class="acciones">
+    <a matButton="outlined" routerLink="/secretaria/nomina">
+      <mat-icon>upload_file</mat-icon>
+      Cargar nómina
+    </a>
+    <button matButton="filled" type="button" (click)="nuevo()">
+      <mat-icon>person_add</mat-icon>
+      Nuevo usuario
+    </button>
+  </div>
+</div>
+
+<section class="tarjeta">
+  <div class="barra-filtros">
+    <mat-form-field class="buscador" subscriptSizing="dynamic">
+      <mat-icon matPrefix>search</mat-icon>
+      <input #campo matInput placeholder="Buscar por nombre, RUT o correo" (input)="busqueda.set(campo.value)" />
+    </mat-form-field>
+
+    <div class="filtros" role="group" aria-label="Filtrar usuarios">
+      @for (opcion of filtros; track opcion.valor) {
+        <button type="button" class="filtro" [class.filtro--activo]="filtro() === opcion.valor"
+                [attr.aria-pressed]="filtro() === opcion.valor" (click)="filtro.set(opcion.valor)">
+          @if (filtro() === opcion.valor) {
+            <mat-icon>check</mat-icon>
+          }
+          {{ opcion.texto }}
+        </button>
+      }
+    </div>
+  </div>
+
+  @if (cargando()) {
+    <p class="vacio">Cargando usuarios…</p>
+  } @else if (filas.data.length === 0) {
+    <p class="vacio">No hay usuarios que coincidan con la búsqueda.</p>
+  } @else {
+    <table mat-table class="tabla" [dataSource]="filas">
+      <ng-container matColumnDef="usuario">
+        <th mat-header-cell *matHeaderCellDef>Usuario</th>
+        <td mat-cell *matCellDef="let fila">
+          <div class="persona">
+            <span class="avatar">{{ iniciales(fila.name) }}</span>
+            <div>
+              <div class="persona__nombre">{{ fila.name }}</div>
+              <div class="persona__correo">{{ fila.email }}</div>
+            </div>
+          </div>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="rut">
+        <th mat-header-cell *matHeaderCellDef>RUT</th>
+        <td mat-cell *matCellDef="let fila">{{ fila.rut ?? '—' }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="rol">
+        <th mat-header-cell *matHeaderCellDef>Rol</th>
+<td mat-cell *matCellDef="let fila">{{ textoRol(fila.rol) }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="estado">
+        <th mat-header-cell *matHeaderCellDef>Estado</th>
+        <td mat-cell *matCellDef="let fila">
+          @if (fila.activo) {
+            <span class="estado estado--exito">Activa</span>
+          } @else {
+            <span class="estado estado--neutro" [matTooltip]="fila.motivo_baja">Desactivada</span>
+          }
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="acciones">
+        <th mat-header-cell *matHeaderCellDef>Acciones</th>
+        <td mat-cell *matCellDef="let fila">
+          <button mat-icon-button type="button" matTooltip="Editar" [attr.aria-label]="'Editar a ' + fila.name" (click)="editar(fila)">
+            <mat-icon>edit</mat-icon>
+          </button>
+          @if (!fila.activo) {
+            <button mat-icon-button class="accion--info" type="button" matTooltip="Reactivar"
+                    [attr.aria-label]="'Reactivar a ' + fila.name" (click)="reactivar(fila)">
+              <mat-icon>undo</mat-icon>
+            </button>
+          } @else if (!esPropia(fila)) {
+            <button mat-icon-button class="accion--peligro" type="button" matTooltip="Desactivar"
+                    [attr.aria-label]="'Desactivar a ' + fila.name" (click)="desactivar(fila)">
+              <mat-icon>block</mat-icon>
+            </button>
+          }
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+      <tr mat-row *matRowDef="let fila; columns: columnas"></tr>
+    </table>
+  }
+
+  <div class="pie" [hidden]="filas.data.length === 0">
+    <mat-paginator [pageSize]="10" [hidePageSize]="true" />
+  </div>
+</section>

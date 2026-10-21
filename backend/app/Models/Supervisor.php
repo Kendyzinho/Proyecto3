@@ -4,8 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
-// Persona del centro que guía al estudiante (Supervisor(a) de Prácticas, Art. 5)
 class Supervisor extends Model
 {
     protected $table = 'supervisores';
@@ -14,14 +14,16 @@ class Supervisor extends Model
 
     protected function casts(): array
     {
-        return [
-            'fecha_alta' => 'date',
-            'fecha_baja' => 'date',
-        ];
+        return ['fecha_alta' => 'date', 'fecha_baja' => 'date'];
     }
 
     public function centro(): BelongsTo
     {
         return $this->belongsTo(CentroPractica::class, 'centro_id');
+    }
+
+    public function practicas(): HasMany
+    {
+        return $this->hasMany(Practica::class, 'supervisor_id');
     }
 }
