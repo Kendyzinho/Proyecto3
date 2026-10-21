@@ -30,7 +30,7 @@ export class AplicacionShell {
     if (rol === 'coordinadora') return [
       { etiqueta: 'Inicio', icono: 'home', ruta: '/coordinacion' },
       { etiqueta: 'Prácticas', icono: 'work' },
-      { etiqueta: 'Solicitudes', icono: 'inbox' },
+      { etiqueta: 'Solicitudes', icono: 'inbox', ruta: '/coordinacion/solicitudes' },
       { etiqueta: 'Centros de práctica', icono: 'domain', ruta: '/coordinacion/centros' },
       { etiqueta: 'Visitas técnicas', icono: 'event' },
       { etiqueta: 'Dictámenes', icono: 'fact_check' },

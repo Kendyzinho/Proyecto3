@@ -1,0 +1,40 @@
+<main class="page">
+  <header class="page-heading"><div><p class="eyebrow">COORDINACIÓN DE PRÁCTICAS</p><h1>Solicitudes por revisar</h1><p>Revisa los antecedentes y registra una decisión para cada solicitud.</p></div><div class="heading-actions"><a class="new-practice-button" routerLink="/coordinacion/practicas/nueva"><mat-icon>add</mat-icon>Nueva práctica</a><span class="pending-count"><mat-icon>inbox</mat-icon>{{ pendientes().length }} pendientes</span></div></header>
+  @if (service.errorApi()) { <div class="notice" role="alert">{{ service.errorApi() }}</div> }
+  @if (service.cargando()) { <div class="notice" role="status">Cargando solicitudes desde el backend…</div> }
+  @if (aviso()) { <div class="notice" role="status">{{ aviso() }}</div> }
+  <nav class="status-filters" role="group" aria-label="Filtrar solicitudes por estado">
+    <button type="button" class="filter-chip" [class.filter-chip--selected]="estadosActivos().includes('Por revisar')" [attr.aria-pressed]="estadosActivos().includes('Por revisar')" (click)="cambiarFiltro('Por revisar')">Por revisar <span>{{ pendientes().length }}</span></button>
+    <button type="button" class="filter-chip" [class.filter-chip--selected]="estadosActivos().includes('Devuelta')" [attr.aria-pressed]="estadosActivos().includes('Devuelta')" (click)="cambiarFiltro('Devuelta')">Devueltas <span>{{ devueltas().length }}</span></button>
+    <button type="button" class="filter-chip" [class.filter-chip--selected]="estadosActivos().includes('Aprobada')" [attr.aria-pressed]="estadosActivos().includes('Aprobada')" (click)="cambiarFiltro('Aprobada')">Aprobadas <span>{{ aprobadas().length }}</span></button>
+  </nav>
+  <div class="review-layout">
+    <section class="panel queue-panel" aria-labelledby="queue-title">
+      <header class="panel-heading"><h2 id="queue-title">Bandeja de entrada</h2><span class="count">{{ filtradas().length }}</span></header>
+      <div class="queue-list">
+        @for (solicitud of filtradas(); track solicitud.id) {
+          <button type="button" class="queue-row" [class.queue-row--active]="seleccionada().id === solicitud.id" (click)="seleccionar(solicitud.id)">
+            <span class="avatar">{{ solicitud.estudianteNombre.charAt(0) }}</span><span class="queue-copy"><strong>{{ solicitud.estudianteNombre }}</strong><small>{{ solicitud.centroRazonSocial }}</small><small>{{ solicitud.actualizadaEn | date:'dd-MM-yyyy HH:mm' }}</small></span><mat-icon>chevron_right</mat-icon>
+          </button>
+        } @empty { <div class="empty-queue"><mat-icon>mark_email_read</mat-icon><strong>{{ estadosActivos().length ? 'No hay solicitudes para estos filtros' : 'Selecciona al menos un estado' }}</strong><span>{{ estadosActivos().length ? 'Las solicitudes de los estados seleccionados aparecerán aquí.' : 'Activa uno o más filtros para mostrar solicitudes.' }}</span></div> }
+      </div>
+    </section>
+
+    <section class="panel detail-panel" aria-labelledby="detail-title">
+      @if (seleccionada(); as solicitud) {
+        <header class="panel-heading detail-heading"><div><span class="eyebrow">SOLICITUD #{{ solicitud.id }}</span><h2 id="detail-title">{{ solicitud.estudianteNombre }}</h2><p>{{ solicitud.estudianteCorreo }}</p></div><span class="state-chip" [class.state-chip--returned]="solicitud.estado === 'Devuelta'" [class.state-chip--approved]="solicitud.estado === 'Aprobada'">{{ solicitud.estado }}</span></header>
+        <div class="detail-body">
+          <section class="detail-section"><h3><mat-icon>domain</mat-icon>Centro de práctica</h3><dl><div><dt>Tipo de ingreso</dt><dd>{{ solicitud.modoCentro === 'Propuesto' ? 'Centro propuesto' : 'Centro registrado' }}</dd></div><div><dt>Estado del centro</dt><dd>{{ estadoCentro(solicitud) }}</dd></div><div><dt>Razón social</dt><dd>{{ solicitud.centroRazonSocial }}</dd></div><div><dt>RUT</dt><dd>{{ solicitud.centroRut }}</dd></div><div><dt>Dirección</dt><dd>{{ direccionCentro(solicitud) }}</dd></div></dl></section>
+          <section class="detail-section"><h3><mat-icon>person</mat-icon>Supervisor(a)</h3><dl><div><dt>Contraparte</dt><dd>{{ solicitud.supervisorNombre }}</dd></div><div><dt>Correo</dt><dd><a [href]="'mailto:' + solicitud.supervisorCorreo">{{ solicitud.supervisorCorreo }}</a></dd></div><div><dt>Cargo y unidad</dt><dd>{{ solicitud.supervisorCargo || '—' }} · {{ solicitud.supervisorUnidad || '—' }}</dd></div><div><dt>Supervisor propuesto</dt><dd>{{ solicitud.modoSupervisor === 'Propuesto' ? 'Sí' : 'No' }}</dd></div></dl></section>
+          <section class="detail-section"><h3><mat-icon>work_outline</mat-icon>Práctica</h3><dl><div><dt>Modalidad</dt><dd>{{ solicitud.horario.modalidad }}</dd></div><div><dt>Fechas propuestas</dt><dd>{{ solicitud.horario.fechaInicio | date:'dd-MM-yyyy' }} a {{ solicitud.horario.fechaTermino | date:'dd-MM-yyyy' }}</dd></div><div><dt>Días y horas</dt><dd>{{ solicitud.horario.dias.join(', ') }} · {{ solicitud.horario.horaDesde }}–{{ solicitud.horario.horaHasta }}</dd></div></dl><p class="schedule-note"><mat-icon>info</mat-icon>El horario es una propuesta y se confirma al iniciar la práctica.</p></section>
+          <section class="detail-section"><h3><mat-icon>task_alt</mat-icon>Tareas</h3><p class="tasks">{{ solicitud.tareas }}</p></section>
+          <section class="detail-section prerequisite-section" [class.prerequisite-section--fulfilled]="solicitud.habilitacionCumplida !== false" [class.prerequisite-section--not-fulfilled]="solicitud.habilitacionCumplida === false"><h3><mat-icon>{{ solicitud.habilitacionCumplida === false ? 'cancel' : 'check_circle' }}</mat-icon>{{ solicitud.habilitacionCumplida === false ? 'Prerrequisito no cumplido' : 'Prerrequisito cumplido' }}</h3></section>
+          @if (solicitud.modoCentro === 'Propuesto' || solicitud.modoSupervisor === 'Propuesto') { <div class="proposal-notice"><mat-icon>pending_actions</mat-icon><span>El centro y el supervisor propuestos ya están registrados como pendientes. La solicitud solo puede confirmarse cuando ambos cumplan las condiciones de alta y vigencia.</span></div> }
+          @if (solicitud.estado === 'Por revisar') { <section class="decision-section"><h3>Decisión de revisión</h3><label for="motivo">Motivo de devolución <span>(obligatorio si devuelves)</span></label><textarea id="motivo" rows="3" [ngModel]="motivo()" (ngModelChange)="motivo.set($event)" placeholder="Indica qué debe corregir o completar el estudiante."></textarea>@if (error()) { <small class="field-error" role="alert">{{ error() }}</small> }<div class="decision-actions"><button type="button" class="return-button" [disabled]="guardando()" (click)="devolver()"><mat-icon>undo</mat-icon>Devolver para corregir</button><button type="button" class="approve-button" [disabled]="guardando()" (click)="aprobar()"><mat-icon>check</mat-icon>Aprobar solicitud</button></div></section> }
+          @else if (solicitud.estado === 'Devuelta') { <div class="read-only-state"><strong>Solicitud devuelta</strong><span>El estudiante puede corregirla y reenviarla.</span>@if (solicitud.motivoDevolucion) { <p><b>Motivo:</b> {{ solicitud.motivoDevolucion }}</p> }</div> }
+          @else { <div class="read-only-state read-only-state--approved"><strong>Solicitud aprobada</strong><span>El horario propuesto se confirma al iniciar la práctica.</span></div> }
+        </div>
+      } @else { <div class="no-selection"><span class="empty-icon"><mat-icon>inbox</mat-icon></span><h2>Selecciona una solicitud</h2><p>El detalle de la postulación aparecerá aquí.</p></div> }
+    </section>
+  </div>
+</main>

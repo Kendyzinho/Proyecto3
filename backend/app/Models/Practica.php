@@ -10,7 +10,11 @@ class Practica extends Model
 {
     protected $table = 'practicas';
 
-    protected $fillable = ['habilitacion_id', 'supervisor_id', 'origen', 'modalidad', 'tareas', 'fecha_inicio', 'fecha_fin', 'justificacion_excepcional', 'registrada_por'];
+    protected $fillable = [
+        'habilitacion_id', 'supervisor_id', 'origen', 'centro_propuesto_en_solicitud',
+        'supervisor_propuesto_en_solicitud', 'modalidad', 'tareas', 'fecha_inicio', 'fecha_fin',
+        'justificacion_excepcional', 'registrada_por',
+    ];
 
     public function autoraRegistro(): BelongsTo
     {
@@ -19,7 +23,12 @@ class Practica extends Model
 
     protected function casts(): array
     {
-        return ['fecha_inicio' => 'date', 'fecha_fin' => 'date'];
+        return [
+            'fecha_inicio' => 'date',
+            'fecha_fin' => 'date',
+            'centro_propuesto_en_solicitud' => 'boolean',
+            'supervisor_propuesto_en_solicitud' => 'boolean',
+        ];
     }
 
     public function habilitacion(): BelongsTo
@@ -45,5 +54,10 @@ class Practica extends Model
     public function documentos(): HasMany
     {
         return $this->hasMany(Documento::class);
+    }
+
+    public function horarios(): HasMany
+    {
+        return $this->hasMany(Horario::class, 'practica_id');
     }
 }

@@ -5,6 +5,7 @@ use App\Http\Controllers\CentroPracticaController;
 use App\Http\Controllers\DocumentoController;
 use App\Http\Controllers\NominaController;
 use App\Http\Controllers\PracticaExcepcionalController;
+use App\Http\Controllers\SolicitudPracticaController;
 use App\Http\Controllers\UsuarioController;
 use App\Models\Periodo;
 use Illuminate\Support\Facades\Route;
@@ -21,6 +22,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
     Route::put('/me/password', [AuthController::class, 'cambiarContrasena'])->middleware('throttle:6,1');
+
+    // HU-09: solicitud profesional del estudiante y revisión por Coordinación.
+    Route::get('/practicas/solicitud-profesional', [SolicitudPracticaController::class, 'estudiante']);
+    Route::post('/practicas/solicitud-profesional', [SolicitudPracticaController::class, 'guardar']);
+    Route::get('/solicitudes-practica', [SolicitudPracticaController::class, 'bandeja']);
+    Route::post('/practicas/{practica}/decision', [SolicitudPracticaController::class, 'decidir']);
 
     Route::get('/periodos/actual', function () {
         $periodo = Periodo::actual();
