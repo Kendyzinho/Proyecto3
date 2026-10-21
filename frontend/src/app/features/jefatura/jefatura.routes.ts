@@ -1,6 +1,21 @@
 import { Routes } from '@angular/router';
 
-// Inicio provisorio hasta que exista el inicio real de este rol
+import { Marco, OpcionMenu } from '../../shared/marco/marco';
+
+// Las demás opciones (Prácticas, Visación y actas, Estadísticas, Comentarios) se suman cuando existan sus pantallas
+const MENU: OpcionMenu[] = [
+  { texto: 'Inicio', icono: 'home', ruta: '/jefatura' },
+  { texto: 'Mallas y prácticas', icono: 'account_tree', ruta: '/jefatura/mallas' },
+];
+
 export default [
-  { path: '', title: 'Inicio', loadComponent: () => import('../../shared/inicio-temporal/inicio-temporal').then((m) => m.InicioTemporal) },
+  {
+    path: '',
+    component: Marco,
+    data: { grupo: 'Jefatura de Carrera', menu: MENU },
+    children: [
+      { path: '', title: 'Inicio', loadComponent: () => import('../../shared/inicio-temporal/inicio-temporal').then((m) => m.InicioTemporal) },
+      { path: 'mallas', title: 'Mallas y prácticas', loadComponent: () => import('./mallas/mallas').then((m) => m.Mallas) },
+    ],
+  },
 ] satisfies Routes;
