@@ -10,11 +10,17 @@ export default [
       adaptable: true,
       menu: [
         { texto: 'Inicio', icono: 'home', ruta: '/coordinacion' },
+        { texto: 'Prácticas', icono: 'work', ruta: '/coordinacion/asignaciones' },
         { texto: 'Centros de práctica', icono: 'domain', ruta: '/coordinacion/centros' },
       ],
     },
     children: [
       { path: '', title: 'Inicio', loadComponent: () => import('./inicio').then((m) => m.InicioCoordinacion) },
+      {
+        path: 'asignaciones',
+        title: 'Asignación de prácticas',
+        loadComponent: () => import('./asignacion-practicas/asignacion-practicas').then((m) => m.AsignacionPracticas),
+      },
       {
         path: 'centros',
         title: 'Centros de práctica',

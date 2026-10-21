@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\AsignacionPracticaController;
 use App\Http\Controllers\CentroPracticaController;
 use App\Http\Controllers\DocumentoController;
 use App\Http\Controllers\NominaController;
@@ -18,6 +19,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/metricas', [PracticaExcepcionalController::class, 'metricas']);
         Route::get('/practicas-excepcionales/catalogo', [PracticaExcepcionalController::class, 'catalogo']);
         Route::post('/practicas-excepcionales', [PracticaExcepcionalController::class, 'store']);
+
+        // HU-08: asignación de prácticas laborales por perfil.
+        Route::get('/asignaciones/habilitaciones', [AsignacionPracticaController::class, 'habilitaciones']);
+        Route::get('/asignaciones/habilitaciones/{habilitacion}/centros', [AsignacionPracticaController::class, 'centros']);
+        Route::post('/asignaciones', [AsignacionPracticaController::class, 'asignar']);
     });
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);

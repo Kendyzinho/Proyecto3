@@ -29,7 +29,7 @@ export class AplicacionShell {
     const rol = this.usuario()?.rol;
     if (rol === 'coordinadora') return [
       { etiqueta: 'Inicio', icono: 'home', ruta: '/coordinacion' },
-      { etiqueta: 'Prácticas', icono: 'work' },
+      { etiqueta: 'Prácticas', icono: 'work', ruta: '/coordinacion/asignaciones' },
       { etiqueta: 'Solicitudes', icono: 'inbox', ruta: '/coordinacion/solicitudes' },
       { etiqueta: 'Centros de práctica', icono: 'domain', ruta: '/coordinacion/centros' },
       { etiqueta: 'Visitas técnicas', icono: 'event' },
