@@ -1,0 +1,10 @@
+:host { display: block; }
+.encabezado-pagina p { margin: 8px 0 0; color: #526582; }
+.metrica { display: flex; align-items: center; gap: 18px; padding: 24px; max-width: 420px; }
+.metrica__icono { padding: 12px; border-radius: 12px; background: #e8eef8; color: #355085; }
+.metrica__numero { font-size: 30px; }
+.metrica p { margin: 6px 0 0; color: #526582; }
+@media (max-width: 600px) {
+  .encabezado-pagina { align-items: flex-start; flex-direction: column; }
+  .metrica { padding: 20px; }
+}

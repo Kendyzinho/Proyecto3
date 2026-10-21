@@ -10,7 +10,12 @@ class Practica extends Model
 {
     protected $table = 'practicas';
 
-    protected $fillable = ['habilitacion_id', 'supervisor_id', 'origen', 'modalidad', 'tareas', 'fecha_inicio', 'fecha_fin'];
+    protected $fillable = ['habilitacion_id', 'supervisor_id', 'origen', 'modalidad', 'tareas', 'fecha_inicio', 'fecha_fin', 'justificacion_excepcional', 'registrada_por'];
+
+    public function autoraRegistro(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'registrada_por');
+    }
 
     protected function casts(): array
     {
@@ -35,5 +40,10 @@ class Practica extends Model
     public function dictamenes(): HasMany
     {
         return $this->hasMany(Dictamen::class)->orderByDesc('fecha')->orderByDesc('id');
+    }
+
+    public function documentos(): HasMany
+    {
+        return $this->hasMany(Documento::class);
     }
 }

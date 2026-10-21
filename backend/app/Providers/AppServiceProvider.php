@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -19,6 +20,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Ver config/mail.php: evita escribirles a los correos de los datos de prueba
+        if ($direccion = config('mail.siempre_a')) {
+            Mail::alwaysTo($direccion);
+        }
     }
 }

@@ -25,6 +25,11 @@ class Habilitacion extends Model
         return $this->belongsTo(Estudiante::class);
     }
 
+    public function tipoPractica(): BelongsTo
+    {
+        return $this->belongsTo(TipoPractica::class);
+    }
+
     public function periodo(): BelongsTo
     {
         return $this->belongsTo(Periodo::class);
@@ -33,5 +38,10 @@ class Habilitacion extends Model
     public function practicas(): HasMany
     {
         return $this->hasMany(Practica::class);
+    }
+
+    public function carga(): BelongsTo
+    {
+        return $this->belongsTo(CargaNomina::class, 'carga_id');
     }
 }

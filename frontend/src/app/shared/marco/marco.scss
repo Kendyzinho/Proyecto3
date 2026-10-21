@@ -1,0 +1,168 @@
+:host {
+  display: block;
+  height: 100%;
+}
+
+.marco {
+  height: 100%;
+  background: #f1f5f9;
+}
+
+.lateral {
+  width: 280px;
+  border-right: 1px solid #e2e8f0;
+  border-radius: 0;
+  background: #fff;
+}
+
+.lateral__encabezado {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 16px 20px;
+  background: #355085;
+  color: #fff;
+  text-align: center;
+}
+
+.marca {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.marca__separador {
+  width: 1px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.marca__nombre {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.lateral__usuario {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.lateral__rol {
+  margin: 4px 0 0;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.lateral__menu {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px 12px;
+}
+
+.lateral__grupo {
+  margin: 8px 12px 8px;
+  color: #99530f;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.opcion {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  height: 44px;
+  padding: 0 12px;
+  border-radius: 8px;
+  color: #1e293b;
+  font-size: 14px;
+  text-decoration: none;
+
+  mat-icon {
+    color: #5b6b80;
+  }
+
+  &:hover {
+    background: #f1f5f9;
+  }
+}
+
+.opcion--activa,
+.opcion--activa:hover {
+  background: #e1edf8;
+  color: #212d4a;
+  font-weight: 600;
+
+  mat-icon {
+    color: #355085;
+  }
+}
+
+.contenido {
+  display: flex;
+  flex-direction: column;
+}
+
+.barra {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  flex-shrink: 0; // sin esto, en páginas largas el flex la aplasta de 64 a 40 px
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+  padding: 0 16px;
+  background: #355085;
+  color: #fff;
+}
+
+.barra__usuario {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 24px;
+  background: transparent;
+  color: #fff;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+}
+
+.barra__avatar {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #edb01c;
+  color: #3f1b09;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.pagina {
+  width: 100%;
+  max-width: 1160px;
+  box-sizing: border-box;
+  margin: 0 auto;
+  padding: 32px 40px;
+}
+
+.barra > button {
+  color: #fff;
+}
+
+.marco--movil .pagina { padding: 24px 16px; }

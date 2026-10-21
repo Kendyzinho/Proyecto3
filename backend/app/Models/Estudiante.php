@@ -15,6 +15,12 @@ class Estudiante extends Model
         return $this->belongsTo(User::class);
     }
 
+    // Alias usado por los recursos de nómina
+    public function usuario(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
     public function habilitaciones(): HasMany
     {
         return $this->hasMany(Habilitacion::class);

@@ -20,4 +20,16 @@ class AcuerdoColaboracion extends Model
     {
         return $this->belongsTo(CentroPractica::class, 'centro_id');
     }
+
+    // fecha_inicio vacía = en trámite (ER)
+    public function estado(): string
+    {
+        if ($this->fecha_inicio === null || $this->fecha_inicio->isFuture()) {
+            return 'en_tramite';
+        }
+
+        return $this->fecha_termino !== null && $this->fecha_termino->isPast() && ! $this->fecha_termino->isToday()
+            ? 'vencido'
+            : 'vigente';
+    }
 }

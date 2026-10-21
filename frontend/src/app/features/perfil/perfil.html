@@ -1,0 +1,81 @@
+<main class="perfil">
+  <div class="encabezado">
+    <div>
+      <h1>Mi perfil</h1>
+      <p>Tus datos y tu contraseña</p>
+    </div>
+    <a matButton [routerLink]="auth.inicio()"><mat-icon>arrow_back</mat-icon>Volver al inicio</a>
+  </div>
+
+  <div class="columnas">
+    <section class="panel" aria-labelledby="datos-titulo" [attr.aria-busy]="cargando()">
+      <div class="panel__cabecera">
+        <mat-icon>person</mat-icon>
+        <div><h2 id="datos-titulo">Datos personales</h2><p>Solo lectura</p></div>
+      </div>
+
+      @if (cargando()) {
+        <div class="carga" role="status"><mat-spinner diameter="24" aria-label="Cargando perfil" />Cargando tus datos…</div>
+      } @else if (errorCarga(); as mensaje) {
+        <div class="panel__cuerpo">
+          <p class="aviso aviso--error" role="alert">{{ mensaje }}</p>
+          <button matButton="outlined" type="button" (click)="cargarPerfil()">Reintentar</button>
+        </div>
+      } @else if (usuario(); as datos) {
+        <dl class="datos">
+          <div><dt>Nombre</dt><dd>{{ datos.name }}</dd></div>
+          <div><dt>RUT</dt><dd>{{ datos.rut || 'No registrado' }}</dd></div>
+          <div><dt>Correo electrónico</dt><dd>{{ datos.email }}</dd></div>
+          <div><dt>Rol</dt><dd>{{ roles[datos.rol] }}</dd></div>
+        </dl>
+        <p class="nota"><mat-icon>info</mat-icon>Para corregir tus datos, contacta a la Secretaría de Jefatura.</p>
+      } @else {
+        <div class="panel__cuerpo">
+          <p role="status">No hay datos de perfil disponibles.</p>
+          <button matButton="outlined" type="button" (click)="cargarPerfil()">Volver a cargar</button>
+        </div>
+      }
+    </section>
+
+    <section class="panel" aria-labelledby="clave-titulo">
+      <div class="panel__cabecera">
+        <mat-icon>lock</mat-icon>
+        <div><h2 id="clave-titulo">Cambiar contraseña</h2><p>Necesitas tu contraseña actual</p></div>
+      </div>
+      <form class="panel__cuerpo campos" [formGroup]="form" (ngSubmit)="guardar()" novalidate [attr.aria-busy]="guardando()">
+        @if (guardado()) {
+          <p class="aviso" role="status"><mat-icon>check_circle</mat-icon>Contraseña actualizada. Tu sesión sigue activa.</p>
+        }
+        @if (errorGuardado(); as mensaje) {
+          <p class="aviso aviso--error" role="alert">{{ mensaje }}</p>
+        }
+
+        @for (campo of campos; track campo.clave) {
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label>{{ campo.etiqueta }}</mat-label>
+            <input matInput [id]="campo.clave" [type]="visibles()[campo.clave] ? 'text' : 'password'"
+                   [formControlName]="campo.clave" [autocomplete]="campo.autocomplete"
+                   [errorStateMatcher]="erroresDeClave" aria-describedby="politica-clave" />
+            <button mat-icon-button matSuffix type="button" [disabled]="guardando()"
+                    (click)="alternarVisibilidad(campo.clave)"
+                    [attr.aria-label]="(visibles()[campo.clave] ? 'Ocultar ' : 'Mostrar ') + campo.etiqueta.toLowerCase()"
+                    [attr.aria-pressed]="visibles()[campo.clave]">
+              <mat-icon>{{ visibles()[campo.clave] ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
+            <mat-error>{{ mensajeCampo(campo.clave) }}</mat-error>
+          </mat-form-field>
+        }
+
+        <div class="politica" id="politica-clave">
+          <strong>La nueva contraseña debe tener:</strong>
+          <ul><li>Al menos 8 caracteres</li><li>Una letra mayúscula</li><li>Un número</li></ul>
+          <p>Debe ser distinta de tu contraseña actual.</p>
+        </div>
+        <button matButton="filled" type="submit" [disabled]="guardando() || cargando() || !usuario()">
+          <mat-icon>{{ guardando() ? 'hourglass_top' : 'check' }}</mat-icon>
+          {{ guardando() ? 'Guardando…' : 'Guardar nueva contraseña' }}
+        </button>
+      </form>
+    </section>
+  </div>
+</main>
