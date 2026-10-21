@@ -1,0 +1,90 @@
+.planilla {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.planilla__periodo {
+  width: 280px;
+  flex-shrink: 0;
+}
+
+.oculto {
+  display: none;
+}
+
+.archivo {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 16px;
+  min-height: 78px;
+  padding: 0 16px;
+  box-sizing: border-box;
+  border: 1px dashed #7c8aa0;
+  border-radius: 12px;
+  background: #f7f9fc;
+}
+
+.archivo__icono {
+  color: #355085;
+}
+
+.archivo__nombre {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 0 24px 20px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: #fee2e2;
+  font-size: 14px;
+  line-height: 20px;
+
+  mat-icon {
+    flex-shrink: 0;
+    color: #b91c1c;
+  }
+}
+
+.resumen {
+  display: flex;
+  gap: 28px;
+  padding: 16px 24px;
+}
+
+.vacio {
+  margin: 0;
+  padding: 32px 24px;
+  color: #5b6b80;
+  font-size: 14px;
+}
+
+.con-motivo {
+  cursor: help;
+  text-decoration: underline dotted;
+  text-underline-offset: 4px;
+}
+
+.pie {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 24px 16px 8px;
+
+  &[hidden] {
+    display: none;
+  }
+}
+
+.pie__acciones {
+  display: flex;
+  gap: 12px;
+}

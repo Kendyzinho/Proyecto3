@@ -4,7 +4,12 @@ import { MatIconModule } from '@angular/material/icon';
 
 import { Auth } from '../../core/services/auth';
 
-interface OpcionMenu { etiqueta: string; icono: string; ruta?: string; badge?: number; }
+interface OpcionMenu {
+  etiqueta: string;
+  icono: string;
+  ruta?: string;
+  badge?: number;
+}
 
 @Component({
   selector: 'app-aplicacion-shell',
@@ -33,12 +38,13 @@ export class AplicacionShell {
     ];
     if (rol === 'estudiante') return [
       { etiqueta: 'Inicio', icono: 'home', ruta: '/estudiante' },
-      { etiqueta: 'Mi asistencia', icono: 'schedule' },
+      { etiqueta: 'Mi asistencia', icono: 'schedule', ruta: '/estudiante/asistencia' },
       { etiqueta: 'Solicitud de práctica', icono: 'send', ruta: '/estudiante/solicitud' },
-      { etiqueta: 'Evaluación del centro', icono: 'assignment' },
-      { etiqueta: 'Portafolio', icono: 'link' },
+      { etiqueta: 'Evaluación del centro', icono: 'assignment', ruta: '/estudiante/evaluacion' },
+      { etiqueta: 'Portafolio', icono: 'link', ruta: '/estudiante/portafolio' },
     ];
-    return [{ etiqueta: 'Inicio', icono: 'home', ruta: this.auth.inicio() }];
+    const etiqueta = rol === 'secretaria' ? 'Secretaría de Jefatura' : 'Jefatura de Carrera';
+    return [{ etiqueta: 'Inicio', icono: 'home', ruta: rol === 'secretaria' ? '/secretaria' : '/jefatura' }, { etiqueta, icono: 'dashboard' }];
   });
   protected readonly nombreRol = computed(() => ({ coordinadora: 'Coordinadora de Prácticas', estudiante: 'Estudiante Practicante', secretaria: 'Secretaria de Jefatura', jefe: 'Jefatura de Carrera' })[this.usuario()?.rol ?? 'estudiante']);
 

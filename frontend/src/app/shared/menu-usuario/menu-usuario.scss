@@ -1,0 +1,37 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.usuario {
+  color: #fff;
+
+  .avatar {
+    display: inline-grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    margin-right: 8px;
+    border-radius: 50%;
+    background: #edb01c;
+    color: #3f1b09;
+    font-size: 12px;
+    font-weight: 600;
+    vertical-align: middle;
+  }
+
+  .nombre {
+    display: inline-block;
+    max-width: 240px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: middle;
+  }
+}
+
+@media (max-width: 600px) {
+  .usuario .nombre {
+    display: none;
+  }
+}

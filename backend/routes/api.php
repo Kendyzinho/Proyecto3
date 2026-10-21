@@ -2,21 +2,68 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CentroPracticaController;
+use App\Http\Controllers\DocumentoController;
+use App\Http\Controllers\NominaController;
+use App\Http\Controllers\PracticaExcepcionalController;
 use App\Http\Controllers\SolicitudPracticaController;
+use App\Http\Controllers\UsuarioController;
+use App\Models\Periodo;
 use Illuminate\Support\Facades\Route;
 
 // HU-01: máximo 6 intentos por minuto para frenar ataques de fuerza bruta
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:6,1');
 
 Route::middleware('auth:sanctum')->group(function () {
+    Route::middleware('rol:coordinadora')->prefix('coordinacion')->group(function () {
+        Route::get('/metricas', [PracticaExcepcionalController::class, 'metricas']);
+        Route::get('/practicas-excepcionales/catalogo', [PracticaExcepcionalController::class, 'catalogo']);
+        Route::post('/practicas-excepcionales', [PracticaExcepcionalController::class, 'store']);
+    });
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
+    Route::put('/me/password', [AuthController::class, 'cambiarContrasena'])->middleware('throttle:6,1');
 
-    // HU-09: solicitudes de Práctica Profesional del estudiante y revisión de Coordinación.
+    // HU-09: solicitud profesional del estudiante y revisión por Coordinación.
     Route::get('/practicas/solicitud-profesional', [SolicitudPracticaController::class, 'estudiante']);
     Route::post('/practicas/solicitud-profesional', [SolicitudPracticaController::class, 'guardar']);
     Route::get('/solicitudes-practica', [SolicitudPracticaController::class, 'bandeja']);
     Route::post('/practicas/{practica}/decision', [SolicitudPracticaController::class, 'decidir']);
+
+    Route::get('/periodos/actual', function () {
+        $periodo = Periodo::actual();
+
+        return response()->json($periodo ? ['id' => $periodo->id, 'nombre' => $periodo->nombre()] : null);
+    });
+
+    // HU-05: cuentas de usuario, solo la Secretaria de Jefatura.
+    Route::middleware('rol:secretaria')->prefix('usuarios')->group(function () {
+        Route::get('/', [UsuarioController::class, 'index']);
+        Route::post('/', [UsuarioController::class, 'store']);
+        Route::put('/{usuario}', [UsuarioController::class, 'update']);
+        Route::post('/{usuario}/desactivar', [UsuarioController::class, 'desactivar']);
+        Route::post('/{usuario}/reactivar', [UsuarioController::class, 'reactivar']);
+    });
+
+    // HU-07: nómina de estudiantes, solo la Secretaria de Jefatura.
+    Route::middleware('rol:secretaria')->prefix('nomina')->group(function () {
+        Route::get('/', [NominaController::class, 'index']);
+        Route::get('/catalogo', [NominaController::class, 'catalogo']);
+        Route::get('/plantilla', [NominaController::class, 'plantilla']);
+        Route::get('/exportar', [NominaController::class, 'exportar']);
+        Route::post('/revisar', [NominaController::class, 'revisar']);
+        Route::post('/confirmar', [NominaController::class, 'confirmar']);
+        Route::post('/estudiantes', [NominaController::class, 'agregar']);
+    });
+
+    // HU-10: documentos de prácticas y acuerdos de colaboración.
+    Route::middleware('rol:secretaria,coordinadora')->group(function () {
+        Route::get('/documentos', [DocumentoController::class, 'index']);
+        Route::get('/practicas/{practica}/documentos', [DocumentoController::class, 'show']);
+        Route::get('/practicas/{practica}/documentos/{tipo}', [DocumentoController::class, 'descargar']);
+        Route::post('/practicas/{practica}/documentos/enviar', [DocumentoController::class, 'enviar']);
+        Route::post('/centros/{centro}/acuerdo', [DocumentoController::class, 'guardarAcuerdo']);
+        Route::get('/acuerdos/{acuerdo}/archivo', [DocumentoController::class, 'archivoAcuerdo']);
+    });
 
     // HU-12: catálogo de centros; las mutaciones y bajas verifican rol coordinadora.
     Route::get('/areas', [CentroPracticaController::class, 'areas']);

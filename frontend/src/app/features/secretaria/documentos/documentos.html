@@ -1,0 +1,127 @@
+<div class="encabezado-pagina">
+  <h1>Documentos</h1>
+</div>
+
+<div class="columnas">
+  <section class="tarjeta lista">
+    <div class="tarjeta__cabecera">
+      <h2>Prácticas por formalizar</h2>
+    </div>
+
+    @if (practicas().length === 0) {
+      <p class="vacio">No hay prácticas con centro en el {{ periodo()?.nombre }}.</p>
+    } @else {
+      <div class="lista__encabezado">
+        <span>Estudiante</span>
+        <span>Carta</span>
+        <span>Seguro</span>
+      </div>
+      @for (practica of practicas(); track practica.id) {
+        <button type="button" class="lista__fila" [class.lista__fila--activa]="detalle()?.id === practica.id" (click)="elegir(practica)">
+          <span class="persona">
+            <span class="avatar">{{ iniciales(practica.estudiante) }}</span>
+            <span class="persona__nombre">{{ practica.estudiante }}</span>
+          </span>
+          <span class="estado" [class]="claseEstado(practica.carta.estado)">{{ textoEstado(practica.carta.estado, 'carta') }}</span>
+          <span class="estado" [class]="claseEstado(practica.seguro.estado)">{{ textoEstado(practica.seguro.estado, 'seguro') }}</span>
+        </button>
+      }
+    }
+  </section>
+
+  @if (detalle(); as actual) {
+    <section class="tarjeta detalle">
+      <div class="tarjeta__cabecera">
+        <h2>{{ actual.estudiante }}</h2>
+      </div>
+
+      <mat-tab-group [selectedIndex]="pestana()" (selectedIndexChange)="pestana.set($event)" animationDuration="0ms">
+        <mat-tab label="Carta de presentación">
+          <div class="hoja-contenedor">
+            @if (actual.con_acuerdo) {
+              <article class="hoja">
+                <div class="membrete">
+                  <img src="logos/uta-horizontal.png" alt="Universidad de Tarapacá" width="145" height="40" />
+                  <p>{{ actual.textos.carta.unidad }}</p>
+                </div>
+                <p class="hoja__fecha">{{ actual.textos.carta.lugar_fecha }}</p>
+                <div class="hoja__bloque">
+                  @for (linea of actual.textos.carta.destinatario; track $index) {
+                    <p>{{ linea }}</p>
+                  }
+                </div>
+                @for (parrafo of actual.textos.carta.parrafos; track $index) {
+                  <p>{{ parrafo }}</p>
+                }
+                <div class="hoja__firma">
+                  <p class="hoja__firma-nombre">{{ actual.textos.carta.firma[0] }}</p>
+                  <p class="hoja__firma-cargo">{{ actual.textos.carta.firma[1] }}</p>
+                </div>
+              </article>
+            } @else {
+              <p class="bloqueo">El centro no tiene un acuerdo de colaboración vigente (Art. 15).</p>
+            }
+          </div>
+        </mat-tab>
+
+        <mat-tab label="Seguro escolar">
+          <div class="hoja-contenedor">
+            @if (actual.con_acuerdo) {
+              <article class="hoja">
+                <div class="membrete">
+                  <img src="logos/uta-horizontal.png" alt="Universidad de Tarapacá" width="145" height="40" />
+                  <p>{{ actual.textos.seguro.unidad }}</p>
+                </div>
+                <h3 class="hoja__titulo">{{ actual.textos.seguro.titulo }}</h3>
+                <dl class="hoja__datos">
+                  @for (dato of actual.textos.seguro.datos | keyvalue: sinOrden; track dato.key) {
+                    <dt>{{ dato.key }}</dt>
+                    <dd>{{ dato.value }}</dd>
+                  }
+                </dl>
+                @for (seccion of actual.textos.seguro.secciones; track seccion.titulo) {
+                  <h4>{{ seccion.titulo }}</h4>
+                  @if (seccion.texto) {
+                    <p>{{ seccion.texto }}</p>
+                  }
+                  @if (seccion.pasos) {
+                    <ol>
+                      @for (paso of seccion.pasos; track $index) {
+                        <li>{{ paso }}</li>
+                      }
+                    </ol>
+                  }
+                }
+              </article>
+            } @else {
+              <p class="bloqueo">El centro no tiene un acuerdo de colaboración vigente (Art. 15).</p>
+            }
+          </div>
+        </mat-tab>
+
+        <mat-tab label="Acuerdo">
+          <div class="tarjeta__cuerpo">
+            @if (actual.centro_interno) {
+              <p class="bloqueo">No aplica: {{ actual.centro }} es un centro interno.</p>
+            } @else {
+              <app-acuerdo-centro [centroId]="actual.centro_id" [acuerdo]="actual.acuerdo" (guardado)="acuerdoGuardado()" />
+            }
+          </div>
+        </mat-tab>
+      </mat-tab-group>
+
+      @if (tipoActual()) {
+        <div class="pie">
+          <button matButton="outlined" type="button" [disabled]="ocupado() || !actual.con_acuerdo" (click)="descargarPdf()">
+            <mat-icon>picture_as_pdf</mat-icon>
+            Descargar PDF
+          </button>
+          <button matButton="filled" type="button" [disabled]="ocupado() || !actual.con_acuerdo" (click)="enviar()">
+            <mat-icon>send</mat-icon>
+            {{ ocupado() ? 'Enviando…' : 'Enviar al estudiante y al centro' }}
+          </button>
+        </div>
+      }
+    </section>
+  }
+</div>

@@ -40,6 +40,18 @@ class CentroPractica extends Model
         return $this->hasMany(AcuerdoColaboracion::class, 'centro_id');
     }
 
+    // Último acuerdo registrado, esté vigente, en trámite o vencido
+    public function acuerdoActual(): ?AcuerdoColaboracion
+    {
+        return $this->acuerdos()->latest('id')->first();
+    }
+
+    // Art. 15: sin acuerdo vigente el centro no recibe estudiantes. El centro interno (UTA) no lo necesita
+    public function puedeRecibirEstudiantes(): bool
+    {
+        return $this->es_interno || $this->acuerdoActual()?->estado() === 'vigente';
+    }
+
     public function requerimientos(): HasMany
     {
         return $this->hasMany(RequerimientoCentro::class, 'centro_id');

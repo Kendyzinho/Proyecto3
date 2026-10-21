@@ -1,0 +1,38 @@
+<mat-sidenav-container class="marco" [class.marco--movil]="movil()">
+  <mat-sidenav class="lateral" [mode]="movil() ? 'over' : 'side'" [opened]="movil() ? menuMovil() : menuAbierto()" (closedStart)="menuMovil.set(false)">
+    <div class="lateral__encabezado">
+      <div class="marca">
+        <img src="logos/dm-blanco.svg" alt="Diseño Multimedia UTarapacá" width="98" height="40" />
+        <span class="marca__separador"></span>
+        <span class="marca__nombre">Prácticas</span>
+      </div>
+      @if (auth.usuario(); as usuario) {
+        <p class="lateral__usuario">{{ usuario.name }}</p>
+        <p class="lateral__rol">{{ nombreRol() }}</p>
+      }
+    </div>
+
+    <nav class="lateral__menu">
+      <p class="lateral__grupo">{{ grupoVisible() }}</p>
+      @for (opcion of menuVisible(); track opcion.ruta) {
+        <a class="opcion" [routerLink]="opcion.ruta" routerLinkActive="opcion--activa" [routerLinkActiveOptions]="{ exact: true }" (click)="menuMovil.set(false)">
+          <mat-icon>{{ opcion.icono }}</mat-icon>
+          <span>{{ opcion.texto }}</span>
+        </a>
+      }
+    </nav>
+  </mat-sidenav>
+
+  <mat-sidenav-content class="contenido">
+    <header class="barra">
+      <button mat-icon-button type="button" aria-label="Mostrar u ocultar el menú" (click)="movil() ? menuMovil.set(!menuMovil()) : menuAbierto.set(!menuAbierto())">
+        <mat-icon>menu</mat-icon>
+      </button>
+      <app-menu-usuario />
+    </header>
+
+    <main class="pagina">
+      <router-outlet />
+    </main>
+  </mat-sidenav-content>
+</mat-sidenav-container>
