@@ -1,0 +1,36 @@
+<div class="shell" [class.shell--collapsed]="menuColapsado()" [class.shell--mobile-open]="menuMovilAbierto()">
+  <aside class="sidebar">
+    <div class="brand"><img src="/brand/logodm-blanco.png" alt="Diseño Multimedia UTA" /><span class="brand-divider"></span><strong>Prácticas</strong></div>
+    <div class="user-card"><span class="user-name">{{ usuario()?.name }}</span><span class="user-role">{{ nombreRol() }}</span></div>
+    <nav aria-label="Navegación principal" class="navigation">
+      <p class="nav-section">{{ usuario()?.rol === 'coordinadora' ? 'COORDINACIÓN DE PRÁCTICAS' : usuario()?.rol === 'estudiante' ? 'ESTUDIANTE' : 'SISTEMA DE PRÁCTICAS' }}</p>
+      @for (opcion of menu(); track opcion.etiqueta) {
+        @if (opcion.ruta) {
+          <a class="nav-item" [routerLink]="opcion.ruta" routerLinkActive="nav-item--active" [routerLinkActiveOptions]="{ exact: opcion.etiqueta === 'Inicio' }" (click)="cerrarMenus()" [title]="menuColapsado() ? opcion.etiqueta : ''">
+            <mat-icon aria-hidden="true">{{ opcion.icono }}</mat-icon><span class="nav-label">{{ opcion.etiqueta }}</span>
+            @if (opcion.badge) { <span class="badge">{{ opcion.badge }}</span> }
+          </a>
+        } @else {
+          <span class="nav-item nav-item--disabled" [title]="opcion.etiqueta"><mat-icon aria-hidden="true">{{ opcion.icono }}</mat-icon><span class="nav-label">{{ opcion.etiqueta }}</span></span>
+        }
+      }
+    </nav>
+  </aside>
+  @if (menuMovilAbierto()) { <button class="backdrop" type="button" aria-label="Cerrar menú" (click)="menuMovilAbierto.set(false)"></button> }
+  <div class="workspace">
+    <header class="topbar">
+      <button class="icon-button menu-toggle" type="button" aria-label="Expandir o contraer menú" (click)="alternarMenu()"><mat-icon>menu</mat-icon></button>
+      <div class="topbar-actions">
+        <div class="popover-anchor">
+          <button class="icon-button bell" type="button" aria-label="Notificaciones" [attr.aria-expanded]="mostrarNotificaciones()" (click)="mostrarNotificaciones.update((v) => !v); mostrarPerfil.set(false)"><mat-icon>notifications_none</mat-icon></button>
+          @if (mostrarNotificaciones()) { <section class="popover notification-popover"><strong>Notificaciones</strong><p>No hay notificaciones nuevas.</p></section> }
+        </div>
+        <div class="popover-anchor">
+          <button class="profile-button" type="button" [attr.aria-expanded]="mostrarPerfil()" (click)="mostrarPerfil.update((v) => !v); mostrarNotificaciones.set(false)"><span class="profile-avatar">{{ iniciales() }}</span><span class="profile-name">{{ usuario()?.name }}</span><mat-icon>expand_more</mat-icon></button>
+          @if (mostrarPerfil()) { <section class="popover profile-popover"><strong>{{ usuario()?.name }}</strong><small>{{ usuario()?.email }}</small><button type="button" (click)="auth.logout()">Cerrar sesión</button></section> }
+        </div>
+      </div>
+    </header>
+    <div class="content" (click)="cerrarMenus()"><ng-content /></div>
+  </div>
+</div>

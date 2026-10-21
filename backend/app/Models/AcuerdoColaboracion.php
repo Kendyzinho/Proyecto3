@@ -13,10 +13,7 @@ class AcuerdoColaboracion extends Model
 
     protected function casts(): array
     {
-        return [
-            'fecha_inicio' => 'date',
-            'fecha_termino' => 'date',
-        ];
+        return ['fecha_inicio' => 'date', 'fecha_termino' => 'date'];
     }
 
     public function centro(): BelongsTo

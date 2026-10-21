@@ -3,10 +3,16 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Periodo extends Model
 {
     protected $fillable = ['anio', 'semestre'];
+
+    public function requerimientosCentro(): HasMany
+    {
+        return $this->hasMany(RequerimientoCentro::class);
+    }
 
     // Período en curso según la fecha (2º semestre desde julio); si no existe, el más reciente
     public static function actual(): ?self

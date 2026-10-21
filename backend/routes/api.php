@@ -1,13 +1,13 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CentroPracticaController;
 use App\Http\Controllers\DocumentoController;
 use App\Http\Controllers\NominaController;
 use App\Http\Controllers\PracticaExcepcionalController;
+use App\Http\Controllers\UsuarioController;
 use App\Models\Periodo;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\UsuarioController;
-
 
 // HU-01: máximo 6 intentos por minuto para frenar ataques de fuerza bruta
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:6,1');
@@ -22,23 +22,22 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::put('/me/password', [AuthController::class, 'cambiarContrasena'])->middleware('throttle:6,1');
 
-    // Período en curso, para las pantallas de cualquier rol
     Route::get('/periodos/actual', function () {
         $periodo = Periodo::actual();
 
         return response()->json($periodo ? ['id' => $periodo->id, 'nombre' => $periodo->nombre()] : null);
     });
-    // HU-05: cuentas de usuario, solo la Secretaria de Jefatura
-Route::middleware('rol:secretaria')->prefix('usuarios')->group(function () {
-    Route::get('/', [UsuarioController::class, 'index']);
-    Route::post('/', [UsuarioController::class, 'store']);
-    Route::put('/{usuario}', [UsuarioController::class, 'update']);
-    Route::post('/{usuario}/desactivar', [UsuarioController::class, 'desactivar']);
-    Route::post('/{usuario}/reactivar', [UsuarioController::class, 'reactivar']);
+
+    // HU-05: cuentas de usuario, solo la Secretaria de Jefatura.
+    Route::middleware('rol:secretaria')->prefix('usuarios')->group(function () {
+        Route::get('/', [UsuarioController::class, 'index']);
+        Route::post('/', [UsuarioController::class, 'store']);
+        Route::put('/{usuario}', [UsuarioController::class, 'update']);
+        Route::post('/{usuario}/desactivar', [UsuarioController::class, 'desactivar']);
+        Route::post('/{usuario}/reactivar', [UsuarioController::class, 'reactivar']);
     });
 
-
-    // HU-07: nómina de estudiantes, solo la Secretaria de Jefatura
+    // HU-07: nómina de estudiantes, solo la Secretaria de Jefatura.
     Route::middleware('rol:secretaria')->prefix('nomina')->group(function () {
         Route::get('/', [NominaController::class, 'index']);
         Route::get('/catalogo', [NominaController::class, 'catalogo']);
@@ -49,7 +48,7 @@ Route::middleware('rol:secretaria')->prefix('usuarios')->group(function () {
         Route::post('/estudiantes', [NominaController::class, 'agregar']);
     });
 
-    // HU-10: carta de presentación, guía del seguro escolar y acuerdo de colaboración
+    // HU-10: documentos de prácticas y acuerdos de colaboración.
     Route::middleware('rol:secretaria,coordinadora')->group(function () {
         Route::get('/documentos', [DocumentoController::class, 'index']);
         Route::get('/practicas/{practica}/documentos', [DocumentoController::class, 'show']);
@@ -58,4 +57,15 @@ Route::middleware('rol:secretaria')->prefix('usuarios')->group(function () {
         Route::post('/centros/{centro}/acuerdo', [DocumentoController::class, 'guardarAcuerdo']);
         Route::get('/acuerdos/{acuerdo}/archivo', [DocumentoController::class, 'archivoAcuerdo']);
     });
+
+    // HU-12: catálogo de centros; las mutaciones y bajas verifican rol coordinadora.
+    Route::get('/areas', [CentroPracticaController::class, 'areas']);
+    Route::post('/areas', [CentroPracticaController::class, 'storeArea']);
+    Route::get('/periodos', [CentroPracticaController::class, 'periodos']);
+    Route::get('/centros-practica', [CentroPracticaController::class, 'index']);
+    Route::get('/centros-practica/{centroPractica}', [CentroPracticaController::class, 'show']);
+    Route::post('/centros-practica', [CentroPracticaController::class, 'store']);
+    Route::put('/centros-practica/{centroPractica}', [CentroPracticaController::class, 'update']);
+    Route::post('/centros-practica/{centroPractica}/dar-de-baja', [CentroPracticaController::class, 'darDeBaja']);
+    Route::post('/centros-practica/{centroPractica}/reactivar', [CentroPracticaController::class, 'reactivar']);
 });
