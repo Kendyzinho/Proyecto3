@@ -32,7 +32,8 @@ const AREAS_BASE = [
 })
 export class CentrosPractica {
   private readonly centrosService = inject(CentrosPracticaService);
-  private readonly centros = signal(this.centrosService.listar());
+  private readonly centros = signal<CentroPractica[]>([]);
+  protected readonly errorCargaCatalogo = signal('');
 
   protected readonly busqueda = signal('');
   protected readonly filtroAcuerdo = signal<FiltroAcuerdo>('Todos');
@@ -54,6 +55,10 @@ export class CentrosPractica {
   protected cantidadNuevoCupo = 1;
 
   protected nuevoCentro = this.formularioVacio();
+
+  constructor() {
+    this.recargarCatalogo();
+  }
 
   protected readonly centrosVisibles = computed(() => {
     const termino = this.busqueda().trim().toLocaleLowerCase('es');
@@ -101,6 +106,14 @@ export class CentrosPractica {
 
   protected buscar(valor: string): void {
     this.busqueda.set(valor);
+  }
+
+  private recargarCatalogo(): void {
+    this.errorCargaCatalogo.set('');
+    this.centrosService.listar().subscribe({
+      next: (centros) => this.centros.set(centros),
+      error: () => this.errorCargaCatalogo.set('No se pudo cargar el catálogo desde el backend. Comprueba que Laravel esté iniciado y que el servidor tenga centros registrados.'),
+    });
   }
 
   protected seleccionarFiltroAcuerdo(valor: FiltroAcuerdo): void {

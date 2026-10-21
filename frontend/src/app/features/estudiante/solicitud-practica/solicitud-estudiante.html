@@ -2,7 +2,10 @@
   <div class="breadcrumb"><a routerLink="/estudiante">Inicio</a><span aria-hidden="true">/</span><span>Solicitud de práctica</span></div>
   <header class="page-heading"><div><p class="eyebrow">PRÁCTICA PROFESIONAL</p><h1>Solicitud de Práctica Profesional</h1><p>Completa la información del centro, la supervisión y el horario propuesto para solicitar aprobación.</p></div></header>
 
-  @if (!service.habilitacion().puedePostular) {
+  @if (service.errorApi()) { <div class="notice" role="alert">{{ service.errorApi() }}</div> }
+  @if (service.cargando()) {
+    <section class="eligibility-block" role="status"><span class="eligibility-icon"><mat-icon>hourglass_top</mat-icon></span><div><h2>Consultando habilitación</h2><p>Estamos cargando tu habilitación y los centros disponibles.</p></div></section>
+  } @else if (!service.habilitacion().puedePostular && !solicitud()) {
     <section class="eligibility-block" role="status"><span class="eligibility-icon"><mat-icon>lock</mat-icon></span><div><h2>Aún no puedes postular</h2><p>{{ service.habilitacion().motivo }}</p><small>Cuando cumplas el prerrequisito, esta solicitud estará disponible.</small></div></section>
   } @else {
     @if (solicitud(); as actual) {
@@ -22,7 +25,7 @@
           <h2><mat-icon aria-hidden="true">domain</mat-icon><span>1. Centro de práctica</span></h2>
           <div class="field-block">
             <label for="centro">Selecciona un centro registrado</label>
-            <div class="select-action"><select id="centro" name="centro" [ngModel]="formulario.centroId" (ngModelChange)="seleccionarCentro($event === null ? null : +$event)"><option [ngValue]="null">Elige un centro</option>@for (centro of centros; track centro.id) { <option [ngValue]="centro.id">{{ centro.nombre }} — {{ centro.rut }}</option> }</select><button class="text-action" type="button" (click)="proponerCentro()"><mat-icon>add</mat-icon>Proponer otro centro</button></div>
+            <div class="select-action"><select id="centro" name="centro" [ngModel]="formulario.centroId" (ngModelChange)="seleccionarCentro($event === null || $event === '' ? null : +$event)"><option [ngValue]="null">Elige un centro</option>@for (centro of centros(); track centro.id) { <option [ngValue]="centro.id">{{ centro.nombre }} — {{ centro.rut }}</option> }</select><button class="text-action" type="button" (click)="proponerCentro()"><mat-icon>add</mat-icon>Proponer otro centro</button></div>
             @if (centroSeleccionado(); as centro) { <p class="field-hint" [class.field-hint--success]="centro.esInterno || centro.acuerdo === 'Vigente'"><mat-icon>{{ centro.esInterno ? 'apartment' : 'verified' }}</mat-icon>{{ centro.esInterno ? 'Centro interno UTA' : 'Registrado con acuerdo vigente' }} · {{ centro.razonSocial }} · RUT {{ centro.rut }} · {{ centro.direccion }}</p> }
             @if (mostrarError(centroSeleccionado() === null && formulario.modoCentro === 'Registrado')) { <small class="field-error">Selecciona un centro o indica que propondrás uno nuevo.</small> }
           </div>

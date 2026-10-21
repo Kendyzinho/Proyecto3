@@ -1,107 +1,161 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Injectable, inject, signal } from '@angular/core';
+import { Observable, forkJoin, map, tap } from 'rxjs';
 
-import { Auth } from '../../core/services/auth';
-import { CentrosPracticaService } from '../coordinacion/centros-practica/centros-practica.service';
+import { CentroPractica } from '../coordinacion/centros-practica/centro-practica.model';
 import { HistorialDecision, SolicitudFormulario, SolicitudPractica } from './solicitud-practica.model';
 
-const CLAVES = {
-  solicitudes: 'demo_solicitudes_practica',
-  historial: 'demo_historial_practica',
-  practicas: 'demo_practicas_solicitud',
-} as const;
-
-function leer<T>(clave: string): T[] {
-  try {
-    const contenido = typeof localStorage === 'undefined' ? null : localStorage.getItem(clave);
-    return contenido ? JSON.parse(contenido) as T[] : [];
-  } catch {
-    return [];
-  }
+interface ApiResponse<T> { data: T }
+interface CentroApi {
+  id: number; nombre: string; razon_social: string; rut: string | null; direccion: string | null;
+  telefono: string | null; es_interno: boolean; estado: string; estado_acuerdo: string;
+  supervisores: Array<{ id: number; nombre: string; correo: string; cargo: string | null; unidad: string | null; telefono: string | null; fecha_alta: string | null; fecha_baja: string | null }>;
 }
+interface EstadoEstudianteApi {
+  habilitacion: { id: number | null; puede_postular: boolean; motivo: string; periodo?: string; cumple_prerrequisito?: boolean };
+  solicitud: SolicitudPractica | null;
+  borrador?: SolicitudFormulario | null;
+}
+
+const ESTADO_VACIO = { puedePostular: false, motivo: 'Consultando tu habilitación de práctica profesional…' };
 
 @Injectable({ providedIn: 'root' })
 export class SolicitudesPracticaService {
-  private readonly auth = inject(Auth);
-  private readonly catalogoCentros = inject(CentrosPracticaService);
-  readonly todosLosCentros = this.catalogoCentros.listar();
-  readonly centros = this.todosLosCentros.filter((centro) => centro.estado === 'Activo' && (centro.esInterno || centro.acuerdo === 'Vigente'));
-  readonly habilitacion = signal({ puedePostular: true, motivo: 'Debes aprobar la asignatura prerrequisito para solicitar una práctica profesional.' });
-  readonly solicitudes = signal<SolicitudPractica[]>(leer<SolicitudPractica>(CLAVES.solicitudes));
-  readonly historial = signal<HistorialDecision[]>(leer<HistorialDecision>(CLAVES.historial));
-  readonly practicas = signal<{ solicitudId: number; origen: 'solicitud'; estado: 'Por revisar' | 'Devuelta' | 'Aprobada'; horario: SolicitudPractica['horario'] }[]>(leer(CLAVES.practicas));
-  readonly solicitudActual = computed(() => {
-    const email = this.auth.usuario()?.email;
-    return email ? this.solicitudes().find((solicitud) => solicitud.estudianteCorreo === email) ?? null : null;
-  });
-  private siguienteId = 1;
+  private readonly http = inject(HttpClient);
 
-  constructor() {
-    this.siguienteId = Math.max(0, ...this.solicitudes().map((item) => item.id)) + 1;
+  readonly habilitacion = signal(ESTADO_VACIO);
+  readonly cargando = signal(false);
+  readonly errorApi = signal('');
+  readonly centros = signal<CentroPractica[]>([]);
+  readonly todosLosCentros = this.centros;
+  readonly solicitudes = signal<SolicitudPractica[]>([]);
+  readonly historial = signal<HistorialDecision[]>([]);
+  readonly solicitudActual = signal<SolicitudPractica | null>(null);
+  readonly borradorActual = signal<SolicitudFormulario | null>(null);
+
+  cargarEstudiante(): Observable<void> {
+    this.cargando.set(true);
+    this.errorApi.set('');
+    return forkJoin({
+      estado: this.http.get<ApiResponse<EstadoEstudianteApi>>('/api/practicas/solicitud-profesional'),
+      centros: this.http.get<ApiResponse<CentroApi[]>>('/api/centros-practica'),
+    }).pipe(
+      tap(({ estado, centros }) => {
+        this.habilitacion.set({ puedePostular: estado.data.habilitacion.puede_postular, motivo: estado.data.habilitacion.motivo });
+        this.solicitudActual.set(estado.data.solicitud);
+        this.borradorActual.set(estado.data.solicitud ? null : estado.data.borrador ?? null);
+        this.solicitudes.set(estado.data.solicitud ? [estado.data.solicitud] : []);
+        this.centros.set(centros.data.map((centro) => this.mapearCentro(centro)));
+      }),
+      map(() => undefined),
+      tap({ complete: () => this.cargando.set(false), error: (error) => {
+        this.cargando.set(false);
+        this.errorApi.set(this.mensajeError(error));
+      } }),
+    );
   }
 
-  guardarBorrador(formulario: SolicitudFormulario): SolicitudPractica {
-    return this.guardar(formulario, 'Borrador');
+  cargarBandeja(): Observable<void> {
+    this.cargando.set(true);
+    this.errorApi.set('');
+    return forkJoin({
+      solicitudes: this.http.get<ApiResponse<SolicitudPractica[]>>('/api/solicitudes-practica'),
+      centros: this.http.get<ApiResponse<CentroApi[]>>('/api/centros-practica'),
+    }).pipe(
+      tap(({ solicitudes, centros }) => {
+        this.solicitudes.set(solicitudes.data);
+        this.centros.set(centros.data.map((centro) => this.mapearCentro(centro)));
+      }),
+      map(() => undefined),
+      tap({ complete: () => this.cargando.set(false), error: (error) => {
+        this.cargando.set(false);
+        this.errorApi.set(this.mensajeError(error));
+      } }),
+    );
   }
 
-  enviar(formulario: SolicitudFormulario): SolicitudPractica {
-    const actual = this.solicitudActual();
-    const estado = actual?.estado === 'Devuelta' ? 'Por revisar' : 'Por revisar';
-    const solicitud = this.guardar(formulario, estado);
-    this.practicas.update((items) => {
-      const practica = { solicitudId: solicitud.id, origen: 'solicitud' as const, estado: 'Por revisar' as const, horario: structuredClone(solicitud.horario) };
-      return items.some((item) => item.solicitudId === solicitud.id) ? items.map((item) => item.solicitudId === solicitud.id ? practica : item) : [practica, ...items];
-    });
-    if (actual?.estado === 'Devuelta') {
-      this.historial.update((items) => [{ solicitudId: solicitud.id, decision: 'Reenviada', motivo: null, responsable: this.auth.usuario()?.name ?? 'Estudiante', fecha: new Date().toISOString() }, ...items]);
-    }
-    this.persistir();
-    return solicitud;
+  guardarBorrador(formulario: SolicitudFormulario): Observable<void> {
+    return this.http.post<ApiResponse<{ guardado: boolean }>>('/api/practicas/solicitud-profesional', {
+      accion: 'borrador', datos: formulario,
+    }).pipe(map(() => undefined), tap(() => this.borradorActual.set(structuredClone(formulario))));
   }
 
-  aprobar(id: number, responsable: string): void {
-    this.solicitudes.update((items) => items.map((item) => item.id === id ? { ...item, estado: 'Aprobada', motivoDevolucion: null, actualizadaEn: new Date().toISOString() } : item));
-    this.historial.update((items) => [{ solicitudId: id, decision: 'Aprobada', motivo: null, responsable, fecha: new Date().toISOString() }, ...items]);
-    this.actualizarEstadoPractica(id, 'Aprobada');
-    this.persistir();
+  enviar(formulario: SolicitudFormulario): Observable<SolicitudPractica> {
+    return this.http.post<ApiResponse<SolicitudPractica>>('/api/practicas/solicitud-profesional', this.payload(formulario)).pipe(
+      map(({ data }) => data),
+      tap((solicitud) => {
+        this.solicitudActual.set(solicitud);
+        this.solicitudes.set([solicitud]);
+        this.borradorActual.set(null);
+      }),
+    );
   }
 
-  devolver(id: number, motivo: string, responsable: string): void {
-    this.solicitudes.update((items) => items.map((item) => item.id === id ? { ...item, estado: 'Devuelta', motivoDevolucion: motivo.trim(), actualizadaEn: new Date().toISOString() } : item));
-    this.historial.update((items) => [{ solicitudId: id, decision: 'Devuelta', motivo: motivo.trim(), responsable, fecha: new Date().toISOString() }, ...items]);
-    this.actualizarEstadoPractica(id, 'Devuelta');
-    this.persistir();
+  aprobar(id: number): Observable<SolicitudPractica> {
+    return this.decidir(id, 'aprobar').pipe(tap((solicitud) => this.actualizarBandeja(solicitud)));
   }
 
-  private guardar(formulario: SolicitudFormulario, estado: SolicitudPractica['estado']): SolicitudPractica {
-    const usuario = this.auth.usuario();
-    const email = usuario?.email ?? 'estudiante@alumnos.uta.cl';
-    const existente = this.solicitudes().find((item) => item.estudianteCorreo === email);
-    const solicitud: SolicitudPractica = {
-      ...formulario,
-      id: existente?.id ?? this.siguienteId++,
-      estudianteNombre: usuario?.name ?? 'Estudiante de prueba',
-      estudianteCorreo: email,
-      estado,
-      habilitacionCumplida: this.habilitacion().puedePostular,
-      motivoDevolucion: existente?.estado === 'Devuelta' && estado === 'Devuelta' ? existente.motivoDevolucion : null,
-      actualizadaEn: new Date().toISOString(),
+  devolver(id: number, motivo: string): Observable<SolicitudPractica> {
+    return this.decidir(id, 'devolver', motivo).pipe(tap((solicitud) => this.actualizarBandeja(solicitud)));
+  }
+
+  mensajeError(error: unknown): string {
+    const response = error as { error?: { message?: string; errors?: Record<string, string[]> }; message?: string };
+    return Object.values(response?.error?.errors ?? {})[0]?.[0] ?? response?.error?.message ?? response?.message ?? 'No se pudo conectar con el backend.';
+  }
+
+  private decidir(id: number, decision: 'aprobar' | 'devolver', motivo?: string): Observable<SolicitudPractica> {
+    return this.http.post<ApiResponse<SolicitudPractica>>(`/api/practicas/${id}/decision`, { decision, motivo }).pipe(map(({ data }) => data));
+  }
+
+  private payload(formulario: SolicitudFormulario): Record<string, unknown> {
+    return {
+      accion: 'enviar',
+      centro_propuesto: formulario.modoCentro === 'Propuesto',
+      centro_id: formulario.centroId,
+      centro_razon_social: formulario.centroRazonSocial,
+      centro_rut: formulario.centroRut,
+      supervisor_propuesto: formulario.modoSupervisor === 'Propuesto',
+      supervisor_correo: formulario.supervisorId,
+      supervisor: {
+        nombre: formulario.supervisorNombre,
+        correo: formulario.supervisorCorreo,
+        cargo: formulario.supervisorCargo,
+        telefono: formulario.supervisorTelefono,
+        unidad: formulario.supervisorUnidad,
+      },
+      modalidad: formulario.horario.modalidad,
+      fecha_inicio: formulario.horario.fechaInicio,
+      fecha_termino: formulario.horario.fechaTermino,
+      tareas: formulario.tareas,
+      horario: {
+        dias: formulario.horario.dias,
+        hora_desde: formulario.horario.horaDesde,
+        hora_hasta: formulario.horario.horaHasta,
+      },
     };
-    this.solicitudes.update((items) => existente ? items.map((item) => item.id === existente.id ? solicitud : item) : [solicitud, ...items]);
-    this.persistir();
-    return solicitud;
   }
 
-  private actualizarEstadoPractica(id: number, estado: 'Devuelta' | 'Aprobada'): void {
-    this.practicas.update((items) => items.map((item) => item.solicitudId === id ? { ...item, estado } : item));
+  private actualizarBandeja(actualizada: SolicitudPractica): void {
+    this.solicitudes.update((items) => items.map((item) => item.id === actualizada.id ? actualizada : item));
   }
 
-  private persistir(): void {
-    try {
-      localStorage.setItem(CLAVES.solicitudes, JSON.stringify(this.solicitudes()));
-      localStorage.setItem(CLAVES.historial, JSON.stringify(this.historial()));
-      localStorage.setItem(CLAVES.practicas, JSON.stringify(this.practicas()));
-    } catch {
-      // La bandeja sigue disponible en memoria si el navegador bloquea el almacenamiento local.
-    }
+  private mapearCentro(centro: CentroApi): CentroPractica {
+    const acuerdo = centro.estado_acuerdo === 'vigente' ? 'Vigente'
+      : centro.estado_acuerdo === 'en_tramite' ? 'En trámite'
+        : centro.estado_acuerdo === 'vencido' ? 'Vencido' : 'Sin acuerdo';
+    return {
+      id: centro.id, nombre: centro.nombre, razonSocial: centro.razon_social, rut: centro.rut ?? '',
+      areas: [], acuerdo, cupos: [], supervisorPrincipal: centro.supervisores[0]?.nombre ?? null,
+      estado: centro.estado === 'propuesto' ? 'Propuesto' : centro.estado === 'dado_de_baja' ? 'Dado de baja' : 'Activo',
+      direccion: centro.direccion ?? '', telefono: centro.telefono ?? '', esInterno: centro.es_interno,
+      representanteLegal: null, tipoAcuerdo: null, vigenciaAcuerdo: null,
+      supervisores: centro.supervisores.map((supervisor) => ({
+        id: supervisor.id, nombre: supervisor.nombre, correo: supervisor.correo,
+        cargo: supervisor.cargo ?? '', unidad: supervisor.unidad ?? '', telefono: supervisor.telefono ?? '',
+        estado: supervisor.fecha_baja ? 'De baja' : supervisor.fecha_alta ? 'Activo' : 'Propuesto',
+      })),
+      estudiantes: [],
+    };
   }
 }

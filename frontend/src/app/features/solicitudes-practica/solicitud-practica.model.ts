@@ -1,4 +1,4 @@
-export type EstadoSolicitud = 'Borrador' | 'Por revisar' | 'Devuelta' | 'Aprobada';
+export type EstadoSolicitud = 'Borrador' | 'Por revisar' | 'Devuelta' | 'Aprobada' | 'En curso' | 'Finalizada' | 'Cancelada';
 export type ModalidadPractica = 'Presencial' | 'A distancia' | 'Mixta';
 export type ModoCentro = 'Registrado' | 'Propuesto';
 export type ModoSupervisor = 'Registrado' | 'Propuesto';

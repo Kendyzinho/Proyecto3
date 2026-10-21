@@ -25,28 +25,15 @@ export class SolicitudEstudiante {
   protected readonly avisoExitoso = signal(false);
   protected readonly mostrarFormularioCentroPropuesto = signal(true);
   protected readonly solicitud = this.service.solicitudActual;
-  protected readonly bloqueada = computed(() => ['Por revisar', 'Aprobada'].includes(this.solicitud()?.estado ?? ''));
+  protected readonly bloqueada = computed(() => ['Por revisar', 'Aprobada', 'En curso', 'Finalizada', 'Cancelada'].includes(this.solicitud()?.estado ?? ''));
   protected formulario: SolicitudFormulario = this.formularioVacio();
   private centroRegistradoAnterior: number | null = null;
 
   constructor() {
-    const actual = this.solicitud();
-    if (actual) {
-      const { id: _id, estudianteNombre: _nombre, estudianteCorreo: _correo, estado: _estado, habilitacionCumplida: _habilitacion, motivoDevolucion: _motivo, actualizadaEn: _fecha, ...formulario } = actual;
-      this.formulario = structuredClone(formulario);
-    } else {
-      const centro = this.centros.find((item) => item.id === 2) ?? this.centros[0];
-      const supervisor = centro?.supervisores.find((item) => item.estado === 'Activo');
-      if (centro) {
-        this.formulario.centroId = centro.id;
-        this.formulario.centroRazonSocial = centro.razonSocial;
-        this.formulario.centroRut = centro.rut;
-      }
-      if (supervisor) {
-        this.formulario.supervisorId = supervisor.correo;
-        this.aplicarSupervisor(supervisor);
-      }
-    }
+    this.service.cargarEstudiante().subscribe({
+      next: () => this.cargarFormularioDesdeBackend(),
+      error: () => {},
+    });
   }
 
   protected seleccionarCentro(id: number | null): void {
@@ -58,7 +45,7 @@ export class SolicitudEstudiante {
     this.formulario.centroId = id;
     if (id !== null) this.centroRegistradoAnterior = id;
     this.mostrarFormularioCentroPropuesto.set(false);
-    const centro = this.centros.find((item) => item.id === id);
+    const centro = this.centros().find((item) => item.id === id);
     this.formulario.centroRazonSocial = centro?.razonSocial ?? '';
     this.formulario.centroRut = centro?.rut ?? '';
     const supervisor = centro?.supervisores.find((item) => item.estado === 'Activo');
@@ -81,7 +68,7 @@ export class SolicitudEstudiante {
   }
 
   protected volverACentroRegistrado(): void {
-    const centro = this.centros.find((item) => item.id === this.centroRegistradoAnterior) ?? this.centros[0];
+    const centro = this.centros().find((item) => item.id === this.centroRegistradoAnterior) ?? this.centros()[0];
     this.seleccionarCentro(centro?.id ?? null);
   }
 
@@ -101,7 +88,7 @@ export class SolicitudEstudiante {
   }
 
   protected centroSeleccionado(): CentroPractica | null {
-    return this.centros.find((centro) => centro.id === this.formulario.centroId) ?? null;
+    return this.centros().find((centro) => centro.id === this.formulario.centroId) ?? null;
   }
 
   protected supervisoresDisponibles(): SupervisorCentro[] {
@@ -169,10 +156,17 @@ export class SolicitudEstudiante {
   }
 
   protected guardarBorrador(): void {
-    this.service.guardarBorrador(this.formulario);
-    this.avisoExitoso.set(true);
-    this.aviso.set('Borrador guardado. Puedes seguir editándolo antes de enviarlo.');
-    this.intentoEnviar.set(false);
+    this.service.guardarBorrador(this.formulario).subscribe({
+      next: () => {
+        this.avisoExitoso.set(true);
+        this.aviso.set('Borrador guardado en tu cuenta. Puedes retomarlo al volver a esta pantalla.');
+        this.intentoEnviar.set(false);
+      },
+      error: (error: unknown) => {
+        this.avisoExitoso.set(false);
+        this.aviso.set(this.service.mensajeError(error));
+      },
+    });
   }
 
   protected enviarSolicitud(): void {
@@ -182,9 +176,16 @@ export class SolicitudEstudiante {
       this.aviso.set('Revisa los campos indicados antes de enviar la solicitud.');
       return;
     }
-    this.service.enviar(this.formulario);
-    this.avisoExitoso.set(true);
-    this.aviso.set('Solicitud enviada a la Coordinadora para su revisión. Te avisaremos por correo cuando haya una decisión.');
+    this.service.enviar(this.formulario).subscribe({
+      next: () => {
+        this.avisoExitoso.set(true);
+        this.aviso.set('Solicitud enviada a la Coordinadora para su revisión. Te avisaremos por correo cuando haya una decisión.');
+      },
+      error: (error: unknown) => {
+        this.avisoExitoso.set(false);
+        this.aviso.set(this.service.mensajeError(error));
+      },
+    });
   }
 
   protected mostrarError(condicionValida: boolean): boolean {
@@ -217,5 +218,41 @@ export class SolicitudEstudiante {
       supervisorCargo: '', supervisorTelefono: '', supervisorUnidad: '', tareas: '',
       horario: { modalidad: '', fechaInicio: '', fechaTermino: '', dias: [], horaDesde: '', horaHasta: '' },
     };
+  }
+
+  private cargarFormularioDesdeBackend(): void {
+    const actual = this.solicitud();
+    if (actual) {
+      const { id: _id, estudianteNombre: _nombre, estudianteCorreo: _correo, estado: _estado, habilitacionCumplida: _habilitacion, motivoDevolucion: _motivo, actualizadaEn: _fecha, ...formulario } = actual;
+      this.formulario = structuredClone(formulario);
+      this.formulario.modoCentro = actual.modoCentro;
+      this.formulario.modoSupervisor = actual.modoSupervisor;
+      this.mostrarFormularioCentroPropuesto.set(actual.modoCentro === 'Propuesto');
+      return;
+    }
+
+    const borrador = this.service.borradorActual();
+    this.formulario = borrador ? structuredClone(borrador) : this.formularioVacio();
+    if (borrador) {
+      this.centroRegistradoAnterior = borrador.centroId;
+      this.mostrarFormularioCentroPropuesto.set(borrador.modoCentro === 'Propuesto');
+      return;
+    }
+    const centro = this.centros().find((item) => item.id === this.formulario.centroId) ?? this.centros()[0];
+    if (centro && this.formulario.centroId === null) {
+      this.formulario.centroId = centro.id;
+      this.formulario.centroRazonSocial = centro.razonSocial;
+      this.formulario.centroRut = centro.rut;
+      this.formulario.modoCentro = 'Registrado';
+      const supervisor = centro.supervisores.find((item) => item.estado === 'Activo');
+      if (supervisor) {
+        this.formulario.supervisorId = supervisor.correo;
+        this.formulario.modoSupervisor = 'Registrado';
+        this.aplicarSupervisor(supervisor);
+      }
+      return;
+    }
+
+    if (!centro) this.proponerCentro();
   }
 }

@@ -11,11 +11,12 @@ export interface CupoCentro {
 }
 
 export interface SupervisorCentro {
+  id?: number;
   nombre: string;
   cargo: string;
   unidad: string;
   correo: string;
-  estado: 'Activo' | 'De baja';
+  estado: 'Propuesto' | 'Activo' | 'De baja';
 }
 
 export interface EstudianteCentro {
