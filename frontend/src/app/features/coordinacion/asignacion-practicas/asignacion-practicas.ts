@@ -1,10 +1,8 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 
-import { CentroAsignable } from './asignacion-practicas.model';
+import { CentroAsignable, EstudianteAsignable, ModalidadPractica } from './asignacion-practicas.model';
 import { AsignacionPracticasService } from './asignacion-practicas.service';
-
-type CategoriaPractica = 'Laboral' | 'Profesional';
 
 @Component({
   selector: 'app-asignacion-practicas',
@@ -14,46 +12,93 @@ type CategoriaPractica = 'Laboral' | 'Profesional';
 })
 export class AsignacionPracticas {
   private readonly service = inject(AsignacionPracticasService);
-  protected readonly estudiantes = this.service.estudiantes;
-  protected readonly centros = this.service.centros;
-  protected readonly categoriaActiva = signal<CategoriaPractica>('Laboral');
-  protected readonly estudianteId = signal<number | null>(101);
-  protected readonly centroId = signal<number | null>(201);
+  protected readonly estudiantes = signal<EstudianteAsignable[]>([]);
+  protected readonly centros = signal<CentroAsignable[]>([]);
+  protected readonly estudianteId = signal<number | null>(null);
+  protected readonly centroId = signal<number | null>(null);
+  protected readonly supervisorId = signal<number | null>(null);
+  protected readonly modalidad = signal<ModalidadPractica>('presencial');
+  protected readonly cargandoEstudiantes = signal(false);
+  protected readonly cargandoCentros = signal(false);
+  protected readonly guardando = signal(false);
   protected readonly aviso = signal('');
   protected readonly avisoExitoso = signal(false);
   protected readonly estudiante = computed(() => this.estudiantes().find((item) => item.id === this.estudianteId()) ?? null);
-  protected readonly estudiantesSinCentro = computed(() => this.estudiantes().filter((item) => item.categoria === this.categoriaActiva() && item.habilitado && !item.practicaAsignada));
-  protected readonly cantidadLaborales = computed(() => this.estudiantes().filter((item) => item.categoria === 'Laboral' && item.habilitado && !item.practicaAsignada).length);
-  protected readonly cantidadProfesionales = computed(() => this.estudiantes().filter((item) => item.categoria === 'Profesional' && item.habilitado && !item.practicaAsignada).length);
-  protected readonly centrosCompatibles = computed(() => {
-    const estudiante = this.estudiante();
-    if (!estudiante) return [];
-    return this.centros()
-      .filter((centro) => {
-        const cupo = centro.cupos.find((item) => item.periodo === estudiante.periodo && item.categoria === estudiante.categoria);
-        return centro.estado === 'Activo' && centro.acuerdoVigente &&
-          this.contarCoincidencias(centro) > 0 && cupo !== undefined && cupo.ocupados < cupo.total;
-      })
-      .sort((a, b) => this.contarCoincidencias(b) - this.contarCoincidencias(a));
-  });
+  protected readonly centroSeleccionado = computed(() => this.centros().find((item) => item.id === this.centroId()) ?? null);
+  protected readonly supervisorSeleccionado = computed(() => this.centroSeleccionado()?.supervisores.find((item) => item.id === this.supervisorId()) ?? null);
+  protected readonly estudiantesSinCentro = computed(() => this.estudiantes());
+  protected readonly centrosCompatibles = computed(() => this.centros().slice().sort((a, b) => this.contarCoincidencias(b) - this.contarCoincidencias(a)));
 
-  protected contarCoincidencias(centro: CentroAsignable): number {
-    const areas = this.estudiante()?.areas ?? [];
-    return centro.areas.filter((area) => areas.includes(area)).length;
+  constructor() {
+    this.cargarHabilitaciones();
+  }
+
+  protected cargarHabilitaciones(): void {
+    this.cargandoEstudiantes.set(true);
+    this.estudiantes.set([]);
+    this.estudianteId.set(null);
+    this.centros.set([]);
+    this.centroId.set(null);
+    this.supervisorId.set(null);
+    this.service.listarHabilitaciones().subscribe({
+      next: (items) => {
+        this.estudiantes.set(items);
+        const primerEstudiante = items[0];
+        if (primerEstudiante) this.seleccionarEstudiante(primerEstudiante.id);
+        this.cargandoEstudiantes.set(false);
+      },
+      error: (error: unknown) => {
+        this.avisoExitoso.set(false);
+        this.aviso.set(this.service.mensajeError(error, 'No se pudieron cargar las habilitaciones.'));
+        this.cargandoEstudiantes.set(false);
+      },
+    });
   }
 
   protected seleccionarEstudiante(id: number): void {
     this.estudianteId.set(id);
-    this.centroId.set(this.centrosCompatibles()[0]?.id ?? null);
+    this.centroId.set(null);
+    this.supervisorId.set(null);
+    this.centros.set([]);
+    this.aviso.set('');
+    const periodo = this.estudiantes().find((item) => item.id === id)?.periodo ?? '';
+    this.cargarCentros(id, periodo);
+  }
+
+  private cargarCentros(habilitacionId: number, periodo: string): void {
+    this.cargandoCentros.set(true);
+    this.service.listarCentros(habilitacionId, periodo).subscribe({
+      next: (centros) => {
+        this.centros.set(centros);
+        this.cargandoCentros.set(false);
+      },
+      error: (error: unknown) => {
+        this.avisoExitoso.set(false);
+        this.aviso.set(this.service.mensajeError(error, 'No se pudieron cargar los centros compatibles.'));
+        this.cargandoCentros.set(false);
+      },
+    });
+  }
+
+  protected seleccionarCentro(centroId: number): void {
+    this.centroId.set(centroId);
+    const centro = this.centros().find((item) => item.id === centroId);
+    this.supervisorId.set(centro?.supervisores[0]?.id ?? null);
     this.aviso.set('');
   }
 
-  protected cambiarCategoria(categoria: CategoriaPractica): void {
-    this.categoriaActiva.set(categoria);
-    const primerEstudiante = this.estudiantesSinCentro()[0];
-    this.estudianteId.set(primerEstudiante?.id ?? null);
-    this.centroId.set(this.centrosCompatibles()[0]?.id ?? null);
+  protected seleccionarSupervisor(id: number): void {
+    this.supervisorId.set(id);
     this.aviso.set('');
+  }
+
+  protected cambiarModalidad(event: Event): void {
+    this.modalidad.set((event.target as HTMLSelectElement).value as ModalidadPractica);
+  }
+
+  protected contarCoincidencias(centro: CentroAsignable): number {
+    const areas = this.estudiante()?.areas ?? [];
+    return centro.areas.filter((area) => areas.includes(area)).length;
   }
 
   protected iniciales(nombre: string): string {
@@ -61,25 +106,34 @@ export class AsignacionPracticas {
   }
 
   protected asignar(): void {
-    const estudianteId = this.estudianteId();
-    const centroId = this.centroId();
-    if (estudianteId === null || centroId === null) {
+    const estudiante = this.estudiante();
+    const centro = this.centroSeleccionado();
+    const supervisor = this.supervisorSeleccionado();
+    if (!estudiante || !centro || !supervisor) {
       this.avisoExitoso.set(false);
-      this.aviso.set('Selecciona un centro para confirmar la asignación.');
+      this.aviso.set('Selecciona un centro y un supervisor activo para continuar.');
       return;
     }
-    const estudianteNombre = this.estudiante()?.nombre;
-    const centroNombre = this.centros().find((centro) => centro.id === centroId)?.nombre;
-    const error = this.service.crearAsignacion(estudianteId, centroId);
-    if (error) {
-      this.avisoExitoso.set(false);
-      this.aviso.set(error);
-      return;
-    }
-    this.avisoExitoso.set(true);
-    this.aviso.set(`Asignación registrada para ${estudianteNombre} en ${centroNombre}. El correo se enviará cuando se conecte la API.`);
-    const siguienteEstudiante = this.estudiantesSinCentro()[0];
-    this.estudianteId.set(siguienteEstudiante?.id ?? null);
-    this.centroId.set(this.centrosCompatibles()[0]?.id ?? null);
+
+    this.guardando.set(true);
+    this.aviso.set('');
+    this.service.crearAsignacion({
+      habilitacion_id: estudiante.id,
+      centro_id: centro.id,
+      supervisor_id: supervisor.id,
+      modalidad: this.modalidad(),
+    }).subscribe({
+      next: ({ message }) => {
+        this.avisoExitoso.set(true);
+        this.aviso.set(`${message} Se encoló la notificación por correo.`);
+        this.guardando.set(false);
+        this.cargarHabilitaciones();
+      },
+      error: (error: unknown) => {
+        this.avisoExitoso.set(false);
+        this.aviso.set(this.service.mensajeError(error, 'No se pudo registrar la asignación.'));
+        this.guardando.set(false);
+      },
+    });
   }
 }
