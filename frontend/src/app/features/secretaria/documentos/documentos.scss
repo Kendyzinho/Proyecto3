@@ -1,0 +1,157 @@
+.columnas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.lista__encabezado,
+.lista__fila {
+  display: grid;
+  grid-template-columns: 1fr 104px 88px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 24px;
+}
+
+.lista__encabezado {
+  height: 40px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f7f9fc;
+  color: #5b6b80;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.lista__fila {
+  width: 100%;
+  min-height: 60px;
+  border: 0;
+  border-bottom: 1px solid #e2e8f0;
+  background: #fff;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  &:last-child {
+    border-bottom: 0;
+  }
+
+  &:hover {
+    background: #f7f9fc;
+  }
+}
+
+.lista__fila--activa,
+.lista__fila--activa:hover {
+  background: #e1edf8;
+}
+
+.vacio,
+.bloqueo {
+  margin: 0;
+  padding: 32px 24px;
+  color: #5b6b80;
+  font-size: 14px;
+}
+
+.hoja-contenedor {
+  padding: 24px;
+  background: #f7f9fc;
+}
+
+// Vista previa de la hoja, como en el PDF
+.hoja {
+  padding: 32px 40px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  font-size: 14px;
+  line-height: 22px;
+
+  p {
+    margin: 0 0 12px;
+  }
+
+  h4 {
+    margin: 16px 0 4px;
+    font-size: 14px;
+  }
+
+  ol {
+    margin: 0;
+    padding-left: 20px;
+  }
+}
+
+.membrete {
+  margin-bottom: 20px;
+
+  p {
+    margin: 6px 0 0;
+    color: #5b6b80;
+    font-size: 12px;
+  }
+}
+
+.hoja__fecha {
+  color: #5b6b80;
+  text-align: right;
+}
+
+.hoja__bloque {
+  margin: 20px 0;
+
+  p {
+    margin: 0;
+  }
+}
+
+.hoja__titulo {
+  margin: 0 0 12px;
+  font-size: 18px;
+}
+
+.hoja__datos {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 4px 12px;
+  margin: 0 0 8px;
+
+  dt {
+    color: #5b6b80;
+  }
+
+  dd {
+    margin: 0;
+  }
+}
+
+.hoja__firma {
+  margin-top: 40px;
+
+  p {
+    margin: 0;
+  }
+}
+
+.hoja__firma-nombre {
+  font-weight: 600;
+}
+
+.hoja__firma-cargo {
+  color: #5b6b80;
+}
+
+.pie {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 24px;
+  border-top: 1px solid #e2e8f0;
+}
+
+@media (max-width: 1200px) {
+  .columnas {
+    grid-template-columns: 1fr;
+  }
+}

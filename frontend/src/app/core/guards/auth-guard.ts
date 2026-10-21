@@ -10,7 +10,7 @@ export const authGuard: CanMatchFn = (route) => {
   const router = inject(Router);
   const usuario = auth.usuario();
 
-  if (!usuario) {
+  if (!usuario || !auth.token) {
     return router.createUrlTree(['/auth']);
   }
   const rol = route.data?.['rol'] as Rol | undefined;
@@ -23,5 +23,5 @@ export const authGuard: CanMatchFn = (route) => {
 // El login solo se muestra sin sesión; con sesión manda al inicio de su rol.
 export const invitadoGuard: CanMatchFn = () => {
   const auth = inject(Auth);
-  return auth.autenticado() ? inject(Router).createUrlTree([auth.inicio()]) : true;
+  return auth.autenticado() && auth.token ? inject(Router).createUrlTree([auth.inicio()]) : true;
 };

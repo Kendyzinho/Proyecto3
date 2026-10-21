@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('tipo', 30); // carta, seguro, portafolio...
             $table->string('archivo_o_url');
             $table->dateTime('fecha');
+            $table->dateTime('fecha_envio')->nullable(); // vacía = no enviado (HU-10)
             $table->timestamps();
         });
     }

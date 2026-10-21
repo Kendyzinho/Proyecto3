@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-// CENTRO_ÁREA: áreas que ofrece cada centro.
+// CENTRO_ÁREA: áreas que ofrece cada centro en el catálogo HU-12.
 return new class extends Migration
 {
     public function up(): void

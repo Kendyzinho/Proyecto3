@@ -1,0 +1,74 @@
+<main class="page">
+  <div class="breadcrumb"><a routerLink="/estudiante">Inicio</a><span aria-hidden="true">/</span><span>Solicitud de práctica</span></div>
+  <header class="page-heading"><div><p class="eyebrow">PRÁCTICA PROFESIONAL</p><h1>Solicitud de Práctica Profesional</h1><p>Completa la información del centro, la supervisión y el horario propuesto para solicitar aprobación.</p></div></header>
+
+  @if (service.errorApi()) { <div class="notice" role="alert">{{ service.errorApi() }}</div> }
+  @if (service.cargando()) {
+    <section class="eligibility-block" role="status"><span class="eligibility-icon"><mat-icon>hourglass_top</mat-icon></span><div><h2>Consultando habilitación</h2><p>Estamos cargando tu habilitación y los centros disponibles.</p></div></section>
+  } @else if (!service.habilitacion().puedePostular && !solicitud()) {
+    <section class="eligibility-block" role="status"><span class="eligibility-icon"><mat-icon>lock</mat-icon></span><div><h2>Aún no puedes postular</h2><p>{{ service.habilitacion().motivo }}</p><small>Cuando cumplas el prerrequisito, esta solicitud estará disponible.</small></div></section>
+  } @else {
+    @if (solicitud(); as actual) {
+      <section class="request-status" [class.request-status--returned]="actual.estado === 'Devuelta'" [class.request-status--approved]="actual.estado === 'Aprobada'">
+        <div><span class="status-kicker">Estado de tu solicitud</span><strong>{{ actual.estado === 'Por revisar' ? 'En revisión' : actual.estado }}</strong><small>Última actualización: {{ actual.actualizadaEn | date:'dd-MM-yyyy HH:mm' }}</small></div>
+        @if (actual.estado === 'Devuelta' && actual.motivoDevolucion) { <p class="return-reason"><strong>Motivo de devolución:</strong> {{ actual.motivoDevolucion }}. Corrige la información y reenvíala.</p> }
+        @if (actual.estado === 'Aprobada') { <p class="return-reason">La solicitud fue aprobada. El horario propuesto se confirmará al iniciar la práctica.</p> }
+        @if (actual.estado === 'Por revisar') { <p class="return-reason">La solicitud está bloqueada para edición mientras la revisa la Coordinadora.</p> }
+      </section>
+    }
+
+    @if (aviso()) { <div class="notice" [class.notice--success]="avisoExitoso()" role="status">{{ aviso() }}</div> }
+
+    <form class="request-form" novalidate (ngSubmit)="enviarSolicitud()">
+      <fieldset class="form-fields" [disabled]="bloqueada()">
+        <section class="form-section">
+          <h2><mat-icon aria-hidden="true">domain</mat-icon><span>1. Centro de práctica</span></h2>
+          <div class="field-block">
+            <label for="centro">Selecciona un centro registrado</label>
+            <div class="select-action"><select id="centro" name="centro" [ngModel]="formulario.centroId" (ngModelChange)="seleccionarCentro($event === null || $event === '' ? null : +$event)"><option [ngValue]="null">Elige un centro</option>@for (centro of centros(); track centro.id) { <option [ngValue]="centro.id">{{ centro.nombre }} — {{ centro.rut }}</option> }</select><button class="text-action" type="button" (click)="proponerCentro()"><mat-icon>add</mat-icon>Proponer otro centro</button></div>
+            @if (centroSeleccionado(); as centro) { <p class="field-hint" [class.field-hint--success]="centro.esInterno || centro.acuerdo === 'Vigente'"><mat-icon>{{ centro.esInterno ? 'apartment' : 'verified' }}</mat-icon>{{ centro.esInterno ? 'Centro interno UTA' : 'Registrado con acuerdo vigente' }} · {{ centro.razonSocial }} · RUT {{ centro.rut }} · {{ centro.direccion }}</p> }
+            @if (mostrarError(centroSeleccionado() === null && formulario.modoCentro === 'Registrado')) { <small class="field-error">Selecciona un centro o indica que propondrás uno nuevo.</small> }
+          </div>
+          @if (formulario.modoCentro === 'Propuesto') {
+            <div class="proposal-box"><div class="proposal-heading"><mat-icon>add_business</mat-icon><div><strong>Centro nuevo o propuesto</strong><small>La Coordinadora revisará sus antecedentes antes de registrarlo.</small></div><button class="collapse-button" type="button" (click)="alternarFormularioCentroPropuesto()" [attr.aria-expanded]="mostrarFormularioCentroPropuesto()"><mat-icon>{{ mostrarFormularioCentroPropuesto() ? 'expand_less' : 'expand_more' }}</mat-icon>{{ mostrarFormularioCentroPropuesto() ? 'Reducir' : 'Completar datos' }}</button></div>
+              @if (mostrarFormularioCentroPropuesto()) { <div class="field-grid field-grid--two"><div class="field-block"><label for="razonSocial">Razón social *</label><input id="razonSocial" name="razonSocial" [(ngModel)]="formulario.centroRazonSocial" placeholder="Ej.: Empresa Creativa SpA"><small class="field-hint">Este centro quedará propuesto hasta su aprobación.</small>@if (mostrarError(!!formulario.centroRazonSocial.trim())) { <small class="field-error">Ingresa la razón social.</small> }</div>
+                <div class="field-block"><label for="rutCentro">RUT *</label><input id="rutCentro" name="rutCentro" [(ngModel)]="formulario.centroRut" (blur)="formatearRut()" placeholder="76.123.456-7" maxlength="12"><small class="field-hint">Se formatea al salir del campo.</small>@if (mostrarError(rutValido())) { <small class="field-error">Ingresa un RUT chileno válido.</small> }</div></div>
+              } @else { <button class="text-action" type="button" (click)="volverACentroRegistrado()">Elegir un centro registrado</button> }
+            </div>
+          }
+        </section>
+
+        <section class="form-section">
+          <h2><mat-icon aria-hidden="true">person</mat-icon><span>2. Supervisor(a)</span></h2>
+          @if (formulario.modoCentro === 'Registrado' && centroSeleccionado() && supervisoresDisponibles().length) {
+            <div class="field-block"><label for="supervisorExistente">Supervisor(a) registrado(a)</label><div class="select-action"><select id="supervisorExistente" name="supervisorExistente" [ngModel]="formulario.supervisorId" (ngModelChange)="seleccionarSupervisor($event)"><option value="">Selecciona un supervisor</option>@for (supervisor of supervisoresDisponibles(); track supervisor.correo) { <option [value]="supervisor.correo">{{ supervisor.nombre }} — {{ supervisor.unidad }}</option> }</select><button class="text-action" type="button" (click)="proponerSupervisor()"><mat-icon>person_add</mat-icon>Proponer uno nuevo</button></div></div>
+          } @else if (formulario.modoCentro === 'Registrado' && centroSeleccionado()) {
+            <p class="field-hint">Este centro aún no tiene supervisores registrados. Ingresa una contraparte propuesta.</p><button class="text-action" type="button" (click)="proponerSupervisor()"><mat-icon>person_add</mat-icon>Proponer supervisor(a)</button>
+          } @else if (formulario.modoCentro === 'Registrado') {
+            <p class="field-hint">Selecciona un centro registrado para consultar sus supervisores, o elige proponer un centro nuevo.</p>
+          }
+          @if (formulario.modoSupervisor === 'Registrado' && supervisorSeleccionado(); as supervisor) {
+            <div class="supervisor-summary"><span class="avatar">{{ iniciales(supervisor.nombre) }}</span><div><strong>{{ supervisor.nombre }}</strong><small>{{ supervisor.cargo }} · {{ supervisor.unidad }}</small><a [href]="'mailto:' + supervisor.correo">{{ supervisor.correo }}</a></div></div>
+          } @else if (formulario.modoSupervisor === 'Propuesto' && (formulario.modoCentro === 'Propuesto' || centroSeleccionado())) {
+            <div class="field-grid field-grid--two"><div class="field-block"><label for="nombreSupervisor">Nombre completo *</label><input id="nombreSupervisor" name="nombreSupervisor" [(ngModel)]="formulario.supervisorNombre" placeholder="Nombre y apellidos">@if (mostrarError(!!formulario.supervisorNombre.trim())) { <small class="field-error">Ingresa el nombre del supervisor o supervisora.</small> }</div>
+              <div class="field-block"><label for="cargoSupervisor">Cargo</label><input id="cargoSupervisor" name="cargoSupervisor" [(ngModel)]="formulario.supervisorCargo" placeholder="Ej.: Directora de arte"></div>
+              <div class="field-block"><label for="correoSupervisor">Correo electrónico *</label><input id="correoSupervisor" name="correoSupervisor" type="email" [(ngModel)]="formulario.supervisorCorreo" placeholder="nombre@empresa.cl">@if (mostrarError(correoValido(formulario.supervisorCorreo))) { <small class="field-error">Ingresa un correo válido.</small> }</div>
+              <div class="field-block"><label for="telefonoSupervisor">Teléfono</label><input id="telefonoSupervisor" name="telefonoSupervisor" type="tel" [(ngModel)]="formulario.supervisorTelefono" placeholder="+56 9 1234 5678"></div>
+              <div class="field-block field-block--wide"><label for="unidadSupervisor">Unidad o área</label><input id="unidadSupervisor" name="unidadSupervisor" [(ngModel)]="formulario.supervisorUnidad" placeholder="Ej.: Producción"></div></div>
+          }
+        </section>
+
+        <section class="form-section">
+          <h2><mat-icon aria-hidden="true">work_outline</mat-icon><span>3. Práctica</span></h2>
+          <fieldset class="modality-field"><legend>Modalidad *</legend><div class="radio-options">@for (modalidad of ['Presencial', 'A distancia', 'Mixta']; track modalidad) { <label><input type="radio" name="modalidad" [value]="$any(modalidad)" [(ngModel)]="formulario.horario.modalidad"><span>{{ modalidad }}</span></label> }</div></fieldset>
+          @if (mostrarError(!!formulario.horario.modalidad)) { <small class="field-error">Selecciona una modalidad.</small> }
+          <div class="field-grid field-grid--two date-grid"><div class="field-block"><label for="fechaInicio">Fecha de inicio propuesta *</label><input id="fechaInicio" name="fechaInicio" type="date" [(ngModel)]="formulario.horario.fechaInicio">@if (mostrarError(!!formulario.horario.fechaInicio)) { <small class="field-error">Indica una fecha de inicio.</small> }</div><div class="field-block"><label for="fechaTermino">Fecha de término propuesta *</label><input id="fechaTermino" name="fechaTermino" type="date" [(ngModel)]="formulario.horario.fechaTermino">@if (mostrarError(!!formulario.horario.fechaTermino && formulario.horario.fechaTermino >= formulario.horario.fechaInicio)) { <small class="field-error">La fecha de término debe ser igual o posterior al inicio.</small> }</div></div>
+          <div class="schedule-block"><span class="schedule-label">Días y horas propuestos *</span><div class="schedule-row"><div class="day-toggles">@for (dia of dias; track dia) { <button type="button" [class.day-toggle--active]="formulario.horario.dias.includes(dia)" [attr.aria-pressed]="formulario.horario.dias.includes(dia)" (click)="alternarDia(dia)"><mat-icon>check</mat-icon>{{ dia }}</button> }</div><div class="time-range"><label>Desde<input name="horaDesde" type="time" [(ngModel)]="formulario.horario.horaDesde"></label><label>Hasta<input name="horaHasta" type="time" [(ngModel)]="formulario.horario.horaHasta"></label></div></div>@if (mostrarError(formulario.horario.dias.length > 0 && !!formulario.horario.horaDesde && !!formulario.horario.horaHasta && formulario.horario.horaHasta > formulario.horario.horaDesde)) { <small class="field-error">Selecciona al menos un día y un rango horario válido.</small> }<small class="field-hint">El horario es una propuesta y se confirmará al iniciar la práctica.</small></div>
+          <div class="field-block tasks-field"><label for="tareas">Tareas que realizarás *</label><textarea id="tareas" name="tareas" rows="4" [(ngModel)]="formulario.tareas" placeholder="Describe las funciones y actividades que realizarás en el centro."></textarea>@if (mostrarError(!!formulario.tareas.trim())) { <small class="field-error">Describe las tareas que realizarás.</small> }</div>
+        </section>
+      </fieldset>
+      <footer class="form-footer">@if (solicitud()?.estado !== 'Devuelta') { <button class="secondary-button" type="button" [disabled]="bloqueada()" (click)="guardarBorrador()">Guardar borrador</button> }<button class="primary-button" type="submit" [disabled]="bloqueada()">{{ solicitud()?.estado === 'Devuelta' ? 'Corregir y reenviar' : 'Enviar solicitud' }}<mat-icon>send</mat-icon></button></footer>
+    </form>
+    <p class="privacy-note"><mat-icon>info</mat-icon>La información de contacto y el horario serán revisados por la Coordinadora. El horario propuesto quedará confirmado al iniciar la práctica.</p>
+  }
+</main>

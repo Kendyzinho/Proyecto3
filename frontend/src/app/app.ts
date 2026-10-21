@@ -1,7 +1,8 @@
-import { Component, inject } from '@angular/core';
+import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { Auth } from './core/services/auth';
 import { AplicacionShell } from './shared/aplicacion-shell/aplicacion-shell';
+import { inject } from '@angular/core';
 
 @Component({
   selector: 'app-root',

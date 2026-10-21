@@ -1,0 +1,91 @@
+.acciones {
+  display: flex;
+  gap: 12px;
+}
+
+.barra-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 24px;
+}
+
+.buscador {
+  width: 320px;
+}
+
+.filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.filtro {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #fff;
+  color: #1e293b;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+
+  &:hover {
+    background: #f7f9fc;
+  }
+}
+
+.filtro--activo,
+.filtro--activo:hover {
+  border-color: #dfe8f5;
+  background: #dfe8f5;
+  font-weight: 600;
+}
+
+.mat-column-acciones {
+  width: 120px;
+  padding-right: 16px;
+  text-align: right;
+}
+
+.accion--peligro {
+  color: #b91c1c;
+}
+
+.accion--info {
+  color: #355085;
+}
+
+.vacio {
+  margin: 0;
+  padding: 32px 24px;
+  color: #5b6b80;
+  font-size: 14px;
+}
+
+.pie {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 8px;
+
+  &[hidden] {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .buscador {
+    width: 100%;
+  }
+}

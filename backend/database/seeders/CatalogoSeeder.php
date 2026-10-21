@@ -36,7 +36,10 @@ class CatalogoSeeder extends Seeder
             ['malla_id' => $nueva, 'nombre' => 'Profesional', 'categoria' => 'profesional', 'horas_requeridas' => 240, 'prerrequisito' => 'Laboral aprobada', 'created_at' => $ahora, 'updated_at' => $ahora],
         ]);
 
-        foreach (['Diseño gráfico', 'Web', 'Animación', 'Audiovisual', 'Editorial', 'Redes sociales'] as $area) {
+        // Áreas de los formularios "Solicitud de estudiante" que hoy usan los centros
+        $areas = ['Diseño gráfico y diagramación', 'Fotografía', 'Producción audiovisual', 'Animación digital',
+            'Diseño y desarrollo web', 'Publicidad y marketing digital'];
+        foreach ($areas as $area) {
             DB::table('areas')->insert(['nombre' => $area, 'created_at' => $ahora, 'updated_at' => $ahora]);
         }
     }
