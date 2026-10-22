@@ -136,6 +136,25 @@ cd backend && php artisan test
 cd frontend && npx ng test --watch=false
 ```
 
+## Perfil y seguridad (US-04)
+
+Todos los usuarios autenticados pueden abrir **Mi perfil** desde el menú de usuario.
+La ruta `/perfil` consulta `GET /api/me`; el recurso incluye `id`, `name`, `rut`, `email` y `rol`.
+El RUT puede ser nulo y se presenta como «No registrado». Los datos personales son de solo lectura.
+
+`PUT /api/me/password` recibe `current_password`, `password` y `password_confirmation`.
+Exige Sanctum y verifica la contraseña actual con Laravel. Solo cambia la contraseña del usuario
+autenticado, sin aceptar un identificador de otro usuario. Devuelve `204` al guardar, `422` por
+validación, `401` sin autenticación y `429` al superar seis intentos por minuto.
+
+La nueva contraseña debe tener al menos ocho caracteres, una mayúscula, un número, coincidir
+con la confirmación y ser distinta de la actual. Se rechazan caracteres nulos y valores de más
+de 72 bytes UTF-8 para evitar el truncamiento de bcrypt. Las contraseñas se guardan con hashing.
+El cambio conserva la sesión actual y los demás tokens existentes; no altera la política de logout.
+La clave anterior deja de servir para nuevos inicios de sesión. El formulario se limpia al guardar
+y al salir del perfil. Las pruebas de autenticación y perfil verifican la base efectiva
+`practicas_test` antes de preparar tablas.
+
 ## Usuarios de prueba
 
 Los crea `php artisan migrate --seed`. Contraseña de todos: `password`.

@@ -1,5 +1,5 @@
-<mat-sidenav-container class="marco">
-  <mat-sidenav class="lateral" mode="side" [opened]="menuAbierto()">
+<mat-sidenav-container class="marco" [class.marco--movil]="movil()">
+  <mat-sidenav class="lateral" [mode]="movil() ? 'over' : 'side'" [opened]="movil() ? menuMovil() : menuAbierto()" (closedStart)="menuMovil.set(false)">
     <div class="lateral__encabezado">
       <div class="marca">
         <img src="logos/dm-blanco.svg" alt="Diseño Multimedia UTarapacá" width="98" height="40" />
@@ -13,9 +13,9 @@
     </div>
 
     <nav class="lateral__menu">
-      <p class="lateral__grupo">{{ grupo() }}</p>
-      @for (opcion of menu(); track opcion.ruta) {
-        <a class="opcion" [routerLink]="opcion.ruta" routerLinkActive="opcion--activa" [routerLinkActiveOptions]="{ exact: true }">
+      <p class="lateral__grupo">{{ grupoVisible() }}</p>
+      @for (opcion of menuVisible(); track opcion.ruta) {
+        <a class="opcion" [routerLink]="opcion.ruta" routerLinkActive="opcion--activa" [routerLinkActiveOptions]="{ exact: true }" (click)="menuMovil.set(false)">
           <mat-icon>{{ opcion.icono }}</mat-icon>
           <span>{{ opcion.texto }}</span>
         </a>
@@ -25,22 +25,10 @@
 
   <mat-sidenav-content class="contenido">
     <header class="barra">
-      <button mat-icon-button type="button" aria-label="Mostrar u ocultar el menú" (click)="menuAbierto.set(!menuAbierto())">
+      <button mat-icon-button type="button" aria-label="Mostrar u ocultar el menú" (click)="movil() ? menuMovil.set(!menuMovil()) : menuAbierto.set(!menuAbierto())">
         <mat-icon>menu</mat-icon>
       </button>
-      @if (auth.usuario(); as usuario) {
-        <button class="barra__usuario" type="button" [matMenuTriggerFor]="menuUsuario">
-          <span class="barra__avatar">{{ iniciales() }}</span>
-          <span>{{ usuario.name }}</span>
-          <mat-icon>expand_more</mat-icon>
-        </button>
-      }
-      <mat-menu #menuUsuario="matMenu" xPosition="before">
-        <button mat-menu-item type="button" (click)="auth.logout()">
-          <mat-icon>logout</mat-icon>
-          <span>Cerrar sesión</span>
-        </button>
-      </mat-menu>
+      <app-menu-usuario />
     </header>
 
     <main class="pagina">

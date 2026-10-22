@@ -1,7 +1,7 @@
 import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { catchError, throwError } from 'rxjs';
+import { catchError, takeUntil, throwError } from 'rxjs';
 
 import { Auth } from '../services/auth';
 
@@ -10,20 +10,27 @@ import { Auth } from '../services/auth';
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const auth = inject(Auth);
   const router = inject(Router);
-  const token = auth.token;
+  if (!req.url.startsWith('/api/')) return next(req);
+
+  const token = req.headers.get('Authorization')?.replace(/^Bearer /, '') ?? auth.token;
 
   const headers: Record<string, string> = { Accept: 'application/json' };
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  return next(req.clone({ setHeaders: headers })).pipe(
+  const respuesta = next(req.clone({ setHeaders: headers })).pipe(
     catchError((error: HttpErrorResponse) => {
-      if (error.status === 401 && token) {
+      if (error.status === 401 && token && token === auth.token) {
         auth.limpiarSesion();
-        router.navigateByUrl('/auth');
+        void router.navigateByUrl('/auth', { replaceUrl: true });
       }
       return throwError(() => error);
     }),
   );
+
+  // El logout debe terminar después de limpiar la sesión; las demás peticiones ya no son útiles.
+  return token && req.url !== '/api/logout'
+    ? respuesta.pipe(takeUntil(auth.sesionFinalizada$))
+    : respuesta;
 };
