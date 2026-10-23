@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+
 import { Marco, OpcionMenu } from '../../shared/marco/marco';
 
 const MENU: OpcionMenu[] = [

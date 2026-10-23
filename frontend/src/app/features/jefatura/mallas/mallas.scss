@@ -1,0 +1,54 @@
+.titulo {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+
+  .estado {
+    font-size: 13px;
+  }
+}
+
+.mat-column-categoria {
+  color: #5b6b80;
+}
+
+.mat-column-horas {
+  width: 100px;
+}
+
+.mat-column-acciones {
+  width: 64px;
+  padding-right: 16px;
+  text-align: right;
+}
+
+.agregar {
+  padding: 8px 12px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.publicar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 24px 0;
+
+  mat-form-field {
+    width: 220px;
+  }
+}
+
+.nota {
+  margin: 0;
+  padding: 8px 24px 20px;
+  color: #5b6b80;
+  font-size: 13px;
+}
+
+.vacio {
+  margin: 0;
+  padding: 32px 24px;
+  color: #5b6b80;
+  font-size: 14px;
+}

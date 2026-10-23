@@ -1,0 +1,100 @@
+<div class="encabezado-pagina">
+  <h1>Mallas y prácticas</h1>
+  <span [matTooltip]="hayEnPreparacion() ? 'Publica la malla en preparación antes de crear otra' : ''">
+    <button matButton="filled" type="button" [disabled]="hayEnPreparacion()" (click)="nuevaMalla()">
+      <mat-icon>add</mat-icon>
+      Nueva malla
+    </button>
+  </span>
+</div>
+
+@if (cargando()) {
+  <p class="vacio">Cargando mallas…</p>
+} @else if (mallas().length === 0) {
+  <section class="tarjeta">
+    <p class="vacio">Todavía no hay mallas. Crea una con «Nueva malla».</p>
+  </section>
+}
+
+@for (malla of mallas(); track malla.id) {
+  <section class="tarjeta">
+    <div class="tarjeta__cabecera">
+      <div class="titulo">
+        <h2>{{ malla.nombre }}</h2>
+        @switch (malla.estado) {
+          @case ('vigente') {
+            <span class="estado estado--exito">Vigente</span>
+          }
+          @case ('programada') {
+            <span class="estado estado--info">Vigente desde el {{ fechaLegible(malla.vigente_desde!) }}</span>
+          }
+          @default {
+            <span class="estado estado--advertencia">En preparación</span>
+          }
+        }
+      </div>
+    </div>
+
+    @if (malla.practicas.length === 0) {
+      <p class="vacio">Esta malla todavía no tiene prácticas.</p>
+    } @else {
+      <table mat-table class="tabla" [dataSource]="malla.practicas">
+        <ng-container matColumnDef="nombre">
+          <th mat-header-cell *matHeaderCellDef>Práctica</th>
+          <td mat-cell *matCellDef="let practica">{{ practica.nombre }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="categoria">
+          <th mat-header-cell *matHeaderCellDef>Categoría</th>
+          <td mat-cell *matCellDef="let practica">{{ textoCategoria(practica.categoria) }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="horas">
+          <th mat-header-cell *matHeaderCellDef>Horas</th>
+          <td mat-cell *matCellDef="let practica">{{ practica.horas_requeridas }} h</td>
+        </ng-container>
+
+        <ng-container matColumnDef="prerrequisito">
+          <th mat-header-cell *matHeaderCellDef>Prerrequisito</th>
+          <td mat-cell *matCellDef="let practica">{{ practica.prerrequisito ?? '—' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="acciones">
+          <th mat-header-cell *matHeaderCellDef></th>
+          <td mat-cell *matCellDef="let practica">
+            <button mat-icon-button type="button" matTooltip="Editar"
+                    [attr.aria-label]="'Editar ' + practica.nombre" (click)="editar(malla, practica)">
+              <mat-icon>edit</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+        <tr mat-row *matRowDef="let fila; columns: columnas"></tr>
+      </table>
+    }
+
+    @if (malla.estado === 'en_preparacion') {
+      <div class="agregar">
+        <button matButton type="button" (click)="agregar(malla)">
+          <mat-icon>add</mat-icon>
+          Agregar práctica
+        </button>
+      </div>
+
+      <div class="publicar">
+        <mat-form-field subscriptSizing="dynamic">
+          <mat-label>Vigente desde</mat-label>
+          <input matInput type="date" [formControl]="vigenteDesde" [min]="hoy" />
+          @if (vigenteDesde.hasError('required')) {
+            <mat-error>Indica desde cuándo rige.</mat-error>
+          }
+        </mat-form-field>
+        <button matButton="filled" type="button" [disabled]="publicando() || malla.practicas.length === 0" (click)="publicar(malla)">
+          {{ publicando() ? 'Publicando…' : 'Publicar malla' }}
+        </button>
+      </div>
+      <p class="nota">Una vez publicada ya no se le pueden agregar ni quitar prácticas, pero sí corregir sus horas.</p>
+    }
+  </section>
+}

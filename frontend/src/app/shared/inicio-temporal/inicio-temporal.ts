@@ -2,7 +2,7 @@ import { Component, inject } from '@angular/core';
 
 import { Auth } from '../../core/services/auth';
 
-// Pantalla provisoria para probar el login y el cierre de sesión mientras no exista el inicio de cada rol.
+// Pantalla provisoria mientras no exista el inicio de cada rol. La barra y el menú del usuario los pone el marco.
 @Component({
   selector: 'app-inicio-temporal',
   imports: [],
