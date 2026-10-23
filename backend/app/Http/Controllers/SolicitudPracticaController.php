@@ -18,7 +18,7 @@ use Illuminate\Validation\ValidationException;
 
 class SolicitudPracticaController extends Controller
 {
-    private const ESTADOS_CUPO = ['confirmada', 'en_curso'];
+    private const ESTADOS_CUPO = ['confirmada', 'en_curso', 'finalizada'];
 
     public function estudiante(Request $request): JsonResponse
     {
@@ -115,6 +115,10 @@ class SolicitudPracticaController extends Controller
                 ->with('historiales')->lockForUpdate()->orderByDesc('id')->get();
             $actual = $candidatas->first(fn (Practica $item) => $this->estadoActual($item) !== 'cancelada');
             $estadoActual = $actual ? $this->estadoActual($actual) : null;
+            $supervisorAnterior = $actual?->supervisor()->lockForUpdate()->first();
+            $centroAnterior = $supervisorAnterior?->centro()->lockForUpdate()->first();
+            $eraCentroPropuesto = (bool) $actual?->centro_propuesto_en_solicitud;
+            $eraSupervisorPropuesto = (bool) $actual?->supervisor_propuesto_en_solicitud;
 
             if ($actual && !in_array($estadoActual, ['borrador', 'devuelta'], true)) {
                 throw ValidationException::withMessages(['solicitud' => 'Esta habilitación ya tiene una práctica activa y no admite otra solicitud.']);
@@ -129,8 +133,9 @@ class SolicitudPracticaController extends Controller
                 'habilitacion_id' => $habilitacion->id,
                 'supervisor_id' => $supervisor?->id,
                 'origen' => 'solicitud',
-                'centro_propuesto_en_solicitud' => (bool) $datos['centro_propuesto'],
-                'supervisor_propuesto_en_solicitud' => (bool) $datos['supervisor_propuesto'],
+                // La propuesta puede haber sido formalizada desde HU-12 mientras se revisaba la solicitud.
+                'centro_propuesto_en_solicitud' => !$centro->fecha_alta || $centro->fecha_alta->isFuture(),
+                'supervisor_propuesto_en_solicitud' => !$supervisor?->fecha_alta || $supervisor->fecha_alta->isFuture(),
                 'modalidad' => $this->modalidadDb($datos['modalidad']),
                 'tareas' => trim($datos['tareas']),
                 'fecha_inicio' => $datos['fecha_inicio'],
@@ -146,6 +151,18 @@ class SolicitudPracticaController extends Controller
 
             if ($supervisor) {
                 $this->guardarHorarios($practica, $datos['horario'], $datos['fecha_inicio']);
+            }
+
+            if ($actual && $estadoActual === 'devuelta' && $accion === 'enviar') {
+                $this->darDeBajaPropuestasReemplazadas(
+                    $actual,
+                    $supervisorAnterior,
+                    $centroAnterior,
+                    $supervisor,
+                    $centro,
+                    $eraSupervisorPropuesto,
+                    $eraCentroPropuesto,
+                );
             }
 
             if (!$actual || $estadoActual !== $nuevoEstado) {
@@ -318,6 +335,12 @@ class SolicitudPracticaController extends Controller
             if ($centro->rut !== $this->formatearRut($datos['centro_rut'])) {
                 throw ValidationException::withMessages(['centro_rut' => 'El centro propuesto cambió. Vuelve a revisar sus datos.']);
             }
+            if ($centro->fecha_baja && $centro->fecha_baja->lessThanOrEqualTo(today())) {
+                throw ValidationException::withMessages(['centro_id' => 'El centro anterior fue dado de baja. Elige o propone otro centro para reenviar.']);
+            }
+            if ($centro->fecha_alta && !$this->centroElegible($centro)) {
+                throw ValidationException::withMessages(['centro_id' => 'El centro ya no es elegible. Elige otro centro o espera a que se regularice su acuerdo.']);
+            }
             return $centro;
         }
 
@@ -350,6 +373,12 @@ class SolicitudPracticaController extends Controller
         }
 
         $supervisorExistente = $centro->supervisores()->where('correo', trim($datos['supervisor']['correo']))->first();
+        if ($supervisorExistente && $supervisorExistente->fecha_baja) {
+            throw ValidationException::withMessages(['supervisor.correo' => 'Este supervisor fue dado de baja. Elige un supervisor activo o propone uno nuevo con otro correo.']);
+        }
+        if ($supervisorExistente && $supervisorExistente->fecha_alta) {
+            return $supervisorExistente;
+        }
         if ($supervisorExistente && empty($supervisorExistente->fecha_alta)) {
             $supervisorExistente->update([
                 'nombre' => trim($datos['supervisor']['nombre']),
@@ -372,6 +401,38 @@ class SolicitudPracticaController extends Controller
             'fecha_alta' => null,
             'fecha_baja' => null,
         ]);
+    }
+
+    private function darDeBajaPropuestasReemplazadas(
+        Practica $practica,
+        ?Supervisor $supervisorAnterior,
+        ?CentroPractica $centroAnterior,
+        ?Supervisor $supervisorNuevo,
+        CentroPractica $centroNuevo,
+        bool $eraSupervisorPropuesto,
+        bool $eraCentroPropuesto,
+    ): void {
+        if ($supervisorAnterior && $eraSupervisorPropuesto
+            && $supervisorAnterior->id !== $supervisorNuevo?->id
+            && !$supervisorAnterior->fecha_alta
+            && !$supervisorAnterior->fecha_baja
+            && !Practica::query()->where('supervisor_id', $supervisorAnterior->id)->whereKeyNot($practica->id)->exists()) {
+            $supervisorAnterior->update(['fecha_baja' => today()->toDateString()]);
+        }
+
+        if ($centroAnterior && $eraCentroPropuesto
+            && $centroAnterior->id !== $centroNuevo->id
+            && !$centroAnterior->fecha_alta
+            && !$centroAnterior->fecha_baja
+            && !DB::table('practicas')->join('supervisores', 'supervisores.id', '=', 'practicas.supervisor_id')
+                ->where('supervisores.centro_id', $centroAnterior->id)
+                ->where('practicas.id', '<>', $practica->id)
+                ->exists()) {
+            $centroAnterior->update([
+                'fecha_baja' => today()->toDateString(),
+                'motivo_baja' => 'Propuesta retirada al reenviar la solicitud con otro centro.',
+            ]);
+        }
     }
 
     private function validarHorario(array $datos): void
@@ -405,20 +466,19 @@ class SolicitudPracticaController extends Controller
         if (!$supervisor || $supervisor->fecha_baja) {
             throw ValidationException::withMessages(['supervisor' => 'No se puede confirmar todavía: el supervisor debe estar registrado y activo en este centro.']);
         }
-        // La confirmación de esta práctica da de alta al supervisor propuesto,
-        // siempre que el centro ya haya cumplido sus requisitos de elegibilidad.
-        if (!$supervisor->fecha_alta && $practica->supervisor_propuesto_en_solicitud) {
-            $supervisor->update(['fecha_alta' => today()->toDateString()]);
-        } elseif (!$supervisor->fecha_alta) {
+        // La Coordinadora debe activar al supervisor desde HU-12 antes de confirmar HU-09.
+        if (!$supervisor->fecha_alta || $supervisor->fecha_alta->isFuture()) {
             throw ValidationException::withMessages(['supervisor' => 'No se puede confirmar todavía: el supervisor debe estar activo en este centro.']);
         }
     }
 
     private function centroElegible(CentroPractica $centro): bool
     {
-        if (!$centro->fecha_alta || ($centro->fecha_baja && $centro->fecha_baja->lessThanOrEqualTo(today()))) return false;
+        if (!$centro->fecha_alta || $centro->fecha_alta->isFuture()
+            || ($centro->fecha_baja && $centro->fecha_baja->lessThanOrEqualTo(today()))) return false;
         if ($centro->es_interno) return true;
         return $centro->acuerdos()->whereNotNull('fecha_inicio')->whereDate('fecha_inicio', '<=', today())
+            ->whereNotNull('archivo_pdf')
             ->where(fn (Builder $query) => $query->whereNull('fecha_termino')->orWhereDate('fecha_termino', '>=', today()))->exists();
     }
 
@@ -447,7 +507,7 @@ class SolicitudPracticaController extends Controller
             ->where('habilitaciones.periodo_id', $habilitacion->periodo_id)
             ->where('tipos_practica.categoria', 'profesional')
             ->where('practicas.id', '<>', $practica->id)
-            ->whereRaw('(select h.estado_nuevo from historiales_practica h where h.practica_id = practicas.id order by h.fecha_hora desc, h.id desc limit 1) in (?, ?)', self::ESTADOS_CUPO)
+            ->whereRaw('(select h.estado_nuevo from historiales_practica h where h.practica_id = practicas.id order by h.fecha_hora desc, h.id desc limit 1) in (?, ?, ?)', self::ESTADOS_CUPO)
             ->count();
         if ($ocupados >= $requerimiento->cupos) {
             throw ValidationException::withMessages(['cupo' => 'El centro ya no tiene cupos profesionales disponibles para este período.']);

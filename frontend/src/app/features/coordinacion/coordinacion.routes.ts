@@ -11,6 +11,7 @@ export default [
       menu: [
         { texto: 'Inicio', icono: 'home', ruta: '/coordinacion' },
         { texto: 'Prácticas', icono: 'work', ruta: '/coordinacion/asignaciones' },
+        { texto: 'Solicitudes', icono: 'inbox', ruta: '/coordinacion/solicitudes' },
         { texto: 'Centros de práctica', icono: 'domain', ruta: '/coordinacion/centros' },
       ],
     },
@@ -26,16 +27,21 @@ export default [
         title: 'Centros de práctica',
         loadComponent: () => import('./centros-practica/centros-practica').then((m) => m.CentrosPractica),
       },
+      {
+        path: 'solicitudes',
+        title: 'Solicitudes de práctica',
+        loadComponent: () => import('./solicitudes-practica/revision-solicitudes').then((m) => m.RevisionSolicitudes),
+      },
+      {
+        path: 'practicas',
+        children: [
+          {
+            path: 'nueva',
+            title: 'Nueva práctica · HU-19',
+            loadComponent: () => import('./solicitudes-practica/nueva-practica-hu19').then((m) => m.NuevaPracticaHu19),
+          },
+        ],
+      },
     ],
-  },
-  {
-    path: 'solicitudes',
-    title: 'Solicitudes de práctica',
-    loadComponent: () => import('./solicitudes-practica/revision-solicitudes').then((m) => m.RevisionSolicitudes),
-  },
-  {
-    path: 'practicas/nueva',
-    title: 'Nueva práctica · HU-19',
-    loadComponent: () => import('./solicitudes-practica/nueva-practica-hu19').then((m) => m.NuevaPracticaHu19),
   },
 ] satisfies Routes;

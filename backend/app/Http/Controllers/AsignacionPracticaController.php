@@ -70,7 +70,20 @@ class AsignacionPracticaController extends Controller
             ->join('requerimientos_centro as rc', function ($join) use ($h) {
                 $join->on('rc.centro_id', '=', 'c.id')->where('rc.periodo_id', '=', $h->periodo_id)->where('rc.categoria', '=', $h->categoria);
             })
-            ->whereNotNull('c.fecha_alta')->whereNull('c.fecha_baja')
+            ->whereNotNull('c.fecha_alta')->whereDate('c.fecha_alta', '<=', today()->toDateString())
+            ->where(fn (Builder $vigenciaCentro) => $vigenciaCentro->whereNull('c.fecha_baja')
+                ->orWhereDate('c.fecha_baja', '>', today()->toDateString()))
+            ->where(function (Builder $eligibilidad) {
+                $eligibilidad->where('c.es_interno', true)
+                    ->orWhereExists(fn (Builder $acuerdo) => $acuerdo->selectRaw('1')
+                        ->from('acuerdos_colaboracion as ac')
+                        ->whereColumn('ac.centro_id', 'c.id')
+                        ->whereNotNull('ac.fecha_inicio')
+                        ->whereDate('ac.fecha_inicio', '<=', today()->toDateString())
+                        ->whereNotNull('ac.archivo_pdf')
+                        ->where(fn (Builder $vigencia) => $vigencia->whereNull('ac.fecha_termino')
+                            ->orWhereDate('ac.fecha_termino', '>=', today()->toDateString())));
+            })
             ->whereExists(fn (Builder $area) => $area->selectRaw('1')->from('centro_area as ca')
                 ->whereColumn('ca.centro_id', 'c.id')->whereIn('ca.area_id', $areaIds))
             ->whereExists(fn (Builder $supervisor) => $supervisor->selectRaw('1')->from('supervisores as s')
@@ -125,10 +138,20 @@ class AsignacionPracticaController extends Controller
 
             $center = DB::table('centros_practica')->where('id', $data['centro_id'])->lockForUpdate()->first();
             if (!$center) throw ValidationException::withMessages(['centro_id' => 'No se encontró el centro.']);
+            $acuerdoVigente = $center->es_interno || DB::table('acuerdos_colaboracion')
+                ->where('centro_id', $center->id)
+                ->whereNotNull('fecha_inicio')
+                ->whereDate('fecha_inicio', '<=', today()->toDateString())
+                ->whereNotNull('archivo_pdf')
+                ->where(fn ($query) => $query->whereNull('fecha_termino')
+                    ->orWhereDate('fecha_termino', '>=', today()->toDateString()))
+                ->exists();
             $supervisor = DB::table('supervisores')->where('id', $data['supervisor_id'])->where('centro_id', $center->id)
                 ->whereNotNull('fecha_alta')->whereNull('fecha_baja')->first();
-            if (!$center->fecha_alta || $center->fecha_baja || !$supervisor) {
-                throw ValidationException::withMessages(['centro_id' => 'El centro y el supervisor deben estar activos y registrados.']);
+            $centroDadoDeBaja = $center->fecha_baja !== null && $center->fecha_baja <= today()->toDateString();
+            $altaFutura = $center->fecha_alta !== null && $center->fecha_alta > today()->toDateString();
+            if (!$center->fecha_alta || $altaFutura || $centroDadoDeBaja || !$supervisor || !$acuerdoVigente) {
+                throw ValidationException::withMessages(['centro_id' => 'El centro debe estar activo, contar con acuerdo vigente (salvo la UTA) y tener un supervisor activo.']);
             }
 
             $required = DB::table('requerimientos_centro')->where('centro_id', $center->id)->where('periodo_id', $h->periodo_id)

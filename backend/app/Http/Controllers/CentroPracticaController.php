@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Area;
 use App\Models\CentroPractica;
 use App\Models\Periodo;
+use App\Models\Supervisor;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -14,7 +15,9 @@ use Illuminate\Validation\ValidationException;
 
 class CentroPracticaController extends Controller
 {
-    private const ESTADOS_QUE_RESERVAN_CUPO = ['confirmada', 'en_curso'];
+    // Una práctica finalizada sigue ocupando el cupo de su período; solo cancelar lo libera.
+    private const ESTADOS_QUE_OCUPAN_CUPO = ['confirmada', 'en_curso', 'finalizada'];
+    private const ESTADOS_QUE_BLOQUEAN_BAJA = ['confirmada', 'en_curso'];
     private const ESTADOS_VISIBLES_EN_HISTORIAL = ['confirmada', 'en_curso', 'finalizada', 'cancelada'];
 
     public function index(Request $request): JsonResponse
@@ -36,10 +39,14 @@ class CentroPracticaController extends Controller
         }
 
         if ($request->query('estado') === 'activo') {
-            $query->whereNotNull('fecha_alta')->where(fn (Builder $builder) => $builder
-                ->whereNull('fecha_baja')->orWhereDate('fecha_baja', '>', today()));
+            $query->whereNotNull('fecha_alta')->whereDate('fecha_alta', '<=', today())->where(fn (Builder $builder) => $builder
+                ->whereNull('fecha_baja')->orWhereDate('fecha_baja', '>', today()))
+                ->where(function (Builder $builder) {
+                    $builder->where('es_interno', true)->orWhereHas('acuerdos', fn (Builder $acuerdos) => $this->acuerdoVigenteQuery($acuerdos));
+                });
         } elseif ($request->query('estado') === 'propuesto') {
-            $query->whereNull('fecha_baja')->whereNull('fecha_alta');
+            $query->whereNull('fecha_baja')->where(fn (Builder $builder) => $builder
+                ->whereNull('fecha_alta')->orWhereDate('fecha_alta', '>', today()));
         } elseif ($request->query('estado') === 'baja') {
             $query->whereNotNull('fecha_baja')->whereDate('fecha_baja', '<=', today());
         }
@@ -146,6 +153,79 @@ class CentroPracticaController extends Controller
         return response()->json(['data' => $this->serializeCentro($this->catalogQuery()->findOrFail($centroPractica->id), true)]);
     }
 
+    public function storeSupervisor(Request $request, CentroPractica $centroPractica): JsonResponse
+    {
+        $this->requireCoordinator($request);
+        $data = $request->validate([
+            'nombre' => ['required', 'string', 'max:255'],
+            'correo' => ['required', 'email', 'max:255'],
+            'telefono' => ['nullable', 'string', 'max:30'],
+            'cargo' => ['nullable', 'string', 'max:255'],
+            'unidad' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        abort_if($centroPractica->fecha_baja && $centroPractica->fecha_baja->lessThanOrEqualTo(today()), 422, 'No se pueden agregar supervisores a un centro dado de baja.');
+        if ($centroPractica->supervisores()->where('correo', trim($data['correo']))->exists()) {
+            throw ValidationException::withMessages(['correo' => 'Ya existe un supervisor con ese correo en este centro.']);
+        }
+
+        $centroPractica->supervisores()->create([
+            'nombre' => trim($data['nombre']),
+            'correo' => trim($data['correo']),
+            'telefono' => isset($data['telefono']) ? trim($data['telefono']) : null,
+            'cargo' => isset($data['cargo']) ? trim($data['cargo']) : null,
+            'unidad' => isset($data['unidad']) ? trim($data['unidad']) : null,
+            'fecha_alta' => null,
+            'fecha_baja' => null,
+        ]);
+
+        return response()->json(['data' => $this->serializeCentro($this->catalogQuery()->findOrFail($centroPractica->id), true)], 201);
+    }
+
+    public function activarSupervisor(Request $request, CentroPractica $centroPractica, Supervisor $supervisor): JsonResponse
+    {
+        $this->requireCoordinator($request);
+        abort_unless((int) $supervisor->centro_id === (int) $centroPractica->id, 404);
+
+        if (!$this->centroPuedeRecibirEstudiantes($centroPractica)) {
+            throw ValidationException::withMessages(['centro' => 'El centro debe estar activo y, si es externo, tener un acuerdo vigente con PDF para activar supervisores.']);
+        }
+        if ($supervisor->fecha_baja && $supervisor->fecha_baja->lessThanOrEqualTo(today())) {
+            throw ValidationException::withMessages(['supervisor' => 'Un supervisor dado de baja no se puede reactivar desde esta acción.']);
+        }
+
+        $supervisor->update(['fecha_alta' => today()->toDateString(), 'fecha_baja' => null]);
+
+        return response()->json(['data' => $this->serializeCentro($this->catalogQuery()->findOrFail($centroPractica->id), true)]);
+    }
+
+    public function darDeBajaSupervisor(Request $request, CentroPractica $centroPractica, Supervisor $supervisor): JsonResponse
+    {
+        $this->requireCoordinator($request);
+        abort_unless((int) $supervisor->centro_id === (int) $centroPractica->id, 404);
+        abort_if($supervisor->fecha_baja && $supervisor->fecha_baja->lessThanOrEqualTo(today()), 422, 'El supervisor ya está dado de baja.');
+
+        // Conserva las prácticas existentes; la elegibilidad futura exige que el supervisor esté activo.
+        $supervisor->update(['fecha_baja' => today()->toDateString()]);
+
+        return response()->json(['data' => $this->serializeCentro($this->catalogQuery()->findOrFail($centroPractica->id), true)]);
+    }
+
+    private function centroPuedeRecibirEstudiantes(CentroPractica $centro): bool
+    {
+        if (!$centro->fecha_alta || $centro->fecha_alta->isFuture()
+            || ($centro->fecha_baja && $centro->fecha_baja->lessThanOrEqualTo(today()))) {
+            return false;
+        }
+        if ($centro->es_interno) {
+            return true;
+        }
+
+        return $centro->acuerdos()->whereNotNull('fecha_inicio')->whereDate('fecha_inicio', '<=', today())
+            ->where(fn (Builder $query) => $query->whereNull('fecha_termino')->orWhereDate('fecha_termino', '>=', today()))
+            ->whereNotNull('archivo_pdf')->exists();
+    }
+
     private function catalogQuery(bool $includeStudentHistory = true): Builder
     {
         $relations = [
@@ -170,11 +250,13 @@ class CentroPracticaController extends Controller
     private function restringirACentrosSeleccionables(Builder $query): void
     {
         $query->whereNotNull('fecha_alta')
+            ->whereDate('fecha_alta', '<=', today())
             ->where(fn (Builder $builder) => $builder->whereNull('fecha_baja')->orWhereDate('fecha_baja', '>', today()))
             ->where(function (Builder $builder) {
                 $builder->where('es_interno', true)->orWhereHas('acuerdos', fn (Builder $acuerdos) => $acuerdos
                     ->whereNotNull('fecha_inicio')
                     ->whereDate('fecha_inicio', '<=', today())
+                    ->whereNotNull('archivo_pdf')
                     ->where(fn (Builder $vigencia) => $vigencia->whereNull('fecha_termino')->orWhereDate('fecha_termino', '>=', today())));
             });
     }
@@ -185,7 +267,7 @@ class CentroPracticaController extends Controller
         $data['estado'] = $this->estadoCentro($centro);
         $data['acuerdos'] = $centro->acuerdos->map(function ($acuerdo) use ($centro, $includeStudentHistory) {
             $agreementStatus = $centro->es_interno ? 'exento' : match (true) {
-                $acuerdo->fecha_inicio === null => 'en_tramite',
+                !$acuerdo->archivo_pdf || $acuerdo->fecha_inicio === null => 'en_tramite',
                 $acuerdo->fecha_inicio->isFuture() => 'en_tramite',
                 $acuerdo->fecha_termino !== null && $acuerdo->fecha_termino->lessThan(today()) => 'vencido',
                 default => 'vigente',
@@ -208,7 +290,7 @@ class CentroPracticaController extends Controller
                 ->where('supervisores.centro_id', $centro->id)
                 ->where('habilitaciones.periodo_id', $requerimiento->periodo_id)
                 ->where('tipos_practica.categoria', $requerimiento->categoria)
-                ->whereRaw('(select hp.estado_nuevo from historiales_practica hp where hp.practica_id = practicas.id order by hp.fecha_hora desc, hp.id desc limit 1) in (?, ?)', self::ESTADOS_QUE_RESERVAN_CUPO)
+                ->whereRaw('(select hp.estado_nuevo from historiales_practica hp where hp.practica_id = practicas.id order by hp.fecha_hora desc, hp.id desc limit 1) in (?, ?, ?)', self::ESTADOS_QUE_OCUPAN_CUPO)
                 ->count();
 
             return [...$requerimiento->toArray(), 'ocupados' => $ocupados, 'disponibles' => max(0, $requerimiento->cupos - $ocupados)];
@@ -244,11 +326,22 @@ class CentroPracticaController extends Controller
         if ($centro->fecha_baja !== null && $centro->fecha_baja->lessThanOrEqualTo(today())) {
             return 'dado_de_baja';
         }
-        if ($centro->fecha_alta === null) {
+        if ($centro->fecha_alta === null || $centro->fecha_alta->isFuture()) {
             return 'propuesto';
         }
 
+        if (!$centro->puedeRecibirEstudiantes()) {
+            return 'sin_acuerdo';
+        }
+
         return $centro->fecha_baja !== null ? 'baja_programada' : 'activo';
+    }
+
+    private function acuerdoVigenteQuery(Builder $query): Builder
+    {
+        return $query->whereNotNull('fecha_inicio')->whereDate('fecha_inicio', '<=', today())
+            ->whereNotNull('archivo_pdf')
+            ->where(fn (Builder $vigencia) => $vigencia->whereNull('fecha_termino')->orWhereDate('fecha_termino', '>=', today()));
     }
 
     private function validateCentro(Request $request, ?CentroPractica $centro = null): array
@@ -379,7 +472,7 @@ class CentroPracticaController extends Controller
         return DB::table('practicas')
             ->join('supervisores', 'supervisores.id', '=', 'practicas.supervisor_id')
             ->where('supervisores.centro_id', $centro->id)
-            ->whereRaw('(select hp.estado_nuevo from historiales_practica hp where hp.practica_id = practicas.id order by hp.fecha_hora desc, hp.id desc limit 1) in (?, ?)', self::ESTADOS_QUE_RESERVAN_CUPO)
+            ->whereRaw('(select hp.estado_nuevo from historiales_practica hp where hp.practica_id = practicas.id order by hp.fecha_hora desc, hp.id desc limit 1) in (?, ?)', self::ESTADOS_QUE_BLOQUEAN_BAJA)
             ->exists();
     }
 

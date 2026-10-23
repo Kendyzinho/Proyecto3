@@ -1,9 +1,7 @@
-<header class="barra">
-  <span class="marca">Prácticas</span>
-  <app-menu-usuario />
-</header>
-<main>
+<main class="inicio-temporal">
   @if (auth.usuario(); as usuario) {
-    <p>Sesión iniciada como <strong>{{ usuario.name }}</strong> ({{ usuario.rol }}).</p>
+    <p class="eyebrow">SISTEMA DE GESTIÓN DE PRÁCTICAS</p>
+    <h1>Bienvenido, {{ usuario.name }}</h1>
+    <p class="descripcion">Desde aquí podrás acceder a las gestiones disponibles para tu perfil.</p>
   }
 </main>

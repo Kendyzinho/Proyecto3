@@ -15,7 +15,7 @@ export default [
   {
     path: '',
     component: Marco,
-    data: { grupo: 'Secretaría de Jefatura', menu: MENU },
+    data: { grupo: 'Secretaría de Jefatura', menu: MENU, adaptable: true },
     children: [
       { path: '', title: 'Inicio', loadComponent: () => import('./inicio/inicio').then((m) => m.Inicio) },
       { path: 'usuarios', title: 'Usuarios', loadComponent: () => import('./usuarios/usuarios').then((m) => m.Usuarios) },

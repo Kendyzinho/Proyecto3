@@ -48,6 +48,7 @@ interface CentroApi {
   estado_acuerdo: string;
   areas: AreaApi[];
   acuerdos: Array<{
+    id?: number;
     tipo?: string;
     representante_legal?: string;
     fecha_inicio?: string | null;
@@ -127,6 +128,28 @@ export class CentrosPracticaService {
   reactivar(id: number): Observable<CentroPractica> {
     return this.http
       .post<Respuesta<CentroApi>>(`/api/centros-practica/${id}/reactivar`, {})
+      .pipe(map(({ data }) => this.mapearCentro(data)));
+  }
+
+  archivoAcuerdo(acuerdoId: number): Observable<Blob> {
+    return this.http.get(`/api/acuerdos/${acuerdoId}/archivo`, { responseType: 'blob' });
+  }
+
+  agregarSupervisor(centroId: number, datos: Omit<SupervisorCentro, 'id' | 'estado'>): Observable<CentroPractica> {
+    return this.http
+      .post<Respuesta<CentroApi>>(`/api/centros-practica/${centroId}/supervisores`, datos)
+      .pipe(map(({ data }) => this.mapearCentro(data)));
+  }
+
+  activarSupervisor(centroId: number, supervisorId: number): Observable<CentroPractica> {
+    return this.http
+      .post<Respuesta<CentroApi>>(`/api/centros-practica/${centroId}/supervisores/${supervisorId}/activar`, {})
+      .pipe(map(({ data }) => this.mapearCentro(data)));
+  }
+
+  darDeBajaSupervisor(centroId: number, supervisorId: number): Observable<CentroPractica> {
+    return this.http
+      .post<Respuesta<CentroApi>>(`/api/centros-practica/${centroId}/supervisores/${supervisorId}/dar-de-baja`, {})
       .pipe(map(({ data }) => this.mapearCentro(data)));
   }
 
@@ -226,7 +249,9 @@ export class CentrosPracticaService {
       representanteLegal: acuerdo?.representante_legal ?? null,
       tipoAcuerdo: acuerdo?.tipo ?? null,
       vigenciaAcuerdo: this.vigencia(acuerdo?.fecha_inicio, acuerdo?.fecha_termino),
+      acuerdoArchivoId: acuerdo?.archivo_pdf && acuerdo.id ? acuerdo.id : null,
       supervisores: (centro.supervisores ?? []).map((supervisor): SupervisorCentro => ({
+        id: supervisor.id,
         nombre: supervisor.nombre,
         cargo: supervisor.cargo ?? '',
         unidad: supervisor.unidad ?? '',
@@ -251,6 +276,7 @@ export class CentrosPracticaService {
 
   private mapearEstadoCentro(estado: string): EstadoCentro {
     if (estado === 'propuesto') return 'Propuesto';
+    if (estado === 'sin_acuerdo') return 'Sin acuerdo';
     if (estado === 'dado_de_baja') return 'Dado de baja';
     // Una baja futura sigue siendo seleccionable hasta la fecha efectiva.
     return 'Activo';

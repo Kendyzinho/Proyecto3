@@ -1,4 +1,4 @@
-export type EstadoCentro = 'Activo' | 'Propuesto' | 'Dado de baja';
+export type EstadoCentro = 'Activo' | 'Propuesto' | 'Sin acuerdo' | 'Dado de baja';
 export type EstadoAcuerdo = 'Vigente' | 'En trámite' | 'Vencido' | 'Sin acuerdo';
 export type CategoriaPractica = 'Laboral' | 'Profesional';
 export type EstadoPractica =
@@ -20,6 +20,7 @@ export interface CupoCentro {
 }
 
 export interface SupervisorCentro {
+  id?: number;
   nombre: string;
   cargo: string;
   unidad: string;
@@ -53,6 +54,7 @@ export interface CentroPractica {
   representanteLegal: string | null;
   tipoAcuerdo: string | null;
   vigenciaAcuerdo: string | null;
+  acuerdoArchivoId?: number | null;
   supervisores: SupervisorCentro[];
   estudiantes: EstudianteCentro[];
   motivoBaja?: string;
