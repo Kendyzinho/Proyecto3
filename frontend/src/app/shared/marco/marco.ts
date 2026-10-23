@@ -3,6 +3,7 @@ import { BreakpointObserver } from '@angular/cdk/layout';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatMenuModule } from '@angular/material/menu';
 import { MatPaginatorIntl } from '@angular/material/paginator';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
@@ -23,7 +24,7 @@ export interface OpcionMenu {
 // { path: '', component: Marco, data: { grupo: 'Secretaría de Jefatura', menu: [...] }, children: [...] }
 @Component({
   selector: 'app-marco',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, MatSidenavModule, MatButtonModule, MatIconModule, MenuUsuario],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, MatSidenavModule, MatButtonModule, MatIconModule, MatMenuModule, MenuUsuario],
   templateUrl: './marco.html',
   styleUrl: './marco.scss',
   // Paginador en español para todas las tablas dentro del marco

@@ -1,9 +1,3 @@
-<header class="barra">
-  <span class="marca">Prácticas</span>
-  <app-menu-usuario />
-</header>
-<main>
-  @if (auth.usuario(); as usuario) {
-    <p>Sesión iniciada como <strong>{{ usuario.name }}</strong> ({{ usuario.rol }}).</p>
-  }
-</main>
+@if (auth.usuario(); as usuario) {
+  <p>Sesión iniciada como <strong>{{ usuario.name }}</strong> ({{ usuario.rol }}).</p>
+}

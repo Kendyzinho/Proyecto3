@@ -28,7 +28,17 @@
       <button mat-icon-button type="button" aria-label="Mostrar u ocultar el menú" (click)="movil() ? menuMovil.set(!menuMovil()) : menuAbierto.set(!menuAbierto())">
         <mat-icon>menu</mat-icon>
       </button>
-      <app-menu-usuario />
+
+      <!-- Campana y usuario siempre en la esquina derecha, como en las plantillas -->
+      <div class="barra__acciones">
+        <button mat-icon-button type="button" aria-label="Notificaciones" [matMenuTriggerFor]="notificaciones">
+          <mat-icon>notifications</mat-icon>
+        </button>
+        <mat-menu #notificaciones="matMenu" xPosition="before">
+          <p class="sin-notificaciones">No hay notificaciones nuevas.</p>
+        </mat-menu>
+        <app-menu-usuario />
+      </div>
     </header>
 
     <main class="pagina">
