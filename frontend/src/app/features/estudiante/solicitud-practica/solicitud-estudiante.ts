@@ -5,7 +5,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
 
 import { CentroPractica, SupervisorCentro } from '../../coordinacion/centros-practica/centro-practica.model';
-import { SolicitudFormulario } from '../../solicitudes-practica/solicitud-practica.model';
+import { SolicitudFormulario, SolicitudPractica } from '../../solicitudes-practica/solicitud-practica.model';
 import { SolicitudesPracticaService } from '../../solicitudes-practica/solicitudes-practica.service';
 
 const DIAS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
@@ -137,11 +137,12 @@ export class SolicitudEstudiante {
 
   protected centroValido(): boolean {
     return this.formulario.modoCentro === 'Registrado'
-      ? this.formulario.centroId !== null
+      ? this.centroSeleccionado()?.estado === 'Activo'
       : !!this.formulario.centroRazonSocial.trim() && this.rutValido();
   }
 
   protected supervisorValido(): boolean {
+    if (this.formulario.modoSupervisor === 'Registrado') return this.supervisorSeleccionado() !== null;
     return !!this.formulario.supervisorNombre.trim() && this.correoValido(this.formulario.supervisorCorreo);
   }
 
@@ -227,7 +228,8 @@ export class SolicitudEstudiante {
       this.formulario = structuredClone(formulario);
       this.formulario.modoCentro = actual.modoCentro;
       this.formulario.modoSupervisor = actual.modoSupervisor;
-      this.mostrarFormularioCentroPropuesto.set(actual.modoCentro === 'Propuesto');
+      if (actual.estado === 'Devuelta') this.reconciliarPropuestaDevuelta(actual);
+      this.mostrarFormularioCentroPropuesto.set(this.formulario.modoCentro === 'Propuesto');
       return;
     }
 
@@ -254,5 +256,33 @@ export class SolicitudEstudiante {
     }
 
     if (!centro) this.proponerCentro();
+  }
+
+  private reconciliarPropuestaDevuelta(actual: SolicitudPractica): void {
+    const centro = this.centros().find((item) => item.id === actual.centroId && item.estado === 'Activo');
+    if (!centro) return;
+
+    // Una propuesta aprobada desde HU-12 debe pasar a usarse como centro registrado en el reenvío.
+    this.formulario.modoCentro = 'Registrado';
+    this.formulario.centroId = centro.id;
+    this.formulario.centroRazonSocial = centro.razonSocial;
+    this.formulario.centroRut = centro.rut;
+
+    const supervisor = centro.supervisores.find((item) =>
+      item.correo.toLowerCase() === actual.supervisorCorreo.toLowerCase() && item.estado === 'Activo');
+    if (supervisor) {
+      this.formulario.modoSupervisor = 'Registrado';
+      this.formulario.supervisorId = supervisor.correo;
+      this.aplicarSupervisor(supervisor);
+    } else if (actual.modoSupervisor === 'Registrado') {
+      // El supervisor anterior dejó de estar activo; no se reactiva ni se reutiliza en el reenvío.
+      this.formulario.modoSupervisor = 'Propuesto';
+      this.formulario.supervisorId = null;
+      this.formulario.supervisorNombre = '';
+      this.formulario.supervisorCorreo = '';
+      this.formulario.supervisorCargo = '';
+      this.formulario.supervisorTelefono = '';
+      this.formulario.supervisorUnidad = '';
+    }
   }
 }

@@ -8,7 +8,7 @@
 .lista__encabezado,
 .lista__fila {
   display: grid;
-  grid-template-columns: 1fr 104px 88px;
+  grid-template-columns: minmax(130px, 1fr) minmax(110px, 1fr) 104px 88px;
   align-items: center;
   gap: 8px;
   padding: 0 24px;
@@ -45,6 +45,39 @@
 .lista__fila--activa,
 .lista__fila--activa:hover {
   background: #e1edf8;
+}
+
+.acuerdo-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 20px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.acuerdo-filtros button {
+  border: 1px solid #d6dfeb;
+  border-radius: 999px;
+  padding: 7px 12px;
+  color: #53647a;
+  background: #fff;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.acuerdo-filtros .acuerdo-filtros__activo {
+  border-color: #385a91;
+  color: #fff;
+  background: #385a91;
+}
+
+.centro-pendiente {
+  overflow: hidden;
+  color: #4e6077;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .vacio,

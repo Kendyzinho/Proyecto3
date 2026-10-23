@@ -11,6 +11,7 @@ use App\Models\Practica;
 use App\Services\DocumentoService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -58,7 +59,26 @@ class DocumentoController extends Controller
 
         // Se actualiza el acuerdo actual; si el centro no tiene, se crea
         $acuerdo = $centro->acuerdoActual() ?? new AcuerdoColaboracion(['centro_id' => $centro->id]);
-        $acuerdo->fill($datos)->save();
+        DB::transaction(function () use ($acuerdo, $datos, $centro) {
+            $acuerdo->fill($datos)->save();
+
+            // HU-10 formaliza y da de alta centros externos cuando el acuerdo ya está firmado,
+            // su vigencia no terminó y el PDF está cargado. La UTA se activa por su registro.
+            $fechaInicio = $acuerdo->fecha_inicio;
+            $vigenciaNoTerminada = $acuerdo->fecha_termino === null
+                || $acuerdo->fecha_termino->greaterThanOrEqualTo(today());
+            $fechaAltaCentro = $centro->fresh()->fecha_alta;
+            $altaPendiente = $fechaAltaCentro === null || $fechaAltaCentro->isFuture();
+            if (!$centro->es_interno && $altaPendiente) {
+                $fechaAlta = $fechaInicio && $vigenciaNoTerminada && $acuerdo->archivo_pdf
+                    ? $fechaInicio->toDateString()
+                    : null;
+                CentroPractica::query()->whereKey($centro->id)->update([
+                    'fecha_alta' => $fechaAlta,
+                    'updated_at' => now(),
+                ]);
+            }
+        });
 
         return response()->json(['id' => $acuerdo->id, 'estado' => $acuerdo->estado()]);
     }
@@ -67,7 +87,12 @@ class DocumentoController extends Controller
     {
         abort_if($acuerdo->archivo_pdf === null, 404);
 
-        return Storage::download($acuerdo->archivo_pdf, 'Acuerdo de colaboración.pdf');
+        return Storage::response(
+            $acuerdo->archivo_pdf,
+            'Acuerdo de colaboración.pdf',
+            ['Content-Type' => 'application/pdf'],
+            'inline',
+        );
     }
 
     private function archivo(Documento $documento): StreamedResponse

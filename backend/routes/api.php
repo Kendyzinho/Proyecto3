@@ -81,4 +81,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/centros-practica/{centroPractica}', [CentroPracticaController::class, 'update']);
     Route::post('/centros-practica/{centroPractica}/dar-de-baja', [CentroPracticaController::class, 'darDeBaja']);
     Route::post('/centros-practica/{centroPractica}/reactivar', [CentroPracticaController::class, 'reactivar']);
+    Route::post('/centros-practica/{centroPractica}/supervisores', [CentroPracticaController::class, 'storeSupervisor']);
+    Route::post('/centros-practica/{centroPractica}/supervisores/{supervisor}/activar', [CentroPracticaController::class, 'activarSupervisor']);
+    Route::post('/centros-practica/{centroPractica}/supervisores/{supervisor}/dar-de-baja', [CentroPracticaController::class, 'darDeBajaSupervisor']);
 });

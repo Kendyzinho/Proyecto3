@@ -1100,6 +1100,96 @@ td:first-child {
   margin: 16px 0 0;
 }
 
+.supervisor-actions {
+  text-align: right;
+}
+
+.text-button--danger {
+  color: #b33232;
+}
+
+.supervisor-inline-form {
+  margin: 16px 20px 20px;
+  padding: 22px;
+  border: 1px solid #dce5ef;
+  border-radius: 12px;
+  background: #f8fafc;
+  box-shadow: 0 2px 8px #2432470a;
+}
+
+.supervisor-form-heading { margin-bottom: 20px; }
+
+.supervisor-inline-form h3 {
+  margin: 0 0 7px;
+  color: #25344a;
+  font-size: 16px;
+}
+
+.supervisor-inline-form .muted-copy {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.supervisor-inline-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 22px;
+  row-gap: 19px;
+}
+
+.supervisor-inline-fields .field-block {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  min-width: 0;
+  gap: 7px;
+}
+
+.supervisor-inline-fields label {
+  color: #53647a;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.supervisor-inline-fields input {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  border: 1px solid #b9c6d7;
+  border-radius: 8px;
+  padding: 11px 13px;
+  color: #243247;
+  background: #fff;
+  font: inherit;
+  font-size: 14px;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.supervisor-inline-fields input:focus {
+  outline: none;
+  border-color: #355085;
+  box-shadow: 0 0 0 3px #35508520;
+}
+
+.supervisor-inline-fields input:invalid:not(:focus) {
+  box-shadow: none;
+}
+
+.supervisor-inline-fields .field-error {
+  margin-top: -2px;
+  font-size: 12px;
+}
+
+.supervisor-inline-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  margin-top: 22px;
+  padding-top: 16px;
+  border-top: 1px solid #e1e8f0;
+}
+
 @media (max-width: 700px) {
   .detail-actions {
     width: 100%;
@@ -1111,5 +1201,13 @@ td:first-child {
   .custom-area-row {
     align-items: stretch;
     flex-direction: column;
+  }
+  .supervisor-inline-form {
+    margin: 14px 12px 18px;
+    padding: 17px;
+  }
+  .supervisor-inline-fields {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 16px;
   }
 }

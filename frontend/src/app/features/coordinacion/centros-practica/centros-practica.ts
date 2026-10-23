@@ -9,6 +9,7 @@ import {
   EstudianteCentro,
   EstadoPractica,
   ResultadoDictamen,
+  SupervisorCentro,
 } from './centro-practica.model';
 import { CentrosPracticaService } from './centros-practica.service';
 
@@ -56,6 +57,11 @@ export class CentrosPractica {
   protected readonly estudianteSeleccionado = signal<EstudianteCentro | null>(null);
   protected readonly motivoBaja = signal('');
   protected readonly errorBaja = signal('');
+  protected readonly mostrarFormularioSupervisor = signal(false);
+  protected readonly guardandoSupervisor = signal(false);
+  protected readonly intentoGuardarSupervisor = signal(false);
+  protected readonly supervisorFichaError = signal('');
+  protected readonly nuevoSupervisorFicha = signal<SupervisorFormulario>(this.supervisorVacio());
   protected readonly cuposFormulario = signal<CupoCentro[]>([]);
   protected readonly supervisoresFormulario = signal<SupervisorFormulario[]>([]);
   protected periodoNuevoCupo = '2° semestre 2026';
@@ -186,6 +192,123 @@ export class CentrosPractica {
   protected supervisoresResumen(centro: CentroPractica): string {
     const cantidad = centro.supervisores.length;
     return cantidad === 0 ? 'Sin supervisores' : `${cantidad} ${cantidad === 1 ? 'supervisor(a)' : 'supervisores'}`;
+  }
+
+  protected puedeActivarSupervisores(centro: CentroPractica): boolean {
+    return centro.estado === 'Activo' && (centro.esInterno || centro.acuerdo === 'Vigente');
+  }
+
+  protected abrirFormularioSupervisor(): void {
+    this.supervisorFichaError.set('');
+    this.intentoGuardarSupervisor.set(false);
+    this.nuevoSupervisorFicha.set(this.supervisorVacio());
+    this.mostrarFormularioSupervisor.set(true);
+  }
+
+  protected cancelarSupervisorFicha(): void {
+    this.mostrarFormularioSupervisor.set(false);
+    this.supervisorFichaError.set('');
+  }
+
+  protected actualizarSupervisorFicha(campo: keyof SupervisorFormulario, valor: string): void {
+    this.nuevoSupervisorFicha.update((actual) => ({ ...actual, [campo]: valor }));
+    this.supervisorFichaError.set('');
+  }
+
+  protected nombreSupervisorFichaValido(): boolean {
+    return !!this.nuevoSupervisorFicha().nombre.trim();
+  }
+
+  protected correoSupervisorFichaValido(): boolean {
+    const correo = this.nuevoSupervisorFicha().correo.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) return false;
+    return !this.centroSeleccionado()?.supervisores.some((supervisor) => supervisor.correo.toLowerCase() === correo.toLowerCase());
+  }
+
+  protected mostrarErrorSupervisorFicha(valido: boolean): boolean {
+    return this.intentoGuardarSupervisor() && !valido;
+  }
+
+  protected mensajeCorreoSupervisorFicha(): string {
+    const correo = this.nuevoSupervisorFicha().correo.trim();
+    if (!correo) return 'Ingresa el correo del supervisor o supervisora.';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) return 'Ingresa un correo válido.';
+    return 'Ya existe un supervisor con este correo en el centro.';
+  }
+
+  protected guardarSupervisorFicha(): void {
+    const centro = this.centroSeleccionado();
+    const supervisor = this.nuevoSupervisorFicha();
+    if (!centro) return;
+    this.intentoGuardarSupervisor.set(true);
+    if (!this.nombreSupervisorFichaValido() || !this.correoSupervisorFichaValido()) {
+      return;
+    }
+
+    this.guardandoSupervisor.set(true);
+    this.supervisorFichaError.set('');
+    this.centrosService.agregarSupervisor(centro.id, supervisor).subscribe({
+      next: (actualizado) => {
+        this.reemplazarCentro(actualizado);
+        this.cancelarSupervisorFicha();
+      },
+      error: (error: unknown) => {
+        this.guardandoSupervisor.set(false);
+        this.supervisorFichaError.set(this.centrosService.mensajeError(error));
+      },
+      complete: () => this.guardandoSupervisor.set(false),
+    });
+  }
+
+  protected cambiarEstadoSupervisor(supervisor: SupervisorCentro): void {
+    const centro = this.centroSeleccionado();
+    if (!centro || supervisor.id === undefined) return;
+    if (supervisor.estado === 'Propuesto' && !this.puedeActivarSupervisores(centro)) {
+      this.errorApi.set('Para activar al supervisor, primero el centro debe estar activo y tener acuerdo vigente.');
+      return;
+    }
+
+    const activar = supervisor.estado === 'Propuesto';
+    if (!activar && !window.confirm(`¿Dar de baja a ${supervisor.nombre}? Sus prácticas e historial se conservarán.`)) return;
+
+    this.guardando.set(true);
+    this.errorApi.set('');
+    const accion = activar
+      ? this.centrosService.activarSupervisor(centro.id, supervisor.id)
+      : this.centrosService.darDeBajaSupervisor(centro.id, supervisor.id);
+    accion.subscribe({
+      next: (actualizado) => this.reemplazarCentro(actualizado),
+      error: (error: unknown) => this.errorApi.set(this.centrosService.mensajeError(error)),
+      complete: () => this.guardando.set(false),
+    });
+  }
+
+  protected verAcuerdoPdf(): void {
+    const acuerdoId = this.centroSeleccionado()?.acuerdoArchivoId;
+    if (!acuerdoId) {
+      this.errorApi.set('Este centro todavía no tiene un PDF de acuerdo cargado.');
+      return;
+    }
+
+    // Abrir la pestaña directamente en el click para que el navegador no bloquee la vista previa.
+    const ventana = window.open('', '_blank');
+    if (!ventana) {
+      this.errorApi.set('Permite las ventanas emergentes para ver el PDF del acuerdo.');
+      return;
+    }
+
+    this.errorApi.set('');
+    this.centrosService.archivoAcuerdo(acuerdoId).subscribe({
+      next: (pdf) => {
+        const url = URL.createObjectURL(pdf);
+        ventana.location.href = url;
+        window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      },
+      error: (error: unknown) => {
+        ventana.close();
+        this.errorApi.set(this.centrosService.mensajeError(error));
+      },
+    });
   }
 
   protected cerrarFormularioNuevo(): void {
@@ -452,7 +575,9 @@ export class CentrosPractica {
       ? 'status--active'
       : estado === 'Propuesto'
         ? 'status--proposed'
-        : 'status--inactive';
+        : estado === 'Sin acuerdo'
+          ? 'status--neutral'
+          : 'status--inactive';
   }
 
   protected estadoAcuerdoClass(estado: EstadoAcuerdo): string {

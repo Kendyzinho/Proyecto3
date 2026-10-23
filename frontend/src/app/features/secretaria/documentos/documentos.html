@@ -8,20 +8,27 @@
       <h2>Prácticas por formalizar</h2>
     </div>
 
-    @if (practicas().length === 0) {
-      <p class="vacio">No hay prácticas con centro en el {{ periodo()?.nombre }}.</p>
+    <div class="acuerdo-filtros" role="group" aria-label="Filtrar prácticas por estado del acuerdo">
+      <button type="button" [class.acuerdo-filtros__activo]="!soloSinAcuerdo()" [attr.aria-pressed]="!soloSinAcuerdo()" (click)="filtrarSinAcuerdo(false)">Todas</button>
+      <button type="button" [class.acuerdo-filtros__activo]="soloSinAcuerdo()" [attr.aria-pressed]="soloSinAcuerdo()" (click)="filtrarSinAcuerdo(true)">Centros sin acuerdo vigente</button>
+    </div>
+
+    @if (practicasVisibles().length === 0) {
+      <p class="vacio">{{ soloSinAcuerdo() ? 'No hay centros pendientes de acuerdo en el ' : 'No hay prácticas con centro en el ' }}{{ periodo()?.nombre }}.</p>
     } @else {
       <div class="lista__encabezado">
         <span>Estudiante</span>
+        <span>Centro</span>
         <span>Carta</span>
         <span>Seguro</span>
       </div>
-      @for (practica of practicas(); track practica.id) {
+      @for (practica of practicasVisibles(); track practica.id) {
         <button type="button" class="lista__fila" [class.lista__fila--activa]="detalle()?.id === practica.id" (click)="elegir(practica)">
           <span class="persona">
             <span class="avatar">{{ iniciales(practica.estudiante) }}</span>
             <span class="persona__nombre">{{ practica.estudiante }}</span>
           </span>
+          <span class="centro-pendiente" [title]="practica.centro">{{ practica.centro }}</span>
           <span class="estado" [class]="claseEstado(practica.carta.estado)">{{ textoEstado(practica.carta.estado, 'carta') }}</span>
           <span class="estado" [class]="claseEstado(practica.seguro.estado)">{{ textoEstado(practica.seguro.estado, 'seguro') }}</span>
         </button>

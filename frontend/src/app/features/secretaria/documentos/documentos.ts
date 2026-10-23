@@ -29,6 +29,7 @@ export class Documentos {
 
   protected readonly periodo = signal<PeriodoActual | null>(null);
   protected readonly practicas = signal<PracticaPorFormalizar[]>([]);
+  protected readonly soloSinAcuerdo = signal(false);
   protected readonly detalle = signal<DetallePractica | null>(null);
   protected readonly pestana = signal(0);
   protected readonly ocupado = signal(false);
@@ -40,6 +41,9 @@ export class Documentos {
   protected readonly sinOrden = () => 0; // keyvalue sin reordenar: los datos van en el orden del backend
   protected readonly textoEstado = textoEstado;
   protected readonly claseEstado = claseEstado;
+  protected readonly practicasVisibles = computed(() => this.soloSinAcuerdo()
+    ? this.practicas().filter((practica) => !practica.con_acuerdo)
+    : this.practicas());
 
   constructor() {
     this.api.periodoActual().subscribe((periodo) => {
@@ -49,7 +53,12 @@ export class Documentos {
   }
 
   protected elegir(practica: PracticaPorFormalizar): void {
+    if (!practica.con_acuerdo) this.pestana.set(2);
     this.api.detalle(practica.id).subscribe((detalle) => this.detalle.set(detalle));
+  }
+
+  protected filtrarSinAcuerdo(solo: boolean): void {
+    this.soloSinAcuerdo.set(solo);
   }
 
   protected descargarPdf(): void {

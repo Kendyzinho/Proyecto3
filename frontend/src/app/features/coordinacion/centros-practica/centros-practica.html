@@ -19,10 +19,6 @@
       </button>
     </header>
 
-    @if (errorCargaCatalogo()) {
-      <p class="field-error" role="alert">{{ errorCargaCatalogo() }}</p>
-    }
-
     <section class="catalog-card" aria-label="Catálogo de centros de práctica">
       <div class="filters">
         <label class="search-field">
@@ -242,8 +238,9 @@
             <button
               class="text-button pdf-button"
               type="button"
-              [disabled]="centroSeleccionado()!.acuerdo === 'Sin acuerdo'"
-              title="El PDF se disponibiliza desde HU-10"
+              [disabled]="!centroSeleccionado()!.acuerdoArchivoId"
+              title="Abre el PDF de acuerdo cargado desde HU-10"
+              (click)="verAcuerdoPdf()"
             >
               <svg class="pdf-icon" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
@@ -290,8 +287,8 @@
             <button
               class="text-button"
               type="button"
-              disabled
-              title="La gestión de supervisores se habilitará con el flujo de backend"
+              (click)="abrirFormularioSupervisor()"
+              [disabled]="mostrarFormularioSupervisor() || guardandoSupervisor()"
             >
               ＋ Agregar
             </button>
@@ -305,10 +302,11 @@
                     <th>Unidad</th>
                     <th>Contacto</th>
                     <th>Estado</th>
+                    <th><span class="sr-only">Acciones</span></th>
                   </tr>
                 </thead>
                 <tbody>
-                  @for (supervisor of centroSeleccionado()!.supervisores; track supervisor.correo) {
+                  @for (supervisor of centroSeleccionado()!.supervisores; track supervisor.id ?? supervisor.correo) {
                     <tr>
                       <td>
                         <strong>{{ supervisor.nombre }}</strong
@@ -323,6 +321,16 @@
                           >{{ supervisor.estado }}</span
                         >
                       </td>
+                      <td class="supervisor-actions">
+                        @if (supervisor.estado === 'Propuesto') {
+                          <button class="text-button" type="button" [disabled]="guardando() || !puedeActivarSupervisores(centroSeleccionado()!)"
+                            [title]="puedeActivarSupervisores(centroSeleccionado()!) ? 'Aprobar y activar supervisor' : 'El centro debe estar activo y tener acuerdo vigente'"
+                            (click)="cambiarEstadoSupervisor(supervisor)">Aprobar</button>
+                        } @else if (supervisor.estado === 'Activo') {
+                          <button class="text-button text-button--danger" type="button" [disabled]="guardando()"
+                            (click)="cambiarEstadoSupervisor(supervisor)">Dar de baja</button>
+                        }
+                      </td>
                     </tr>
                   }
                 </tbody>
@@ -332,6 +340,23 @@
             <p class="muted-copy inset-copy">
               Este centro todavía no tiene supervisores registrados.
             </p>
+          }
+          @if (mostrarFormularioSupervisor()) {
+            <form class="supervisor-inline-form" (ngSubmit)="guardarSupervisorFicha()" novalidate>
+              <div class="supervisor-form-heading"><div><h3>Agregar supervisor(a)</h3><p class="muted-copy">Quedará propuesto hasta que lo actives desde esta ficha. Sus prácticas se conservan al darlo de baja.</p></div></div>
+              <div class="supervisor-inline-fields">
+                <div class="field-block"><label for="supervisorFichaNombre">Nombre completo *</label><input id="supervisorFichaNombre" name="supervisorFichaNombre" [ngModel]="nuevoSupervisorFicha().nombre" (ngModelChange)="actualizarSupervisorFicha('nombre', $event)" autocomplete="name" required />@if (mostrarErrorSupervisorFicha(nombreSupervisorFichaValido())) { <small class="field-error">Ingresa el nombre completo.</small> }</div>
+                <div class="field-block"><label for="supervisorFichaCorreo">Correo electrónico *</label><input id="supervisorFichaCorreo" name="supervisorFichaCorreo" type="email" [ngModel]="nuevoSupervisorFicha().correo" (ngModelChange)="actualizarSupervisorFicha('correo', $event)" autocomplete="email" required />@if (mostrarErrorSupervisorFicha(correoSupervisorFichaValido())) { <small class="field-error">{{ mensajeCorreoSupervisorFicha() }}</small> }</div>
+                <div class="field-block"><label for="supervisorFichaCargo">Cargo</label><input id="supervisorFichaCargo" name="supervisorFichaCargo" [ngModel]="nuevoSupervisorFicha().cargo" (ngModelChange)="actualizarSupervisorFicha('cargo', $event)" autocomplete="organization-title" /></div>
+                <div class="field-block"><label for="supervisorFichaUnidad">Unidad o área</label><input id="supervisorFichaUnidad" name="supervisorFichaUnidad" [ngModel]="nuevoSupervisorFicha().unidad" (ngModelChange)="actualizarSupervisorFicha('unidad', $event)" /></div>
+                <div class="field-block"><label for="supervisorFichaTelefono">Teléfono</label><input id="supervisorFichaTelefono" name="supervisorFichaTelefono" type="tel" [ngModel]="nuevoSupervisorFicha().telefono" (ngModelChange)="actualizarSupervisorFicha('telefono', $event)" autocomplete="tel" maxlength="30" /></div>
+              </div>
+              @if (supervisorFichaError()) { <p class="field-error" role="alert">{{ supervisorFichaError() }}</p> }
+              <div class="supervisor-inline-actions">
+                <button class="text-button" type="button" (click)="cancelarSupervisorFicha()">Cancelar</button>
+                <button class="secondary-button" type="submit" [disabled]="guardandoSupervisor()">{{ guardandoSupervisor() ? 'Guardando…' : 'Guardar supervisor' }}</button>
+              </div>
+            </form>
           }
         </article>
 

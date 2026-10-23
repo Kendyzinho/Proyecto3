@@ -24,7 +24,7 @@ class AcuerdoColaboracion extends Model
     // fecha_inicio vacía = en trámite (ER)
     public function estado(): string
     {
-        if ($this->fecha_inicio === null || $this->fecha_inicio->isFuture()) {
+        if (!$this->archivo_pdf || $this->fecha_inicio === null || $this->fecha_inicio->isFuture()) {
             return 'en_tramite';
         }
 

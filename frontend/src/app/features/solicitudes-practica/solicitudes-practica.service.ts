@@ -147,7 +147,7 @@ export class SolicitudesPracticaService {
     return {
       id: centro.id, nombre: centro.nombre, razonSocial: centro.razon_social, rut: centro.rut ?? '',
       areas: [], acuerdo, cupos: [], supervisorPrincipal: centro.supervisores[0]?.nombre ?? null,
-      estado: centro.estado === 'propuesto' ? 'Propuesto' : centro.estado === 'dado_de_baja' ? 'Dado de baja' : 'Activo',
+      estado: centro.estado === 'propuesto' ? 'Propuesto' : centro.estado === 'sin_acuerdo' ? 'Sin acuerdo' : centro.estado === 'dado_de_baja' ? 'Dado de baja' : 'Activo',
       direccion: centro.direccion ?? '', telefono: centro.telefono ?? '', esInterno: centro.es_interno,
       representanteLegal: null, tipoAcuerdo: null, vigenciaAcuerdo: null,
       supervisores: centro.supervisores.map((supervisor) => ({

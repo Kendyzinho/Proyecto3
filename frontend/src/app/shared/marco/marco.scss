@@ -4,15 +4,18 @@
 }
 
 .marco {
+  width: 100%;
+  min-width: 0;
   height: 100%;
   background: #f1f5f9;
 }
 
 .lateral {
-  width: 280px;
+  width: 344px;
   border-right: 1px solid #e2e8f0;
   border-radius: 0;
   background: #fff;
+  transition: width 0.2s ease;
 }
 
 .lateral__encabezado {
@@ -30,6 +33,12 @@
   align-items: center;
   gap: 12px;
   margin-bottom: 12px;
+}
+
+.marca img {
+  width: 112px;
+  height: 40px;
+  object-fit: contain;
 }
 
 .marca__separador {
@@ -105,7 +114,11 @@
 
 .contenido {
   display: flex;
+  flex: 1 1 auto;
   flex-direction: column;
+  min-width: 0;
+  width: auto;
+  max-width: 100%;
 }
 
 .barra {
@@ -113,11 +126,11 @@
   top: 0;
   z-index: 2;
   flex-shrink: 0; // sin esto, en páginas largas el flex la aplasta de 64 a 40 px
-  display: flex;
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
   align-items: center;
-  justify-content: space-between;
-  height: 64px;
-  padding: 0 16px;
+  height: 80px;
+  padding: 0 28px;
   background: #355085;
   color: #fff;
 }
@@ -155,14 +168,35 @@
 
 .pagina {
   width: 100%;
-  max-width: 1160px;
+  min-width: 0;
+  max-width: 1800px;
   box-sizing: border-box;
   margin: 0 auto;
-  padding: 32px 40px;
+  padding: 28px 36px;
 }
 
 .barra > button {
   color: #fff;
 }
 
+.barra__acciones { display: flex; align-items: center; justify-self: end; min-width: 0; gap: 12px; }
+.barra__acciones app-menu-usuario { display: block; flex: 0 1 auto; min-width: 0; max-width: min(52vw, 360px); }
+.notificaciones { position: relative; }
+.notificaciones__panel { position: absolute; z-index: 5; top: calc(100% + 12px); right: 0; width: min(300px, calc(100vw - 32px)); box-sizing: border-box; padding: 16px; border: 1px solid #e2e8f0; border-radius: 12px; background: #fff; color: #26354b; box-shadow: 0 12px 32px #17243a24; }
+.notificaciones__panel p { margin: 8px 0 0; color: #5b6b80; font-size: 13px; line-height: 1.45; }
+.barra__acciones > * { color: #fff; }
+.marco--colapsado:not(.marco--movil) .lateral { width: 82px; }
+.marco--colapsado:not(.marco--movil) .lateral__encabezado { padding-left: 8px; padding-right: 8px; }
+.marco--colapsado:not(.marco--movil) .marca { gap: 0; }
+.marco--colapsado:not(.marco--movil) .marca img { width: 56px; height: 40px; }
+.marco--colapsado:not(.marco--movil) .marca__separador,
+.marco--colapsado:not(.marco--movil) .marca__nombre,
+.marco--colapsado:not(.marco--movil) .lateral__usuario,
+.marco--colapsado:not(.marco--movil) .lateral__rol,
+.marco--colapsado:not(.marco--movil) .lateral__grupo,
+.marco--colapsado:not(.marco--movil) .opcion > span { display: none; }
+.marco--colapsado:not(.marco--movil) .opcion { justify-content: center; padding: 0; }
+.marco--colapsado:not(.marco--movil) .lateral__menu { padding-left: 8px; padding-right: 8px; }
 .marco--movil .pagina { padding: 24px 16px; }
+@media (max-width: 1050px) { .lateral { width: 300px; } .pagina { padding: 26px 28px; } }
+@media (max-width: 700px) { .barra { height: 64px; padding: 0 12px; } .barra__acciones { gap: 4px; } }

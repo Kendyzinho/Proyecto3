@@ -37,9 +37,10 @@ export class Marco {
   private readonly pantalla = toSignal(inject(BreakpointObserver).observe('(max-width: 700px)'));
   protected readonly movil = computed(() => this.adaptable() && !!this.pantalla()?.matches);
   protected readonly menuMovil = signal(false);
+  protected readonly menuColapsado = signal(false);
+  protected readonly notificacionesAbiertas = signal(false);
 
   protected readonly auth = inject(Auth);
-  protected readonly menuAbierto = signal(true);
   protected readonly nombreRol = computed(() => {
     const usuario = this.auth.usuario();
     return usuario ? NOMBRE_ROL[usuario.rol] : '';
@@ -57,6 +58,15 @@ export class Marco {
     }
     return opciones;
   });
+
+  protected alternarMenu(): void {
+    if (this.movil()) {
+      this.menuMovil.update((abierto) => !abierto);
+      return;
+    }
+
+    this.menuColapsado.update((colapsado) => !colapsado);
+  }
 }
 
 export function iniciales(nombre: string): string {
