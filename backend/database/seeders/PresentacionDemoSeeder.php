@@ -1,5 +1,9 @@
 <?php
-
+/**
+ * Para datos de prueba HU-12, HU-09 y HU-08
+ * php artisan migrate
+ * php artisan db:seed --class=PresentacionDemoSeeder
+ * php artisan serve*/
 namespace Database\Seeders;
 
 use App\Models\CentroPractica;
