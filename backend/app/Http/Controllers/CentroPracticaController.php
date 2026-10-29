@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Area;
 use App\Models\CentroPractica;
 use App\Models\Periodo;
+use App\Models\RequerimientoCentro;
 use App\Models\Supervisor;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -374,7 +375,9 @@ class CentroPracticaController extends Controller
             'requerimientos.*.categoria' => ['required', Rule::in(['laboral', 'profesional'])],
             'requerimientos.*.cupos' => ['required', 'integer', 'min:0', 'max:65535'],
             'requerimientos.*.area_ids' => ['sometimes', 'array'],
-            'requerimientos.*.area_ids.*' => ['integer', 'distinct', 'exists:areas,id'],
+            // Las mismas áreas pueden repetirse en distintos requerimientos; la unicidad
+            // se verifica por separado dentro de cada fila para no rechazar esas repeticiones.
+            'requerimientos.*.area_ids.*' => ['integer', 'exists:areas,id'],
             'supervisores' => [$centro ? 'prohibited' : 'required', 'array', 'min:1'],
             'supervisores.*.nombre' => ['required', 'string', 'max:255'],
             'supervisores.*.correo' => ['required', 'email', 'max:255'],
@@ -384,6 +387,13 @@ class CentroPracticaController extends Controller
         ]);
 
         foreach ($data['requerimientos'] ?? [] as $index => $row) {
+            $areaIds = array_map('intval', $row['area_ids'] ?? []);
+            if (count($areaIds) !== count(array_unique($areaIds))) {
+                throw ValidationException::withMessages([
+                    "requerimientos.{$index}.area_ids" => 'No repitas un área dentro del mismo requerimiento.',
+                ]);
+            }
+
             foreach (array_slice($data['requerimientos'] ?? [], $index + 1) as $other) {
                 if ((int) $row['periodo_id'] === (int) $other['periodo_id'] && $row['categoria'] === $other['categoria']) {
                     throw ValidationException::withMessages([
@@ -391,6 +401,16 @@ class CentroPracticaController extends Controller
                     ]);
                 }
             }
+        }
+
+        $supervisorEmails = array_map(
+            fn (array $supervisor) => mb_strtolower(trim($supervisor['correo'])),
+            $data['supervisores'] ?? [],
+        );
+        if (count($supervisorEmails) !== count(array_unique($supervisorEmails))) {
+            throw ValidationException::withMessages([
+                'supervisores' => 'No repitas el correo de un supervisor dentro del mismo centro.',
+            ]);
         }
 
         if (isset($data['rut'])) {
@@ -436,16 +456,36 @@ class CentroPracticaController extends Controller
         }
 
         if (array_key_exists('requerimientos', $data)) {
-            $centro->requerimientos()->delete();
+            $existentes = $centro->requerimientos()->get()->keyBy(
+                fn (RequerimientoCentro $requerimiento) => $requerimiento->periodo_id.'|'.$requerimiento->categoria,
+            );
+            $conservar = [];
+
             foreach ($data['requerimientos'] as $row) {
-                $requerimiento = $centro->requerimientos()->create([
-                    'periodo_id' => $row['periodo_id'],
-                    'categoria' => $row['categoria'],
-                    'cupos' => $row['cupos'],
-                ]);
-                if (isset($row['area_ids'])) {
-                    $requerimiento->areas()->sync($row['area_ids']);
+                $clave = $row['periodo_id'].'|'.$row['categoria'];
+                $requerimiento = $existentes->get($clave);
+
+                if ($requerimiento) {
+                    $requerimiento->update(['cupos' => $row['cupos']]);
+                } else {
+                    $requerimiento = $centro->requerimientos()->create([
+                        'periodo_id' => $row['periodo_id'],
+                        'categoria' => $row['categoria'],
+                        'cupos' => $row['cupos'],
+                    ]);
                 }
+
+                $conservar[] = $requerimiento->id;
+                if (array_key_exists('area_ids', $row)) {
+                    $requerimiento->areas()->sync(array_values(array_unique(array_map('intval', $row['area_ids']))));
+                }
+            }
+
+            $consulta = $centro->requerimientos();
+            if ($conservar === []) {
+                $consulta->delete();
+            } else {
+                $consulta->whereNotIn('id', $conservar)->delete();
             }
         }
     }

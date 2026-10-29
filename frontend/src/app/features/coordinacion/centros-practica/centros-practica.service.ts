@@ -171,6 +171,7 @@ export class CentrosPracticaService {
   }
 
   private payloadCentro(centro: CentroPractica, areaIds: number[], esNuevo: boolean): Observable<Record<string, unknown>> {
+    const areasUnicas = [...new Set(areaIds)];
     return this.http.get<Respuesta<PeriodoApi[]>>('/api/periodos').pipe(
       map(({ data: periodos }) => {
         const requerimientos = centro.cupos.map((cupo) => {
@@ -183,7 +184,7 @@ export class CentrosPracticaService {
             periodo_id: periodo.id,
             categoria: cupo.categoria.toLocaleLowerCase('es'),
             cupos: cupo.total,
-            area_ids: areaIds,
+            area_ids: areasUnicas,
           };
         });
 
@@ -194,7 +195,7 @@ export class CentrosPracticaService {
           direccion: centro.direccion,
           telefono: centro.telefono,
           es_interno: centro.esInterno,
-          area_ids: areaIds,
+          area_ids: areasUnicas,
           requerimientos,
           ...(esNuevo ? {
             supervisores: centro.supervisores.map((supervisor) => ({

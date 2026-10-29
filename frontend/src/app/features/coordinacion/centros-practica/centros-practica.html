@@ -809,9 +809,12 @@
           }
         </section>
         <footer class="dialog-actions">
+          @if (centroEditandoId() !== null && !hayCambiosCentro()) {
+            <p class="field-hint">Modifica algún dato para habilitar «Guardar cambios».</p>
+          }
           <button class="secondary-button" type="button" (click)="cerrarFormularioNuevo()">
             Cancelar</button
-          ><button class="primary-button" type="submit" [disabled]="guardando()">
+          ><button class="primary-button" type="submit" [disabled]="guardando() || (centroEditandoId() !== null && !hayCambiosCentro())">
             {{ centroEditandoId() === null ? 'Guardar centro' : 'Guardar cambios' }}
           </button>
         </footer>

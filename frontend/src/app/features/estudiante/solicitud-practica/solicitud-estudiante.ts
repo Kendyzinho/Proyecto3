@@ -27,6 +27,7 @@ export class SolicitudEstudiante {
   protected readonly solicitud = this.service.solicitudActual;
   protected readonly bloqueada = computed(() => ['Por revisar', 'Aprobada', 'En curso', 'Finalizada', 'Cancelada'].includes(this.solicitud()?.estado ?? ''));
   protected formulario: SolicitudFormulario = this.formularioVacio();
+  private formularioOriginal: string | null = null;
   private centroRegistradoAnterior: number | null = null;
 
   constructor() {
@@ -156,9 +157,19 @@ export class SolicitudEstudiante {
     return this.centroValido() && this.supervisorValido() && !!this.formulario.tareas.trim() && this.horarioValido();
   }
 
+  protected hayCambiosEnSolicitud(): boolean {
+    return this.formularioOriginal === null || this.serializarFormulario() !== this.formularioOriginal;
+  }
+
   protected guardarBorrador(): void {
+    if (!this.hayCambiosEnSolicitud()) {
+      this.avisoExitoso.set(false);
+      this.aviso.set('No hay cambios que guardar.');
+      return;
+    }
     this.service.guardarBorrador(this.formulario).subscribe({
       next: () => {
+        this.marcarFormularioComoOriginal();
         this.avisoExitoso.set(true);
         this.aviso.set('Borrador guardado en tu cuenta. Puedes retomarlo al volver a esta pantalla.');
         this.intentoEnviar.set(false);
@@ -172,6 +183,11 @@ export class SolicitudEstudiante {
 
   protected enviarSolicitud(): void {
     this.intentoEnviar.set(true);
+    if (this.solicitud()?.estado === 'Devuelta' && !this.hayCambiosEnSolicitud()) {
+      this.avisoExitoso.set(false);
+      this.aviso.set('Debes realizar al menos un cambio antes de reenviar la solicitud.');
+      return;
+    }
     if (!this.puedeEnviar()) {
       this.avisoExitoso.set(false);
       this.aviso.set('Revisa los campos indicados antes de enviar la solicitud.');
@@ -179,6 +195,7 @@ export class SolicitudEstudiante {
     }
     this.service.enviar(this.formulario).subscribe({
       next: () => {
+        this.marcarFormularioComoOriginal();
         this.avisoExitoso.set(true);
         this.aviso.set('Solicitud enviada a la Coordinadora para su revisión. Te avisaremos por correo cuando haya una decisión.');
       },
@@ -221,6 +238,16 @@ export class SolicitudEstudiante {
     };
   }
 
+  private serializarFormulario(): string {
+    const copia = structuredClone(this.formulario);
+    copia.horario.dias = [...copia.horario.dias].sort((a, b) => DIAS.indexOf(a) - DIAS.indexOf(b));
+    return JSON.stringify(copia);
+  }
+
+  private marcarFormularioComoOriginal(): void {
+    this.formularioOriginal = this.serializarFormulario();
+  }
+
   private cargarFormularioDesdeBackend(): void {
     const actual = this.solicitud();
     if (actual) {
@@ -230,6 +257,7 @@ export class SolicitudEstudiante {
       this.formulario.modoSupervisor = actual.modoSupervisor;
       if (actual.estado === 'Devuelta') this.reconciliarPropuestaDevuelta(actual);
       this.mostrarFormularioCentroPropuesto.set(this.formulario.modoCentro === 'Propuesto');
+      this.marcarFormularioComoOriginal();
       return;
     }
 
@@ -238,6 +266,7 @@ export class SolicitudEstudiante {
     if (borrador) {
       this.centroRegistradoAnterior = borrador.centroId;
       this.mostrarFormularioCentroPropuesto.set(borrador.modoCentro === 'Propuesto');
+      this.marcarFormularioComoOriginal();
       return;
     }
     const centro = this.centros().find((item) => item.id === this.formulario.centroId) ?? this.centros()[0];
@@ -252,10 +281,12 @@ export class SolicitudEstudiante {
         this.formulario.modoSupervisor = 'Registrado';
         this.aplicarSupervisor(supervisor);
       }
+      this.marcarFormularioComoOriginal();
       return;
     }
 
     if (!centro) this.proponerCentro();
+    this.marcarFormularioComoOriginal();
   }
 
   private reconciliarPropuestaDevuelta(actual: SolicitudPractica): void {

@@ -69,6 +69,7 @@ export class CentrosPractica {
   protected cantidadNuevoCupo = 1;
 
   protected nuevoCentro = this.formularioVacio();
+  private centroOriginalAlEditar: string | null = null;
 
   protected readonly centrosVisibles = computed(() => {
     const termino = this.busqueda().trim().toLocaleLowerCase('es');
@@ -148,6 +149,7 @@ export class CentrosPractica {
   protected editarCentro(): void {
     const centro = this.centroSeleccionado();
     if (!centro) return;
+    this.errorApi.set('');
     this.limpiarFormulario();
     this.nuevoCentro = {
       nombre: centro.nombre,
@@ -160,7 +162,13 @@ export class CentrosPractica {
     this.areasSeleccionadas.set([...centro.areas]);
     this.cuposFormulario.set([...centro.cupos]);
     this.centroEditandoId.set(centro.id);
+    this.centroOriginalAlEditar = this.serializarDatosEditablesCentro();
     this.mostrarFormularioNuevo.set(true);
+  }
+
+  protected hayCambiosCentro(): boolean {
+    return this.centroOriginalAlEditar === null ||
+      this.serializarDatosEditablesCentro() !== this.centroOriginalAlEditar;
   }
 
   protected agregarSupervisorFormulario(): void {
@@ -385,6 +393,10 @@ export class CentrosPractica {
     if (hayError || this.errorTipoCentro() || this.areasSeleccionadas().length === 0 || erroresSupervisores) return;
 
     const centroEditando = this.centroEditandoId();
+    if (centroEditando !== null && !this.hayCambiosCentro()) {
+      this.errorApi.set('No hay cambios en el centro para guardar.');
+      return;
+    }
     const actual = this.centros().find((centro) => centro.id === centroEditando);
     const datos: CentroPractica = {
       id: centroEditando ?? Math.max(0, ...this.centros().map((item) => item.id)) + 1,
@@ -603,6 +615,7 @@ export class CentrosPractica {
   }
 
   private limpiarFormulario(): void {
+    this.centroOriginalAlEditar = null;
     this.nuevoCentro = this.formularioVacio();
     this.areasSeleccionadas.set([]);
     this.nuevaArea.set('');
@@ -612,6 +625,28 @@ export class CentrosPractica {
     this.periodoNuevoCupo = '2° semestre 2026';
     this.categoriaNuevoCupo = 'Laboral';
     this.cantidadNuevoCupo = 1;
+  }
+
+  private serializarDatosEditablesCentro(): string {
+    const cupos = [...this.cuposFormulario()]
+      .map((cupo) => ({
+        periodoId: cupo.periodoId,
+        periodo: cupo.periodo,
+        categoria: cupo.categoria,
+        total: cupo.total,
+      }))
+      .sort((a, b) => `${a.periodoId}|${a.categoria}`.localeCompare(`${b.periodoId}|${b.categoria}`));
+
+    return JSON.stringify({
+      nombre: this.nuevoCentro.nombre.trim(),
+      razonSocial: this.nuevoCentro.razonSocial.trim(),
+      rut: this.normalizarRut(this.nuevoCentro.rut),
+      direccion: this.nuevoCentro.direccion.trim(),
+      telefono: this.nuevoCentro.telefono.trim(),
+      esInterno: this.nuevoCentro.esInterno,
+      areas: [...new Set(this.areasSeleccionadas().map((area) => area.trim()))].sort((a, b) => a.localeCompare(b, 'es')),
+      cupos,
+    });
   }
 
   private rutDuplicado(valor: string): boolean {

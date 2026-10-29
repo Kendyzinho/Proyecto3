@@ -67,7 +67,10 @@
           <div class="field-block tasks-field"><label for="tareas">Tareas que realizarás *</label><textarea id="tareas" name="tareas" rows="4" [(ngModel)]="formulario.tareas" placeholder="Describe las funciones y actividades que realizarás en el centro."></textarea>@if (mostrarError(!!formulario.tareas.trim())) { <small class="field-error">Describe las tareas que realizarás.</small> }</div>
         </section>
       </fieldset>
-      <footer class="form-footer">@if (solicitud()?.estado !== 'Devuelta') { <button class="secondary-button" type="button" [disabled]="bloqueada()" (click)="guardarBorrador()">Guardar borrador</button> }<button class="primary-button" type="submit" [disabled]="bloqueada()">{{ solicitud()?.estado === 'Devuelta' ? 'Corregir y reenviar' : 'Enviar solicitud' }}<mat-icon>send</mat-icon></button></footer>
+      @if (solicitud()?.estado === 'Devuelta' && !hayCambiosEnSolicitud()) {
+        <p class="field-hint">Modifica algún dato para habilitar el reenvío.</p>
+      }
+      <footer class="form-footer">@if (solicitud()?.estado !== 'Devuelta') { <button class="secondary-button" type="button" [disabled]="bloqueada() || !hayCambiosEnSolicitud()" (click)="guardarBorrador()">Guardar borrador</button> }<button class="primary-button" type="submit" [disabled]="bloqueada() || (solicitud()?.estado === 'Devuelta' && !hayCambiosEnSolicitud())">{{ solicitud()?.estado === 'Devuelta' ? 'Corregir y reenviar' : 'Enviar solicitud' }}<mat-icon>send</mat-icon></button></footer>
     </form>
     <p class="privacy-note"><mat-icon>info</mat-icon>La información de contacto y el horario serán revisados por la Coordinadora. El horario propuesto quedará confirmado al iniciar la práctica.</p>
   }

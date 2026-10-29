@@ -314,7 +314,7 @@ class SolicitudPracticaController extends Controller
             'fecha_termino' => ['required', 'date', 'after_or_equal:fecha_inicio'],
             'tareas' => ['required', 'string', 'max:10000'],
             'horario.dias' => ['required', 'array', 'min:1'],
-            'horario.dias.*' => ['required', Rule::in(['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'])],
+            'horario.dias.*' => ['required', 'distinct', Rule::in(['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'])],
             'horario.hora_desde' => ['required', 'date_format:H:i'],
             'horario.hora_hasta' => ['required', 'date_format:H:i', 'after:horario.hora_desde'],
         ]);
