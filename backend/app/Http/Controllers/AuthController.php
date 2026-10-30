@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\CambiarContrasenaRequest;
 use App\Http\Requests\LoginRequest;
+use App\Http\Requests\RestablecerContrasenaRequest;
+use App\Http\Requests\SolicitarRecuperacionRequest;
 use App\Http\Resources\UsuarioResource;
 use App\Services\AutenticacionService;
 use Illuminate\Http\JsonResponse;
@@ -41,6 +43,26 @@ class AuthController extends Controller
         $this->autenticacion->cambiarContrasena(
             $request->user(),
             $request->validated('current_password'),
+            $request->validated('password'),
+        );
+
+        return response()->noContent();
+    }
+
+    public function solicitarRecuperacion(SolicitarRecuperacionRequest $request): JsonResponse
+    {
+        $this->autenticacion->enviarEnlaceRecuperacion($request->validated('email'));
+
+        return response()->json([
+            'message' => 'Si el correo pertenece a una cuenta activa, te enviamos un enlace para restablecer la contraseña.',
+        ]);
+    }
+
+    public function restablecerContrasena(RestablecerContrasenaRequest $request): Response
+    {
+        $this->autenticacion->restablecerContrasena(
+            $request->validated('token'),
+            $request->validated('email'),
             $request->validated('password'),
         );
 

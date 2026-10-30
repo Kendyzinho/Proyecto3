@@ -17,6 +17,10 @@ use App\Http\Controllers\MallaController;
 // HU-01: máximo 6 intentos por minuto para frenar ataques de fuerza bruta
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:6,1');
 
+// HU-02: recuperación de contraseña sin sesión iniciada
+Route::post('/recuperar-contrasena', [AuthController::class, 'solicitarRecuperacion'])->middleware('throttle:6,1');
+Route::post('/restablecer-contrasena', [AuthController::class, 'restablecerContrasena'])->middleware('throttle:6,1');
+
 Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('rol:coordinadora')->prefix('coordinacion')->group(function () {
         Route::get('/metricas', [PracticaExcepcionalController::class, 'metricas']);

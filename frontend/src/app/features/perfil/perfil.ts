@@ -14,6 +14,7 @@ import { finalize } from 'rxjs';
 import { NOMBRE_ROL, Usuario } from '../../core/models/usuario';
 import { Auth } from '../../core/services/auth';
 import { CambioContrasena, PerfilApi } from '../../core/services/perfil-api';
+import { validarNuevaClave } from '../../core/validadores/clave';
 
 type CampoClave = keyof CambioContrasena;
 const CLAVES_OCULTAS: Record<CampoClave, boolean> = {
@@ -138,15 +139,6 @@ export class Perfil implements OnInit, OnDestroy {
     if (campo === 'password_confirmation' && this.form.hasError('noCoinciden')) return 'Las contraseñas no coinciden.';
     return '';
   }
-}
-
-function validarNuevaClave(control: AbstractControl<string>): ValidationErrors | null {
-  const valor = control.value;
-  if (!valor) return null;
-  if ([...valor].length < 8) return { longitud: true };
-  if (!/\p{Lu}/u.test(valor) || !/[0-9]/.test(valor)) return { complejidad: true };
-  if (new TextEncoder().encode(valor).length > 72) return { demasiadoLarga: true };
-  return valor.includes('\0') ? { caracterInvalido: true } : null;
 }
 
 function validarRelacionDeClaves(control: AbstractControl): ValidationErrors | null {
