@@ -9,6 +9,7 @@ import { RouterTestingHarness } from '@angular/router/testing';
 import { routes } from '../../app.routes';
 import { authInterceptor } from '../../core/interceptors/auth-interceptor';
 import { Auth } from '../../core/services/auth';
+import { MENUS_POR_ROL } from '../../shared/marco/menus-por-rol';
 
 describe('Navegación del perfil', () => {
   beforeEach(() => {
@@ -66,7 +67,9 @@ describe('Navegación del perfil', () => {
     expect(harness.routeNativeElement?.querySelectorAll('header.barra')).toHaveLength(1);
     expect(harness.routeNativeElement?.querySelector('nav.lateral__menu')?.textContent).toContain('Inicio');
     expect(harness.routeNativeElement?.querySelector('.lateral__grupo')?.textContent).toContain(nombreRol);
-    expect(harness.routeNativeElement?.querySelectorAll('nav.lateral__menu .opcion')).toHaveLength(rol === 'secretaria' ? 3 : 1);
+    const opciones = Array.from(harness.routeNativeElement!.querySelectorAll<HTMLAnchorElement>('nav.lateral__menu .opcion'));
+    expect(opciones.map((opcion) => ({ texto: opcion.querySelector('span')?.textContent?.trim(), ruta: opcion.getAttribute('href') })))
+      .toEqual(MENUS_POR_ROL[rol as keyof typeof MENUS_POR_ROL].map(({ texto, ruta }) => ({ texto, ruta })));
 
     harness.routeNativeElement!.querySelector<HTMLAnchorElement>(`a[href="${inicio}"]`)!.click();
     await harness.fixture.whenStable();

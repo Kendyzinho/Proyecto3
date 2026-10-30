@@ -11,6 +11,7 @@ import { PaginadorEnEspanol } from '../../core/i18n/paginador';
 import { NOMBRE_ROL } from '../../core/models/usuario';
 import { Auth } from '../../core/services/auth';
 import { MenuUsuario } from '../menu-usuario/menu-usuario';
+import { MENUS_POR_ROL } from './menus-por-rol';
 
 export interface OpcionMenu {
   texto: string;
@@ -48,15 +49,8 @@ export class Marco {
   protected readonly grupoVisible = computed(() => this.perfil() ? `Área personal · ${this.nombreRol()}` : this.grupo());
   protected readonly menuVisible = computed<OpcionMenu[]>(() => {
     if (!this.perfil()) return this.menu() ?? [];
-    const inicio = this.auth.inicio();
-    const opciones: OpcionMenu[] = [{ texto: 'Inicio', icono: 'home', ruta: inicio }];
-    if (this.auth.usuario()?.rol === 'secretaria') {
-      opciones.push(
-        { texto: 'Nómina de estudiantes', icono: 'table_view', ruta: '/secretaria/nomina' },
-        { texto: 'Documentos', icono: 'description', ruta: '/secretaria/documentos' },
-      );
-    }
-    return opciones;
+    const rol = this.auth.usuario()?.rol;
+    return rol ? MENUS_POR_ROL[rol] ?? [] : [];
   });
 
   protected alternarMenu(): void {

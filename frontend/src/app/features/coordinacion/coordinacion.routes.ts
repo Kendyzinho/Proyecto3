@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { Marco } from '../../shared/marco/marco';
+import { MENUS_POR_ROL } from '../../shared/marco/menus-por-rol';
 
 export default [
   {
@@ -8,12 +9,7 @@ export default [
     data: {
       grupo: 'Coordinadora de Prácticas',
       adaptable: true,
-      menu: [
-        { texto: 'Inicio', icono: 'home', ruta: '/coordinacion' },
-        { texto: 'Prácticas', icono: 'work', ruta: '/coordinacion/asignaciones' },
-        { texto: 'Solicitudes', icono: 'inbox', ruta: '/coordinacion/solicitudes' },
-        { texto: 'Centros de práctica', icono: 'domain', ruta: '/coordinacion/centros' },
-      ],
+      menu: MENUS_POR_ROL.coordinadora,
     },
     children: [
       { path: '', title: 'Inicio', loadComponent: () => import('./inicio').then((m) => m.InicioCoordinacion) },
