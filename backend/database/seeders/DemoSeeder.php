@@ -69,7 +69,7 @@ class DemoSeeder extends Seeder
         ]);
         AcuerdoColaboracion::create([
             'centro_id' => $centro->id, 'tipo' => 'tradicional', 'representante_legal' => 'Representante de '.$nombre,
-            'fecha_inicio' => $inicio, 'fecha_termino' => $termino,
+            'fecha_inicio' => $inicio, 'fecha_termino' => $termino, 'archivo_pdf' => $inicio ? PdfAcuerdoDemo::ruta() : null,
         ]);
 
         return $centro;

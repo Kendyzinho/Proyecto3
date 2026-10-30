@@ -58,7 +58,7 @@ describe('authGuard', () => {
       await harness.fixture.whenStable();
       expect(harness.routeNativeElement?.textContent).toContain('Prácticas registradas del período');
     } else {
-      expect(harness.routeNativeElement?.textContent).toContain('Sesión iniciada');
+      expect(harness.routeNativeElement?.textContent).toContain('Bienvenido');
     }
     expect(harness.routeNativeElement?.querySelector('[aria-label="Menú de usuario"]')).not.toBeNull();
 
@@ -70,7 +70,7 @@ describe('authGuard', () => {
     await harness.navigateByUrl(ruta);
     expect(TestBed.inject(Router).url).toBe('/auth');
     expect(harness.routeNativeElement?.textContent).toContain('Iniciar sesión');
-    expect(harness.routeNativeElement?.textContent).not.toContain('Sesión iniciada');
+    expect(harness.routeNativeElement?.textContent).not.toContain('Bienvenido');
   });
 
   it('no acepta un usuario guardado sin token', () => {

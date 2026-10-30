@@ -49,6 +49,9 @@ class CentrosPracticaTest extends TestCase
                 ['periodo_id' => $periodo->id, 'categoria' => 'laboral', 'cupos' => 3],
                 ['periodo_id' => $periodo->id, 'categoria' => 'profesional', 'cupos' => 1],
             ],
+            'supervisores' => [
+                ['nombre' => 'Camila Rojas', 'correo' => 'camila.rojas@productora.cl', 'cargo' => 'Directora de arte'],
+            ],
         ]);
 
         $response->assertCreated()

@@ -29,8 +29,8 @@ class DocumentoTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->seed([CatalogoSeeder::class, UsuarioSeeder::class, DemoSeeder::class]);
         Storage::fake();
+        $this->seed([CatalogoSeeder::class, UsuarioSeeder::class, DemoSeeder::class]);
         $this->secretaria = User::where('rol', 'secretaria')->first();
         $this->periodo = Periodo::where('anio', 2026)->where('semestre', 2)->first();
     }

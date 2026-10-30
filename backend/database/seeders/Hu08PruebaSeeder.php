@@ -111,6 +111,7 @@ class Hu08PruebaSeeder extends Seeder
                 'representante_legal' => 'Representante ficticio HU-08',
                 'fecha_inicio' => '2026-01-01',
                 'fecha_termino' => '2026-12-31',
+                'archivo_pdf' => PdfAcuerdoDemo::ruta(),
                 'created_at' => $ahora,
                 'updated_at' => $ahora,
             ]);

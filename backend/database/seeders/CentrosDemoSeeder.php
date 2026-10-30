@@ -56,7 +56,7 @@ class CentrosDemoSeeder extends Seeder
             if (!$datos['es_interno']) {
                 AcuerdoColaboracion::firstOrCreate(
                     ['centro_id' => $centro->id, 'tipo' => 'tradicional'],
-                    ['representante_legal' => $datos['representante'], 'fecha_inicio' => '2025-01-01', 'fecha_termino' => '2027-12-31'],
+                    ['representante_legal' => $datos['representante'], 'fecha_inicio' => '2025-01-01', 'fecha_termino' => '2027-12-31', 'archivo_pdf' => PdfAcuerdoDemo::ruta()],
                 );
             }
 

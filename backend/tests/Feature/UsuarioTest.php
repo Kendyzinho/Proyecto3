@@ -6,6 +6,7 @@ use App\Models\Estudiante;
 use App\Models\User;
 use App\Support\Rut;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 // HU-05: crear, editar, desactivar y reactivar cuentas

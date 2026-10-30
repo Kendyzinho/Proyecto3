@@ -53,11 +53,11 @@ describe('Documentos', () => {
     expect(texto).toContain('En espera');
   });
 
-  it('sin acuerdo vigente bloquea la carta y los botones', () => {
+  it('sin acuerdo vigente abre la pestaña del acuerdo y no ofrece enviar', () => {
     const el = fixture.nativeElement as HTMLElement;
-    expect(el.textContent).toContain('no tiene un acuerdo de colaboración vigente (Art. 15)');
-    const enviar = [...el.querySelectorAll('button')].find((b) => b.textContent?.includes('Enviar'))!;
-    expect(enviar.disabled).toBe(true);
+    expect(el.textContent).toContain('Sin acuerdo firmado');
+    const enviar = [...el.querySelectorAll('button')].find((b) => b.textContent?.includes('Enviar'));
+    expect(enviar).toBeUndefined();
   });
 
   it('usa el género de cada documento en los estados', () => {

@@ -174,7 +174,7 @@ class PracticaExcepcionalTest extends TestCase
         $centro->update(['fecha_baja' => null, 'es_interno' => false]);
         $this->postJson($this->url, $this->datos)->assertUnprocessable()->assertJsonValidationErrors('supervisor_id');
         $this->getJson($this->url.'/catalogo?periodo_id='.$this->habilitacion->periodo_id)->assertJsonCount(0, 'supervisores');
-        $centro->acuerdos()->create(['tipo' => 'tradicional', 'representante_legal' => 'Representante', 'fecha_inicio' => '2026-01-01', 'fecha_termino' => '2026-12-31']);
+        $centro->acuerdos()->create(['tipo' => 'tradicional', 'representante_legal' => 'Representante', 'fecha_inicio' => '2026-01-01', 'fecha_termino' => '2026-12-31', 'archivo_pdf' => 'acuerdos/firmado.pdf']);
         $this->postJson($this->url, $this->datos)->assertCreated();
     }
 
