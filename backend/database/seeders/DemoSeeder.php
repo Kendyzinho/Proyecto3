@@ -61,14 +61,15 @@ class DemoSeeder extends Seeder
         }
     }
 
-    // Centro con acuerdo; sin fecha de inicio el acuerdo queda en trámite
+    // Centro con acuerdo; sin fecha de inicio el acuerdo queda en trámite.
+    // Reutiliza el centro y su acuerdo si CentrosDemoSeeder ya los creó.
     private function centro(string $rut, string $razonSocial, string $nombre, string $direccion, ?string $inicio, ?string $termino): CentroPractica
     {
-        $centro = CentroPractica::create([
-            'rut' => $rut, 'razon_social' => $razonSocial, 'nombre' => $nombre, 'direccion' => $direccion, 'fecha_alta' => '2023-01-01',
+        $centro = CentroPractica::firstOrCreate(['rut' => $rut], [
+            'razon_social' => $razonSocial, 'nombre' => $nombre, 'direccion' => $direccion, 'fecha_alta' => '2023-01-01',
         ]);
-        AcuerdoColaboracion::create([
-            'centro_id' => $centro->id, 'tipo' => 'tradicional', 'representante_legal' => 'Representante de '.$nombre,
+        AcuerdoColaboracion::firstOrCreate(['centro_id' => $centro->id, 'tipo' => 'tradicional'], [
+            'representante_legal' => 'Representante de '.$nombre,
             'fecha_inicio' => $inicio, 'fecha_termino' => $termino, 'archivo_pdf' => $inicio ? PdfAcuerdoDemo::ruta() : null,
         ]);
 
@@ -77,8 +78,8 @@ class DemoSeeder extends Seeder
 
     private function supervisor(CentroPractica $centro, string $nombre, string $correo, string $cargo, string $unidad): Supervisor
     {
-        return Supervisor::create([
-            'centro_id' => $centro->id, 'nombre' => $nombre, 'correo' => $correo, 'cargo' => $cargo, 'unidad' => $unidad, 'fecha_alta' => '2023-01-01',
+        return Supervisor::firstOrCreate(['centro_id' => $centro->id, 'nombre' => $nombre], [
+            'correo' => $correo, 'cargo' => $cargo, 'unidad' => $unidad, 'fecha_alta' => '2023-01-01',
         ]);
     }
 }

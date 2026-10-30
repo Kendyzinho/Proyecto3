@@ -30,13 +30,13 @@ class CentrosDemoSeeder extends Seeder
                 'areas' => ['Diseño gráfico y diagramación', 'Fotografía'], 'cupos' => ['laboral' => 4, 'profesional' => 2],
             ],
             [
-                'rut' => '76.543.210-8', 'razon_social' => 'Productora Norte Visual SpA', 'nombre' => 'Productora Norte Visual',
+                'rut' => '76.543.210-3', 'razon_social' => 'Productora Norte Visual SpA', 'nombre' => 'Productora Norte Visual',
                 'direccion' => 'Av. Santa María 2145, Arica', 'telefono' => '+56 58 225 3210', 'es_interno' => false,
                 'representante' => 'Representante de prueba', 'supervisor' => ['nombre' => 'Sergio Paredes', 'correo' => 'sparedes@example.test', 'cargo' => 'Director de Arte', 'unidad' => 'Producción'],
                 'areas' => ['Producción audiovisual', 'Animación digital', 'Diseño gráfico y diagramación'], 'cupos' => ['laboral' => 2, 'profesional' => 1],
             ],
             [
-                'rut' => '70.770.800-5', 'razon_social' => 'Universidad de Tarapacá', 'nombre' => 'Universidad de Tarapacá',
+                'rut' => '70.770.800-K', 'razon_social' => 'Universidad de Tarapacá', 'nombre' => 'Universidad de Tarapacá',
                 'direccion' => 'Av. 18 de Septiembre 2222, Arica', 'telefono' => '+56 58 220 5000', 'es_interno' => true,
                 'representante' => null, 'supervisor' => ['nombre' => 'Daniela Rojas', 'correo' => 'daniela.rojas@example.test', 'cargo' => 'Diseñadora', 'unidad' => 'Escuela de Diseño'],
                 'areas' => ['Diseño y desarrollo web', 'Diseño gráfico y diagramación', 'Producción audiovisual'], 'cupos' => ['laboral' => 4, 'profesional' => 2],
