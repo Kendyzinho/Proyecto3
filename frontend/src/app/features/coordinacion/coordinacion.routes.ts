@@ -7,7 +7,7 @@ export default [
     path: '',
     component: Marco,
     data: {
-      grupo: 'Coordinadora de Prácticas',
+      grupo: 'Coordinación de Prácticas',
       adaptable: true,
       menu: MENUS_POR_ROL.coordinadora,
     },
@@ -29,14 +29,9 @@ export default [
         loadComponent: () => import('./solicitudes-practica/revision-solicitudes').then((m) => m.RevisionSolicitudes),
       },
       {
-        path: 'practicas',
-        children: [
-          {
-            path: 'nueva',
-            title: 'Nueva práctica · HU-19',
-            loadComponent: () => import('./solicitudes-practica/nueva-practica-hu19').then((m) => m.NuevaPracticaHu19),
-          },
-        ],
+        path: 'documentos',
+        title: 'Documentos',
+        loadComponent: () => import('../secretaria/documentos/documentos').then((m) => m.Documentos),
       },
     ],
   },

@@ -119,13 +119,10 @@ class PracticaExcepcionalTest extends TestCase
         $this->assertDatabaseCount('practicas', 2);
     }
 
-    public function test_rechaza_a_distancia_en_el_registro_excepcional(): void
+    public function test_rechaza_una_modalidad_que_no_existe(): void
     {
-        $this->actingAs($this->coordinadora)
-            ->postJson($this->url, array_replace($this->datos, ['modalidad' => 'a_distancia']))
+        $this->actingAs($this->coordinadora)->postJson($this->url, [...$this->datos, 'modalidad' => 'remota'])
             ->assertUnprocessable()->assertJsonValidationErrors('modalidad');
-
-        $this->assertDatabaseCount('practicas', 0);
     }
 
     public function test_rechaza_duplicados_aunque_la_practica_previa_haya_terminado(): void

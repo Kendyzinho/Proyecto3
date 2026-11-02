@@ -24,7 +24,7 @@ class Hu08PruebaSeeder extends Seeder
         $ahora = now();
         $periodo = DB::table('periodos')->where('anio', 2026)->where('semestre', 2)->first();
         $tipo = DB::table('tipos_practica')->where('nombre', 'Laboral I')->whereNull('fecha_baja')->first();
-        $areas = DB::table('areas')->whereIn('nombre', ['Web', 'Animación'])->pluck('id', 'nombre');
+        $areas = DB::table('areas')->whereIn('nombre', ['Diseño y desarrollo web', 'Animación digital'])->pluck('id', 'nombre');
 
         if (!$periodo || !$tipo || $areas->count() < 2) {
             $this->command?->error('Primero ejecuta las migraciones y los seeders CatalogoSeeder y UsuarioSeeder.');
@@ -32,8 +32,8 @@ class Hu08PruebaSeeder extends Seeder
         }
 
         foreach ([
-            ['nombre' => 'Estudiante HU08 Web', 'correo' => 'hu08.web@alumnos.uta.cl', 'rut' => '20.000.008-2', 'area' => 'Web'],
-            ['nombre' => 'Estudiante HU08 Animación', 'correo' => 'hu08.animacion@alumnos.uta.cl', 'rut' => '20.000.009-0', 'area' => 'Animación'],
+            ['nombre' => 'Estudiante HU08 Web', 'correo' => 'hu08.web@alumnos.uta.cl', 'rut' => '20.000.008-2', 'area' => 'Diseño y desarrollo web'],
+            ['nombre' => 'Estudiante HU08 Animación', 'correo' => 'hu08.animacion@alumnos.uta.cl', 'rut' => '20.000.009-0', 'area' => 'Animación digital'],
         ] as $datos) {
             $user = User::firstOrCreate(
                 ['email' => $datos['correo']],

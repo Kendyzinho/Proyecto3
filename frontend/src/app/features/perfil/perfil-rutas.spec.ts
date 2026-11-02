@@ -9,7 +9,7 @@ import { RouterTestingHarness } from '@angular/router/testing';
 import { routes } from '../../app.routes';
 import { authInterceptor } from '../../core/interceptors/auth-interceptor';
 import { Auth } from '../../core/services/auth';
-import { MENUS_POR_ROL } from '../../shared/marco/menus-por-rol';
+import { GRUPOS_POR_ROL, MENUS_POR_ROL } from '../../shared/marco/menus-por-rol';
 
 describe('Navegación del perfil', () => {
   beforeEach(() => {
@@ -20,6 +20,8 @@ describe('Navegación del perfil', () => {
   });
 
   afterEach(() => {
+    // El contador de solicitudes del menú de la Coordinadora se vuelve a pedir con cada marco
+    TestBed.inject(HttpTestingController).match('/api/coordinacion/metricas');
     TestBed.inject(HttpTestingController).verify();
     localStorage.clear();
   });
@@ -41,9 +43,9 @@ describe('Navegación del perfil', () => {
     const http = TestBed.inject(HttpTestingController);
     const cargarInicio = () => {
       if (rol === 'coordinadora') {
-        http.expectOne('/api/coordinacion/metricas').flush({
+        http.match('/api/coordinacion/metricas').forEach((peticion) => peticion.flush({
           periodo: { id: 2, nombre: '2º semestre 2026' }, practicas_registradas: 5,
-        });
+        }));
       }
       if (rol === 'secretaria') {
         http.expectOne('/api/nomina/catalogo').flush({
@@ -66,7 +68,7 @@ describe('Navegación del perfil', () => {
     expect(harness.routeNativeElement?.querySelectorAll('app-menu-usuario')).toHaveLength(1);
     expect(harness.routeNativeElement?.querySelectorAll('header.barra')).toHaveLength(1);
     expect(harness.routeNativeElement?.querySelector('nav.lateral__menu')?.textContent).toContain('Inicio');
-    expect(harness.routeNativeElement?.querySelector('.lateral__grupo')?.textContent).toContain(nombreRol);
+    expect(harness.routeNativeElement?.querySelector('.lateral__grupo')?.textContent).toContain(GRUPOS_POR_ROL[rol as keyof typeof GRUPOS_POR_ROL]);
     const opciones = Array.from(harness.routeNativeElement!.querySelectorAll<HTMLAnchorElement>('nav.lateral__menu .opcion'));
     expect(opciones.map((opcion) => ({ texto: opcion.querySelector('span')?.textContent?.trim(), ruta: opcion.getAttribute('href') })))
       .toEqual(MENUS_POR_ROL[rol as keyof typeof MENUS_POR_ROL].map(({ texto, ruta }) => ({ texto, ruta })));

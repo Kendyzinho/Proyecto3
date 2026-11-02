@@ -17,7 +17,7 @@ class RegistrarPracticaExcepcionalRequest extends FormRequest
             'periodo_id' => ['required', 'integer', 'exists:periodos,id'],
             'habilitacion_id' => ['required', 'integer', 'exists:habilitaciones,id'],
             'supervisor_id' => ['required', 'integer', 'exists:supervisores,id'],
-            'modalidad' => ['required', 'in:presencial,mixta'],
+            'modalidad' => ['required', 'in:presencial,a_distancia,mixta'],
             'fecha_inicio' => ['required', 'date_format:Y-m-d'],
             'fecha_fin' => ['required', 'date_format:Y-m-d', 'after_or_equal:fecha_inicio'],
             'justificacion_excepcional' => ['required', 'string', 'max:5000', 'regex:/\S/u'],

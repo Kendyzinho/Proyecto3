@@ -11,6 +11,7 @@ import {
   ResultadoDictamen,
   SupervisorCentro,
 } from './centro-practica.model';
+import { Acuerdo } from '../../secretaria/documentos/documentos-api';
 
 interface Respuesta<T> {
   data: T;
@@ -229,7 +230,7 @@ export class CentrosPracticaService {
       cupos: (centro.requerimientos ?? []).map((requerimiento) => {
         const periodo = requerimiento.periodo;
         const etiquetaPeriodo = periodo
-          ? `${periodo.semestre}° sem ${periodo.anio}`
+          ? `${periodo.semestre}º semestre ${periodo.anio}`
           : 'Período sin datos';
         return {
           periodo: etiquetaPeriodo,
@@ -251,6 +252,15 @@ export class CentrosPracticaService {
       tipoAcuerdo: acuerdo?.tipo ?? null,
       vigenciaAcuerdo: this.vigencia(acuerdo?.fecha_inicio, acuerdo?.fecha_termino),
       acuerdoArchivoId: acuerdo?.archivo_pdf && acuerdo.id ? acuerdo.id : null,
+      acuerdoDatos: acuerdo?.id ? {
+        id: acuerdo.id,
+        tipo: acuerdo.tipo === 'con_equipamiento' ? 'con_equipamiento' : 'tradicional',
+        representante_legal: acuerdo.representante_legal ?? '',
+        fecha_inicio: acuerdo.fecha_inicio?.slice(0, 10) ?? null,
+        fecha_termino: acuerdo.fecha_termino?.slice(0, 10) ?? null,
+        estado: this.estadoAcuerdoDocumentos(centro.estado_acuerdo),
+        tiene_archivo: !!acuerdo.archivo_pdf,
+      } : null,
       supervisores: (centro.supervisores ?? []).map((supervisor): SupervisorCentro => ({
         id: supervisor.id,
         nombre: supervisor.nombre,
@@ -281,6 +291,10 @@ export class CentrosPracticaService {
     if (estado === 'dado_de_baja') return 'Dado de baja';
     // Una baja futura sigue siendo seleccionable hasta la fecha efectiva.
     return 'Activo';
+  }
+
+  private estadoAcuerdoDocumentos(estado: string): Acuerdo['estado'] {
+    return estado === 'vigente' || estado === 'vencido' ? estado : 'en_tramite';
   }
 
   private mapearEstadoAcuerdo(estado: string): EstadoAcuerdo {

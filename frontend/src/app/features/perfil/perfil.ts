@@ -8,7 +8,6 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 
 import { NOMBRE_ROL, Usuario } from '../../core/models/usuario';
@@ -23,7 +22,7 @@ const CLAVES_OCULTAS: Record<CampoClave, boolean> = {
 
 @Component({
   selector: 'app-perfil',
-  imports: [ReactiveFormsModule, RouterLink, MatButtonModule, MatFormFieldModule,
+  imports: [ReactiveFormsModule, MatButtonModule, MatFormFieldModule,
     MatIconModule, MatInputModule, MatProgressSpinnerModule],
   templateUrl: './perfil.html',
   styleUrl: './perfil.scss',

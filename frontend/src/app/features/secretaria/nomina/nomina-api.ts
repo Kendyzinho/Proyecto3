@@ -15,10 +15,16 @@ export interface Practica {
   prerrequisito: string | null;
 }
 
+export interface Area {
+  id: number;
+  nombre: string;
+}
+
 export interface Catalogo {
   periodos: Periodo[];
   periodo_actual_id: number | null;
   practicas: Practica[];
+  areas: Area[];
 }
 
 // Una fila de la planilla después de la revisión del backend
@@ -32,6 +38,7 @@ export interface FilaRevisada {
   practica: string;
   prerrequisito: string | null;
   cumple: boolean | null;
+  areas: string[];
   resultado: Resultado;
   errores: Record<string, string> | [];
 }
@@ -70,6 +77,7 @@ export interface NuevoEstudiante {
   anio_ingreso: number;
   tipo_practica_id: number;
   cumple_prerrequisito: boolean;
+  area_ids: number[];
 }
 
 // HU-07: carga de la nómina de estudiantes (solo Secretaria de Jefatura)

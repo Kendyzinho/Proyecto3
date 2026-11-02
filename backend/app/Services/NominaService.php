@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Area;
 use App\Models\CargaNomina;
 use App\Models\Estudiante;
 use App\Models\Habilitacion;
@@ -21,6 +22,8 @@ use Illuminate\Validation\ValidationException;
 class NominaService
 {
     public const DOMINIO_ESTUDIANTES = '@alumnos.uta.cl';
+
+    private ?Collection $catalogoAreas = null;
 
     public function __construct(private readonly LectorPlanilla $lector)
     {
@@ -75,6 +78,7 @@ class NominaService
             'anio_ingreso' => (string) $datos['anio_ingreso'],
             'practica' => $tipo?->nombre ?? '',
             'cumple' => $datos['cumple_prerrequisito'] ? 'Sí' : 'No',
+            'areas' => Area::whereIn('id', $datos['area_ids'] ?? [])->pluck('nombre')->implode(';'),
         ], $periodo, $this->tiposVigentes());
 
         if ($fila['resultado'] === 'error') {
@@ -91,7 +95,7 @@ class NominaService
     // Nómina guardada del período
     public function listar(Periodo $periodo): Collection
     {
-        return Habilitacion::with(['estudiante.usuario', 'tipoPractica'])
+        return Habilitacion::with(['estudiante.usuario', 'estudiante.areas', 'tipoPractica'])
             ->where('periodo_id', $periodo->id)
             ->get()
             ->sortBy(fn ($h) => $h->estudiante->usuario->name)
@@ -107,6 +111,7 @@ class NominaService
                 'cumple' => $h->cumple_prerrequisito,
                 'resultado' => $h->cumple_prerrequisito ? 'habilitado' : 'bloqueado',
                 'origen' => $h->carga_id ? 'planilla' : 'manual',
+                'areas' => $h->estudiante->areas->pluck('nombre')->all(),
             ]);
     }
 
@@ -114,7 +119,7 @@ class NominaService
     public function exportar(Periodo $periodo): string
     {
         $filas = $this->listar($periodo)->map(fn (array $e) => [
-            $e['rut'], $e['nombre'], $e['correo'], $e['anio_ingreso'], $e['practica'], $e['cumple'] ? 'Sí' : 'No',
+            $e['rut'], $e['nombre'], $e['correo'], $e['anio_ingreso'], $e['practica'], $e['cumple'] ? 'Sí' : 'No', implode('; ', $e['areas']),
         ])->all();
 
         return $this->lector->crearPlanilla($filas);
@@ -191,6 +196,11 @@ class NominaService
             $errores['cumple'] = 'El prerrequisito debe ser Sí o No';
         }
 
+        [$areas, $areaDesconocida] = $this->leerAreas($fila['areas'] ?? '');
+        if ($areaDesconocida !== null) {
+            $errores['areas'] = "El área \"{$areaDesconocida}\" no existe";
+        }
+
         // Cruces con lo que ya está en la base
         if ($rut !== null) {
             $usuario = User::where('rut', $rut)->first();
@@ -214,9 +224,34 @@ class NominaService
             'practica' => $tipo?->nombre ?? $fila['practica'],
             'prerrequisito' => $tipo?->prerrequisito,
             'cumple' => $cumple,
+            'areas' => $areas,
             'resultado' => $errores !== [] ? 'error' : ($cumple ? 'habilitado' : 'bloqueado'),
             'errores' => $errores,
         ];
+    }
+
+    // Separadas por coma o punto y coma; sin distinguir mayúsculas ni tildes.
+    // Devuelve los nombres oficiales y la primera que no exista.
+    private function leerAreas(string $texto): array
+    {
+        $this->catalogoAreas ??= Area::whereNull('fecha_baja')->pluck('nombre');
+        $nombres = [];
+
+        foreach (preg_split('/[,;]/', $texto) as $parte) {
+            $buscada = Str::of($parte)->ascii()->lower()->squish()->toString();
+            if ($buscada === '') {
+                continue;
+            }
+
+            $area = $this->catalogoAreas->first(fn ($n) => Str::of($n)->ascii()->lower()->toString() === $buscada);
+            if ($area === null) {
+                return [$nombres, trim($parte)];
+            }
+
+            $nombres[] = $area;
+        }
+
+        return [array_values(array_unique($nombres)), null];
     }
 
     private function yaHabilitado(User $usuario, TipoPractica $tipo, Periodo $periodo): bool
@@ -238,6 +273,7 @@ class NominaService
 
         $estudiante = Estudiante::firstOrCreate(['user_id' => $usuario->id], ['anio_ingreso' => $fila['anio_ingreso']]);
         $tipo = TipoPractica::findOrFail($fila['tipo_practica_id']);
+        $estudiante->areas()->syncWithoutDetaching(Area::whereIn('nombre', $fila['areas'] ?? [])->pluck('id'));
 
         return Habilitacion::create([
             'carga_id' => $cargaId,

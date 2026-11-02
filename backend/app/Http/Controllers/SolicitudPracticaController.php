@@ -7,6 +7,7 @@ use App\Models\CentroPractica;
 use App\Models\HistorialPractica;
 use App\Models\Practica;
 use App\Models\Supervisor;
+use App\Support\Rut;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -64,7 +65,7 @@ class SolicitudPracticaController extends Controller
                 'puede_postular' => $puedePostular || in_array($estado, ['borrador', 'devuelta'], true),
                 'motivo' => $motivo,
                 'periodo_id' => $habilitacion->periodo_id,
-                'periodo' => "{$habilitacion->semestre}° sem {$habilitacion->anio}",
+                'periodo' => "{$habilitacion->semestre}º sem {$habilitacion->anio}",
                 'cumple_prerrequisito' => (bool) $habilitacion->cumple_prerrequisito,
             ],
             'solicitud' => $practica && $practica->origen === 'solicitud' ? $this->serializar($practica) : null,
@@ -310,13 +311,16 @@ class SolicitudPracticaController extends Controller
             'supervisor.telefono' => ['nullable', 'string', 'max:30'],
             'supervisor.unidad' => ['nullable', 'string', 'max:255'],
             'modalidad' => ['required', Rule::in(['Presencial', 'A distancia', 'Mixta'])],
-            'fecha_inicio' => ['required', 'date'],
+            'fecha_inicio' => ['required', 'date', 'after_or_equal:today'],
             'fecha_termino' => ['required', 'date', 'after_or_equal:fecha_inicio'],
             'tareas' => ['required', 'string', 'max:10000'],
             'horario.dias' => ['required', 'array', 'min:1'],
             'horario.dias.*' => ['required', 'distinct', Rule::in(['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'])],
             'horario.hora_desde' => ['required', 'date_format:H:i'],
             'horario.hora_hasta' => ['required', 'date_format:H:i', 'after:horario.hora_desde'],
+        ], [
+            'fecha_inicio.after_or_equal' => 'La fecha de inicio no puede ser anterior a hoy.',
+            'fecha_termino.after_or_equal' => 'La fecha de término debe ser igual o posterior al inicio.',
         ]);
     }
 
@@ -605,10 +609,10 @@ class SolicitudPracticaController extends Controller
         }
     }
 
+    // Con puntos si es válido; si no, tal como venía para que la validación lo informe
     private function normalizarRut(string $rut): string
     {
-        $value = strtoupper(preg_replace('/[^0-9K]/', '', $rut) ?? '');
-        return strlen($value) > 1 ? substr($value, 0, -1).'-'.substr($value, -1) : $value;
+        return Rut::normalizar($rut) ?? trim($rut);
     }
 
     private function formatearRut(string $rut): string
@@ -618,12 +622,6 @@ class SolicitudPracticaController extends Controller
 
     private function rutValido(string $rut): bool
     {
-        $value = strtoupper(preg_replace('/[^0-9K]/', '', $rut) ?? '');
-        if (!preg_match('/^\d{7,8}[0-9K]$/', $value)) return false;
-        $sum = 0; $factor = 2;
-        for ($i = strlen($value) - 2; $i >= 0; $i--) { $sum += (int) $value[$i] * $factor; $factor = $factor === 7 ? 2 : $factor + 1; }
-        $digit = 11 - ($sum % 11);
-        $expected = $digit === 11 ? '0' : ($digit === 10 ? 'K' : (string) $digit);
-        return substr($value, -1) === $expected;
+        return Rut::normalizar($rut) !== null;
     }
 }

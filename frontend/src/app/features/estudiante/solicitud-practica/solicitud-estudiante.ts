@@ -1,8 +1,12 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
-import { RouterLink } from '@angular/router';
+import { MatInputModule } from '@angular/material/input';
+import { MatRadioModule } from '@angular/material/radio';
+import { MatSelectModule } from '@angular/material/select';
 
 import { CentroPractica, SupervisorCentro } from '../../coordinacion/centros-practica/centro-practica.model';
 import { SolicitudFormulario, SolicitudPractica } from '../../solicitudes-practica/solicitud-practica.model';
@@ -12,7 +16,7 @@ const DIAS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 
 @Component({
   selector: 'app-solicitud-estudiante',
-  imports: [CommonModule, FormsModule, MatIconModule, RouterLink],
+  imports: [CommonModule, FormsModule, MatButtonModule, MatFormFieldModule, MatIconModule, MatInputModule, MatRadioModule, MatSelectModule],
   templateUrl: './solicitud-estudiante.html',
   styleUrl: './solicitud-estudiante.scss',
 })
@@ -20,10 +24,10 @@ export class SolicitudEstudiante {
   protected readonly service = inject(SolicitudesPracticaService);
   protected readonly centros = this.service.centros;
   protected readonly dias = DIAS;
+  protected readonly hoy = new Date().toISOString().slice(0, 10);
   protected readonly intentoEnviar = signal(false);
   protected readonly aviso = signal('');
   protected readonly avisoExitoso = signal(false);
-  protected readonly mostrarFormularioCentroPropuesto = signal(true);
   protected readonly solicitud = this.service.solicitudActual;
   protected readonly bloqueada = computed(() => ['Por revisar', 'Aprobada', 'En curso', 'Finalizada', 'Cancelada'].includes(this.solicitud()?.estado ?? ''));
   protected formulario: SolicitudFormulario = this.formularioVacio();
@@ -45,7 +49,6 @@ export class SolicitudEstudiante {
     this.formulario.modoCentro = 'Registrado';
     this.formulario.centroId = id;
     if (id !== null) this.centroRegistradoAnterior = id;
-    this.mostrarFormularioCentroPropuesto.set(false);
     const centro = this.centros().find((item) => item.id === id);
     this.formulario.centroRazonSocial = centro?.razonSocial ?? '';
     this.formulario.centroRut = centro?.rut ?? '';
@@ -65,16 +68,11 @@ export class SolicitudEstudiante {
     this.formulario.modoSupervisor = 'Propuesto';
     this.formulario.supervisorId = null;
     this.limpiarSupervisor();
-    this.mostrarFormularioCentroPropuesto.set(true);
   }
 
   protected volverACentroRegistrado(): void {
     const centro = this.centros().find((item) => item.id === this.centroRegistradoAnterior) ?? this.centros()[0];
     this.seleccionarCentro(centro?.id ?? null);
-  }
-
-  protected alternarFormularioCentroPropuesto(): void {
-    this.mostrarFormularioCentroPropuesto.update((mostrar) => !mostrar);
   }
 
   protected seleccionarSupervisor(correo: string): void {
@@ -110,10 +108,6 @@ export class SolicitudEstudiante {
     this.formulario.horario.dias = this.formulario.horario.dias.includes(dia)
       ? this.formulario.horario.dias.filter((item) => item !== dia)
       : [...this.formulario.horario.dias, dia];
-  }
-
-  protected iniciales(nombre: string): string {
-    return nombre.split(/\s+/).filter(Boolean).slice(0, 2).map((parte) => parte[0]).join('').toLocaleUpperCase('es');
   }
 
   protected formatearRut(): void {
@@ -171,7 +165,7 @@ export class SolicitudEstudiante {
       next: () => {
         this.marcarFormularioComoOriginal();
         this.avisoExitoso.set(true);
-        this.aviso.set('Borrador guardado en tu cuenta. Puedes retomarlo al volver a esta pantalla.');
+        this.aviso.set('Borrador guardado.');
         this.intentoEnviar.set(false);
       },
       error: (error: unknown) => {
@@ -197,7 +191,7 @@ export class SolicitudEstudiante {
       next: () => {
         this.marcarFormularioComoOriginal();
         this.avisoExitoso.set(true);
-        this.aviso.set('Solicitud enviada a la Coordinadora para su revisión. Te avisaremos por correo cuando haya una decisión.');
+        this.aviso.set('Solicitud enviada a la Coordinadora.');
       },
       error: (error: unknown) => {
         this.avisoExitoso.set(false);
@@ -218,6 +212,7 @@ export class SolicitudEstudiante {
     this.formulario.supervisorNombre = supervisor.nombre;
     this.formulario.supervisorCorreo = supervisor.correo;
     this.formulario.supervisorCargo = supervisor.cargo;
+    this.formulario.supervisorTelefono = supervisor.telefono ?? '';
     this.formulario.supervisorUnidad = supervisor.unidad;
   }
 
@@ -256,7 +251,6 @@ export class SolicitudEstudiante {
       this.formulario.modoCentro = actual.modoCentro;
       this.formulario.modoSupervisor = actual.modoSupervisor;
       if (actual.estado === 'Devuelta') this.reconciliarPropuestaDevuelta(actual);
-      this.mostrarFormularioCentroPropuesto.set(this.formulario.modoCentro === 'Propuesto');
       this.marcarFormularioComoOriginal();
       return;
     }
@@ -265,7 +259,6 @@ export class SolicitudEstudiante {
     this.formulario = borrador ? structuredClone(borrador) : this.formularioVacio();
     if (borrador) {
       this.centroRegistradoAnterior = borrador.centroId;
-      this.mostrarFormularioCentroPropuesto.set(borrador.modoCentro === 'Propuesto');
       this.marcarFormularioComoOriginal();
       return;
     }

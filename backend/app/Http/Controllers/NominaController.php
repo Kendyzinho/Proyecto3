@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\AgregarEstudianteRequest;
 use App\Http\Requests\PlanillaNominaRequest;
+use App\Models\Area;
 use App\Models\Periodo;
 use App\Services\LectorPlanilla;
 use App\Services\NominaService;
@@ -29,6 +30,7 @@ class NominaController extends Controller
             'practicas' => $this->nomina->tiposVigentes()->map(fn ($t) => [
                 'id' => $t->id, 'nombre' => $t->nombre, 'prerrequisito' => $t->prerrequisito,
             ])->values(),
+            'areas' => Area::whereNull('fecha_baja')->orderBy('nombre')->get(['id', 'nombre']),
         ]);
     }
 

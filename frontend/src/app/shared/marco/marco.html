@@ -18,6 +18,9 @@
         <a class="opcion" [routerLink]="opcion.ruta" routerLinkActive="opcion--activa" [routerLinkActiveOptions]="{ exact: true }" (click)="menuMovil.set(false)" [title]="menuColapsado() ? opcion.texto : ''">
           <mat-icon>{{ opcion.icono }}</mat-icon>
           <span>{{ opcion.texto }}</span>
+          @if (opcion.ruta.endsWith('/solicitudes') && contador.pendientes() > 0) {
+            <span class="opcion__contador" [attr.aria-label]="contador.pendientes() + ' por revisar'">{{ contador.pendientes() }}</span>
+          }
         </a>
       }
     </nav>

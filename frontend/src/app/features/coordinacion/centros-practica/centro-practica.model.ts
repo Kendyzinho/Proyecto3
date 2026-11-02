@@ -1,3 +1,5 @@
+import { Acuerdo } from '../../secretaria/documentos/documentos-api';
+
 export type EstadoCentro = 'Activo' | 'Propuesto' | 'Sin acuerdo' | 'Dado de baja';
 export type EstadoAcuerdo = 'Vigente' | 'En trámite' | 'Vencido' | 'Sin acuerdo';
 export type CategoriaPractica = 'Laboral' | 'Profesional';
@@ -55,6 +57,7 @@ export interface CentroPractica {
   tipoAcuerdo: string | null;
   vigenciaAcuerdo: string | null;
   acuerdoArchivoId?: number | null;
+  acuerdoDatos?: Acuerdo | null;
   supervisores: SupervisorCentro[];
   estudiantes: EstudianteCentro[];
   motivoBaja?: string;

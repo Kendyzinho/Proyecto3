@@ -1,6 +1,6 @@
 .columnas {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
   gap: 24px;
   align-items: start;
 }
@@ -8,7 +8,7 @@
 .lista__encabezado,
 .lista__fila {
   display: grid;
-  grid-template-columns: minmax(130px, 1fr) minmax(110px, 1fr) 104px 88px;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) 92px 92px;
   align-items: center;
   gap: 8px;
   padding: 0 24px;
@@ -73,11 +73,8 @@
 }
 
 .centro-pendiente {
-  overflow: hidden;
   color: #4e6077;
   font-size: 12px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .vacio,

@@ -1,29 +1,31 @@
-:host {
-  display: block;
+.accesos {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
 }
 
-.inicio-temporal {
-  max-width: 980px;
-  min-height: 300px;
-  margin: 0 auto;
-  padding: 40px 24px;
-}
-
-.eyebrow {
-  margin: 0 0 8px;
-  color: #a65f12;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-}
-
-h1 {
+.acceso {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   margin: 0;
-  color: #202d42;
-  font-size: clamp(28px, 4vw, 40px);
+  padding: 24px;
+  color: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  text-decoration: none;
+
+  mat-icon {
+    color: #355085;
+  }
+
+  &:hover {
+    background: #f7f9fc;
+  }
 }
 
-.descripcion {
-  color: #526582;
-  font-size: 16px;
+@media (max-width: 900px) {
+  .accesos {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }

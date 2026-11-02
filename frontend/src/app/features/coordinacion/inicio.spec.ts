@@ -3,6 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { provideRouter } from '@angular/router';
 import { Subject } from 'rxjs';
 import { InicioCoordinacion } from './inicio';
 import { NuevaPractica } from './nueva-practica';
@@ -18,7 +19,7 @@ describe('InicioCoordinacion', () => {
     dialogo = { open: vi.fn(() => ({ afterClosed: () => cerrado })) };
     aviso = { open: vi.fn() };
     TestBed.configureTestingModule({ imports: [InicioCoordinacion], providers: [provideHttpClient(), provideHttpClientTesting(),
-      { provide: MatDialog, useValue: dialogo }, { provide: MatSnackBar, useValue: aviso }] });
+      provideRouter([]), { provide: MatDialog, useValue: dialogo }, { provide: MatSnackBar, useValue: aviso }] });
     http = TestBed.inject(HttpTestingController);
     fixture = TestBed.createComponent(InicioCoordinacion); fixture.detectChanges();
   });
@@ -27,7 +28,7 @@ describe('InicioCoordinacion', () => {
 
   it('abre el formulario y vuelve a consultar el total después de registrar', () => {
     metricas(5);
-    expect(fixture.nativeElement.querySelector('header button').textContent).toContain('Registro excepcional');
+    expect(fixture.nativeElement.querySelector('header button').textContent).toContain('Nueva práctica');
     fixture.nativeElement.querySelector('header button').click();
     expect(dialogo.open).toHaveBeenCalledWith(NuevaPractica, expect.objectContaining({ data: { id: 2, nombre: '2º semestre 2026' } }));
     cerrado.next(true); metricas(6);

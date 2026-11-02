@@ -24,6 +24,7 @@ interface HabilitacionApi {
 
 interface CentroApi {
   id: number;
+  nombre: string;
   razon_social: string;
   rut: string | null;
   direccion: string | null;
@@ -47,7 +48,7 @@ export class AsignacionPracticasService {
       nombre: item.estudiante,
       carrera: 'Diseño Multimedia',
       categoria: 'Laboral',
-      periodo: `${item.semestre}° semestre ${item.anio}`,
+      periodo: `${item.semestre}º semestre ${item.anio}`,
       periodoId: item.periodo_id,
       areas: item.areas,
       habilitado: true,
@@ -59,7 +60,7 @@ export class AsignacionPracticasService {
     return this.http.get<Respuesta<CentroApi[]>>(`/api/coordinacion/asignaciones/habilitaciones/${habilitacionId}/centros`)
       .pipe(map(({ data }) => data.map((item) => ({
         id: item.id,
-        nombre: item.razon_social,
+        nombre: item.nombre,
         rut: item.rut ?? 'Sin RUT',
         direccion: item.direccion ?? '',
         estado: 'Activo' as const,

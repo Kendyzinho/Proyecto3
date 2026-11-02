@@ -2,10 +2,10 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
 export interface PeriodoPractica { id: number; nombre: string; }
-export interface MetricasPracticas { periodo: PeriodoPractica | null; practicas_registradas: number; }
+export interface MetricasPracticas { periodo: PeriodoPractica | null; practicas_registradas: number; solicitudes_por_revisar?: number; }
 export interface CatalogoExcepcional {
   periodo: PeriodoPractica;
-  habilitaciones: { id: number; estudiante: string; tipo_practica: string }[];
+  habilitaciones: { id: number; estudiante: string; tipo_practica: string; horas?: number }[];
   supervisores: { id: number; nombre: string; centro: string }[];
 }
 export interface RegistroExcepcional {

@@ -88,7 +88,7 @@ class AsignacionPracticaController extends Controller
                 ->whereColumn('ca.centro_id', 'c.id')->whereIn('ca.area_id', $areaIds))
             ->whereExists(fn (Builder $supervisor) => $supervisor->selectRaw('1')->from('supervisores as s')
                 ->whereColumn('s.centro_id', 'c.id')->whereNotNull('s.fecha_alta')->whereNull('s.fecha_baja'))
-            ->select('c.id', 'c.razon_social', 'c.rut', 'c.direccion', 'c.es_interno', 'rc.cupos', 'rc.periodo_id', 'rc.categoria')
+            ->select('c.id', 'c.nombre', 'c.razon_social', 'c.rut', 'c.direccion', 'c.es_interno', 'rc.cupos', 'rc.periodo_id', 'rc.categoria')
             ->orderBy('c.razon_social')->get();
 
         $centros = $centros->map(function ($centro) use ($areaIds) {
@@ -128,7 +128,7 @@ class AsignacionPracticaController extends Controller
             $h = DB::table('habilitaciones as h')->join('tipos_practica as tp', 'tp.id', '=', 'h.tipo_practica_id')
                 ->where('h.id', $data['habilitacion_id'])->lockForUpdate()
                 ->select('h.*', 'tp.categoria')->first();
-            if (!$h || $h->categoria !== 'laboral') throw ValidationException::withMessages(['habilitacion_id' => 'HU-08 solo permite asignar prácticas laborales.']);
+            if (!$h || $h->categoria !== 'laboral') throw ValidationException::withMessages(['habilitacion_id' => 'Solo se pueden asignar prácticas laborales.']);
             if (!$h->cumple_prerrequisito) throw ValidationException::withMessages(['habilitacion_id' => 'El estudiante no cumple el prerrequisito.']);
 
             $existing = DB::table('practicas as p')->where('p.habilitacion_id', $h->id)

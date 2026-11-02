@@ -34,7 +34,8 @@ class PracticaExcepcionalController extends Controller
 
         return response()->json([
             'periodo' => $periodo ? ['id' => $periodo->id, 'nombre' => $periodo->nombre()] : null,
-            'practicas_registradas' => $periodo ? Practica::whereHas('habilitacion', fn ($q) => $q->where('periodo_id', $periodo->id))->count() : 0,
+            'practicas_registradas' => $periodo ? Practica::formalizadas()->whereHas('habilitacion', fn ($q) => $q->where('periodo_id', $periodo->id))->count() : 0,
+            'solicitudes_por_revisar' => Practica::where('origen', 'solicitud')->conEstado(['por_revisar'])->count(),
         ]);
     }
 }

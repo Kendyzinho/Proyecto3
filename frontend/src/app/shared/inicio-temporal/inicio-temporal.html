@@ -1,7 +1,9 @@
-<main class="inicio-temporal">
-  @if (auth.usuario(); as usuario) {
-    <p class="eyebrow">SISTEMA DE GESTIÓN DE PRÁCTICAS</p>
-    <h1>Bienvenido, {{ usuario.name }}</h1>
-    <p class="descripcion">Desde aquí podrás acceder a las gestiones disponibles para tu perfil.</p>
+<div class="encabezado-pagina"><h1>Inicio</h1></div>
+<div class="accesos">
+  @for (opcion of accesos(); track opcion.ruta) {
+    <a class="tarjeta acceso" [routerLink]="opcion.ruta">
+      <mat-icon>{{ opcion.icono }}</mat-icon>
+      <span>{{ opcion.texto }}</span>
+    </a>
   }
-</main>
+</div>

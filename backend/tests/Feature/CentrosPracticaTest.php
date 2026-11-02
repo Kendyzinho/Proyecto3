@@ -55,14 +55,14 @@ class CentrosPracticaTest extends TestCase
         ]);
 
         $response->assertCreated()
-            ->assertJsonPath('data.rut', '12345678-5')
+            ->assertJsonPath('data.rut', '12.345.678-5')
             ->assertJsonPath('data.estado', 'propuesto')
             ->assertJsonPath('data.areas.0.nombre', 'Web')
             ->assertJsonPath('data.requerimientos.0.cupos', 3)
             ->assertJsonPath('data.requerimientos.0.ocupados', 0)
             ->assertJsonPath('data.estado_acuerdo', 'sin_acuerdo');
 
-        $this->assertDatabaseHas('centros_practica', ['rut' => '12345678-5']);
+        $this->assertDatabaseHas('centros_practica', ['rut' => '12.345.678-5']);
         $this->assertDatabaseHas('requerimientos_centro', [
             'centro_id' => $response->json('data.id'),
             'periodo_id' => $periodo->id,

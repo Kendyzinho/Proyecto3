@@ -1,16 +1,14 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { TestbedHarnessEnvironment } from '@angular/cdk/testing/testbed';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { MatSelectHarness } from '@angular/material/select/testing';
 import { FormGroup } from '@angular/forms';
 import { NuevaPractica } from './nueva-practica';
 import { CatalogoExcepcional } from './practicas-api';
 
 const CATALOGO: CatalogoExcepcional = {
   periodo: { id: 2, nombre: '2º semestre 2026' },
-  habilitaciones: [{ id: 7, estudiante: 'Estudiante de prueba', tipo_practica: 'Laboral I' }],
+  habilitaciones: [{ id: 7, estudiante: 'Estudiante de prueba', tipo_practica: 'Laboral I', horas: 64 }],
   supervisores: [{ id: 3, nombre: 'Carolina', centro: 'Fundación UTA' }],
 };
 
@@ -34,27 +32,21 @@ describe('NuevaPractica', () => {
   function cargar(datos = CATALOGO) { http.expectOne('/api/coordinacion/practicas-excepcionales/catalogo?periodo_id=2').flush(datos); fixture.detectChanges(); }
 
   it('muestra carga, obtiene opciones reales y deriva un centro de solo lectura', () => {
-    expect(fixture.nativeElement.querySelector('.cabecera > [mat-dialog-title]')?.textContent).toBe('Registrar práctica excepcional');
-    expect(fixture.nativeElement.querySelector('.tipo-registro')).toBeNull();
-    expect(fixture.nativeElement.querySelector('.descripcion')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[mat-dialog-title]')?.textContent).toBe('Nueva práctica');
     expect(fixture.nativeElement.textContent).toContain('Cargando estudiantes');
     cargar(); completar(); fixture.detectChanges();
-    const centro = fixture.nativeElement.querySelector('input[readonly]');
+    const [practica, centro] = fixture.nativeElement.querySelectorAll('input[readonly]');
+    expect(practica.value).toBe('Laboral I (64 h)');
     expect(centro.value).toBe('Fundación UTA');
-    expect(fixture.nativeElement.textContent).toContain('Disponibilidad de cupos no determinada');
   });
-  it('ofrece solamente Presencial y Mixta, con Presencial como valor inicial', async () => {
+  it('ofrece Presencial, A distancia y Mixta, con Presencial como valor inicial', () => {
     cargar();
     expect(form().controls['modalidad'].value).toBe('presencial');
-    const select = await TestbedHarnessEnvironment.loader(fixture).getHarness(
-      MatSelectHarness.with({ selector: '[formcontrolname="modalidad"]' }),
-    );
-    await select.open();
-    const opciones = await select.getOptions();
-    expect(await Promise.all(opciones.map((opcion) => opcion.getText()))).toEqual(['Presencial', 'Mixta']);
+    const opciones = [...fixture.nativeElement.querySelectorAll('mat-radio-button')].map((r: any) => r.textContent.trim());
+    expect(opciones).toEqual(['Presencial', 'A distancia', 'Mixta']);
   });
   it('cancela sin enviar registros', () => {
-    cargar(); fixture.nativeElement.querySelector('[aria-label="Cerrar formulario"]').click();
+    cargar(); ([...fixture.nativeElement.querySelectorAll('button')].find((b: any) => b.textContent.includes('Cancelar')) as HTMLButtonElement).click();
     expect(referencia.close).toHaveBeenCalledWith(false);
     http.expectNone('/api/coordinacion/practicas-excepcionales');
   });
@@ -62,10 +54,10 @@ describe('NuevaPractica', () => {
     cargar(); guardar(); expect(form().invalid).toBe(true);
     completar(); form().patchValue({ justificacion_excepcional: '   ' }); guardar(); expect(form().invalid).toBe(true);
     completar(); form().patchValue({ fecha_fin: '2026-10-01' }); guardar(); expect(form().hasError('fechas')).toBe(true);
-    completar(); form().patchValue({ modalidad: 'a_distancia' }); guardar(); expect(form().invalid).toBe(true);
+    completar(); form().patchValue({ modalidad: 'remota' }); guardar(); expect(form().invalid).toBe(true);
     http.expectNone('/api/coordinacion/practicas-excepcionales');
   });
-  it.each(['presencial', 'mixta'])('envía una sola solicitud para modalidad %s', (modalidad) => {
+  it.each(['presencial', 'a_distancia', 'mixta'])('envía una sola solicitud para modalidad %s', (modalidad) => {
     cargar(); completar(); form().patchValue({ modalidad }); guardar(); guardar();
     expect(referencia.disableClose).toBe(true);
     const req = http.expectOne('/api/coordinacion/practicas-excepcionales');

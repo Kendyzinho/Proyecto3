@@ -60,6 +60,15 @@
       </mat-form-field>
     </div>
 
+    <mat-form-field>
+      <mat-label>Áreas</mat-label>
+      <mat-select formControlName="area_ids" multiple>
+        @for (area of datos.areas; track area.id) {
+          <mat-option [value]="area.id">{{ area.nombre }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
     <div class="prerrequisito">
       <span>Cumple el prerrequisito</span>
       <mat-slide-toggle formControlName="cumple_prerrequisito" aria-label="Cumple el prerrequisito" />

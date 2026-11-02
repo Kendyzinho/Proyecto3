@@ -31,7 +31,7 @@ class DocumentoController extends Controller
 
     public function show(Practica $practica): JsonResponse
     {
-        abort_if($practica->supervisor_id === null, 404);
+        $this->exigirFormalizada($practica);
 
         return response()->json($this->documentos->detalle($practica));
     }
@@ -40,6 +40,7 @@ class DocumentoController extends Controller
     public function descargar(Request $request, Practica $practica, string $tipo): StreamedResponse
     {
         abort_unless(in_array($tipo, DocumentoService::TIPOS, true), 404);
+        $this->exigirFormalizada($practica);
         $documento = $this->documentos->vigente($practica, $tipo, $request->user());
 
         return $this->archivo($documento);
@@ -47,6 +48,8 @@ class DocumentoController extends Controller
 
     public function enviar(Request $request, Practica $practica): JsonResponse
     {
+        $this->exigirFormalizada($practica);
+
         return response()->json(['destinatarios' => $this->documentos->enviar($practica, $request->user())]);
     }
 
@@ -93,6 +96,12 @@ class DocumentoController extends Controller
             ['Content-Type' => 'application/pdf'],
             'inline',
         );
+    }
+
+    // Una solicitud por revisar o devuelta todavía no tiene documentos formales
+    private function exigirFormalizada(Practica $practica): void
+    {
+        abort_unless($practica->supervisor_id !== null && $practica->estaFormalizada(), 404);
     }
 
     private function archivo(Documento $documento): StreamedResponse

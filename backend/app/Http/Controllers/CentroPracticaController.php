@@ -7,6 +7,7 @@ use App\Models\CentroPractica;
 use App\Models\Periodo;
 use App\Models\RequerimientoCentro;
 use App\Models\Supervisor;
+use App\Support\Rut;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -35,7 +36,7 @@ class CentroPracticaController extends Controller
             $query->where(fn (Builder $builder) => $builder
                 ->where('nombre', 'like', "%{$term}%")
                 ->orWhere('razon_social', 'like', "%{$term}%")
-                ->orWhere('rut', 'like', "%{$term}%")
+                ->orWhereRaw("REPLACE(rut, '.', '') like ?", ['%'.str_replace('.', '', $term).'%'])
                 ->orWhereHas('supervisores', fn (Builder $supervisores) => $supervisores->where('nombre', 'like', "%{$term}%")));
         }
 
@@ -308,7 +309,7 @@ class CentroPracticaController extends Controller
                     'practica_id' => $practica->id,
                     'nombre' => $estudiante?->user?->name,
                     'correo' => $estudiante?->user?->email,
-                    'periodo' => $periodo ? "{$periodo->semestre}° sem {$periodo->anio}" : null,
+                    'periodo' => $periodo ? "{$periodo->semestre}º sem {$periodo->anio}" : null,
                     'tipo_practica_id' => $habilitacion?->tipo_practica_id,
                     'supervisor' => $supervisor->nombre,
                     'fecha_inicio' => $practica->fecha_inicio?->toDateString(),
@@ -356,7 +357,7 @@ class CentroPracticaController extends Controller
                 'required', 'string', 'max:12',
                 Rule::unique('centros_practica', 'rut')->ignore($centro?->id),
                 function (string $attribute, mixed $value, \Closure $fail): void {
-                    if ($value !== null && !$this->validRut((string) $value)) {
+                    if ($value !== null && Rut::normalizar((string) $value) === null) {
                         $fail('Ingresa un RUT chileno válido.');
                     }
                 },
@@ -368,7 +369,7 @@ class CentroPracticaController extends Controller
             'es_interno' => ['required', 'boolean'],
             // La activación corresponde al flujo de formalización del acuerdo (HU-10).
             'fecha_alta' => ['prohibited'],
-            'area_ids' => ['sometimes', 'array'],
+            'area_ids' => [$centro ? 'sometimes' : 'required', 'array', 'min:1'],
             'area_ids.*' => ['integer', 'distinct', 'exists:areas,id'],
             'requerimientos' => ['sometimes', 'array'],
             'requerimientos.*.periodo_id' => ['required', 'integer', 'exists:periodos,id'],
@@ -521,37 +522,9 @@ class CentroPracticaController extends Controller
         abort_unless($request->user()?->rol === 'coordinadora', 403, 'Esta acción es exclusiva de la Coordinadora.');
     }
 
-    private function validRut(string $rut): bool
-    {
-        $value = strtoupper(preg_replace('/[^0-9K]/', '', $rut) ?? '');
-        if (!preg_match('/^\d{7,8}[0-9K]$/', $value)) {
-            return false;
-        }
-
-        $body = substr($value, 0, -1);
-        $digit = $this->rutCheckDigit($body);
-        $expected = $digit === 'K' ? 'K' : (string) $digit;
-
-        return substr($value, -1) === $expected;
-    }
-
-    private function rutCheckDigit(string $body): int|string
-    {
-        $sum = 0;
-        $factor = 2;
-        for ($index = strlen($body) - 1; $index >= 0; $index--) {
-            $sum += ((int) $body[$index]) * $factor;
-            $factor = $factor === 7 ? 2 : $factor + 1;
-        }
-        $digit = 11 - ($sum % 11);
-
-        return match ($digit) { 11 => 0, 10 => 'K', default => $digit };
-    }
-
+    // Con puntos si es válido; si no, tal como venía para que la validación lo informe
     private function formatRut(string $rut): string
     {
-        $value = strtoupper(preg_replace('/[^0-9K]/', '', $rut) ?? '');
-
-        return substr($value, 0, -1).'-'.substr($value, -1);
+        return Rut::normalizar($rut) ?? trim($rut);
     }
 }

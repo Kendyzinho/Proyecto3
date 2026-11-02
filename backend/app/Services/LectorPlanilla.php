@@ -24,9 +24,13 @@ class LectorPlanilla
         'anio_ingreso' => ['ano de ingreso', 'ano ingreso'],
         'practica' => ['practica', 'tipo de practica'],
         'cumple' => ['cumple prerrequisito', 'prerrequisito'],
+        'areas' => ['areas', 'area', 'areas de interes'],
     ];
 
-    public const ENCABEZADOS = ['RUT', 'Nombre', 'Correo', 'Año de ingreso', 'Práctica', 'Cumple prerrequisito'];
+    // Una planilla anterior sin estas columnas se sigue aceptando
+    public const COLUMNAS_OPCIONALES = ['areas'];
+
+    public const ENCABEZADOS = ['RUT', 'Nombre', 'Correo', 'Año de ingreso', 'Práctica', 'Cumple prerrequisito', 'Áreas'];
 
     public const MAXIMO_FILAS = 1000;
 
@@ -130,6 +134,10 @@ class LectorPlanilla
             $indice = collect($nombres)->map(fn ($n) => array_search($n, $normalizados, true))->first(fn ($i) => $i !== false);
 
             if ($indice === null) {
+                if (in_array($clave, self::COLUMNAS_OPCIONALES, true)) {
+                    continue;
+                }
+
                 $nombre = self::ENCABEZADOS[array_search($clave, array_keys(self::COLUMNAS), true)];
                 throw ValidationException::withMessages(['archivo' => "La planilla no tiene la columna \"{$nombre}\". Usa la plantilla."]);
             }

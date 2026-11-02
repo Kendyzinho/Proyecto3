@@ -52,13 +52,13 @@ describe('authGuard', () => {
       await harness.fixture.whenStable();
       expect(harness.routeNativeElement?.textContent).toContain('Nómina de estudiantes');
     } else if (rol === 'coordinadora') {
-      TestBed.inject(HttpTestingController).expectOne('/api/coordinacion/metricas').flush({
+      TestBed.inject(HttpTestingController).match('/api/coordinacion/metricas').forEach((peticion) => peticion.flush({
         periodo: { id: 2, nombre: '2º semestre 2026' }, practicas_registradas: 5,
-      });
+      }));
       await harness.fixture.whenStable();
-      expect(harness.routeNativeElement?.textContent).toContain('Prácticas registradas del período');
+      expect(harness.routeNativeElement?.textContent).toContain('Prácticas 2º semestre 2026');
     } else {
-      expect(harness.routeNativeElement?.textContent).toContain('Bienvenido');
+      expect(harness.routeNativeElement?.textContent).toContain('Inicio');
     }
     expect(harness.routeNativeElement?.querySelector('[aria-label="Menú de usuario"]')).not.toBeNull();
 
@@ -70,7 +70,7 @@ describe('authGuard', () => {
     await harness.navigateByUrl(ruta);
     expect(TestBed.inject(Router).url).toBe('/auth');
     expect(harness.routeNativeElement?.textContent).toContain('Iniciar sesión');
-    expect(harness.routeNativeElement?.textContent).not.toContain('Bienvenido');
+    expect(harness.routeNativeElement?.textContent).not.toContain('Inicio');
   });
 
   it('no acepta un usuario guardado sin token', () => {

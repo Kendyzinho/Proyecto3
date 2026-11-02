@@ -1,5 +1,14 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, TemplateRef, computed, inject, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
+import { MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
+import { MatPaginatorModule } from '@angular/material/paginator';
+import { MatSelectModule } from '@angular/material/select';
+
+import { AcuerdoCentro } from '../../secretaria/documentos/acuerdo-centro';
 
 import {
   CentroPractica,
@@ -13,7 +22,7 @@ import {
 } from './centro-practica.model';
 import { CentrosPracticaService } from './centros-practica.service';
 
-type FiltroAcuerdo = 'Todos' | EstadoAcuerdo;
+type FiltroCentro = 'Todos' | EstadoAcuerdo | 'Propuestos' | 'Dados de baja';
 type CampoCentro = 'nombre' | 'razonSocial' | 'rut';
 type PeriodoCupos = { periodo: string; cupos: CupoCentro[] };
 type SupervisorFormulario = { nombre: string; correo: string; cargo: string; unidad: string; telefono: string };
@@ -30,13 +39,31 @@ const AREAS_BASE = [
 
 @Component({
   selector: 'app-centros-practica',
-  imports: [FormsModule],
+  imports: [FormsModule, AcuerdoCentro, MatButtonModule, MatDialogModule, MatFormFieldModule, MatIconModule, MatInputModule, MatPaginatorModule, MatSelectModule],
   templateUrl: './centros-practica.html',
   styleUrl: './centros-practica.scss',
 })
 export class CentrosPractica {
   private readonly centrosService = inject(CentrosPracticaService);
+  private readonly dialogo = inject(MatDialog);
   private readonly centros = signal<CentroPractica[]>([]);
+  private readonly plantillaCentro = viewChild.required<TemplateRef<unknown>>('plantillaCentro');
+  private readonly plantillaBaja = viewChild.required<TemplateRef<unknown>>('plantillaBaja');
+  private readonly plantillaAcuerdo = viewChild.required<TemplateRef<unknown>>('plantillaAcuerdo');
+  private readonly plantillaEstudiante = viewChild.required<TemplateRef<unknown>>('plantillaEstudiante');
+  private dialogoAbierto: MatDialogRef<unknown> | null = null;
+
+  protected readonly filtros: { valor: FiltroCentro; texto: string }[] = [
+    { valor: 'Todos', texto: 'Todos' },
+    { valor: 'Vigente', texto: 'Acuerdo vigente' },
+    { valor: 'En trámite', texto: 'Acuerdo en trámite' },
+    { valor: 'Vencido', texto: 'Acuerdo vencido' },
+    { valor: 'Sin acuerdo', texto: 'Sin acuerdo' },
+    { valor: 'Propuestos', texto: 'Propuestos' },
+    { valor: 'Dados de baja', texto: 'Dados de baja' },
+  ];
+  protected readonly tamanoPagina = 10;
+  protected readonly pagina = signal(0);
 
   protected readonly errorApi = signal('');
   protected readonly guardando = signal(false);
@@ -44,16 +71,13 @@ export class CentrosPractica {
   protected readonly periodosCatalogo = signal<{ id: number; anio: number; semestre: number }[]>([]);
 
   protected readonly busqueda = signal('');
-  protected readonly filtroAcuerdo = signal<FiltroAcuerdo>('Todos');
+  protected readonly filtro = signal<FiltroCentro>('Todos');
   protected readonly areaSeleccionada = signal('Todas');
-  protected readonly mostrarDadosDeBaja = signal(false);
   protected readonly centroSeleccionadoId = signal<number | null>(null);
-  protected readonly mostrarFormularioNuevo = signal(false);
   protected readonly centroEditandoId = signal<number | null>(null);
   protected readonly areasSeleccionadas = signal<string[]>([]);
   protected readonly nuevaArea = signal('');
   protected readonly intentoGuardar = signal(false);
-  protected readonly mostrarFormularioBaja = signal(false);
   protected readonly estudianteSeleccionado = signal<EstudianteCentro | null>(null);
   protected readonly motivoBaja = signal('');
   protected readonly errorBaja = signal('');
@@ -64,7 +88,7 @@ export class CentrosPractica {
   protected readonly nuevoSupervisorFicha = signal<SupervisorFormulario>(this.supervisorVacio());
   protected readonly cuposFormulario = signal<CupoCentro[]>([]);
   protected readonly supervisoresFormulario = signal<SupervisorFormulario[]>([]);
-  protected periodoNuevoCupo = '2° semestre 2026';
+  protected periodoNuevoCupoId: number | null = null;
   protected categoriaNuevoCupo: 'Laboral' | 'Profesional' = 'Laboral';
   protected cantidadNuevoCupo = 1;
 
@@ -82,13 +106,15 @@ export class CentrosPractica {
           centro.rut,
           ...centro.supervisores.map((s) => s.nombre),
         ].some((valor) => valor.toLocaleLowerCase('es').includes(termino));
-      const coincideAcuerdo =
-        this.filtroAcuerdo() === 'Todos' || centro.acuerdo === this.filtroAcuerdo();
       const coincideArea =
         this.areaSeleccionada() === 'Todas' || centro.areas.includes(this.areaSeleccionada());
-      const coincideEstado = this.mostrarDadosDeBaja() || centro.estado !== 'Dado de baja';
-      return coincideTexto && coincideAcuerdo && coincideArea && coincideEstado;
+      return coincideTexto && coincideArea && this.cumpleFiltro(centro);
     });
+  });
+
+  protected readonly centrosPagina = computed(() => {
+    const desde = this.pagina() * this.tamanoPagina;
+    return this.centrosVisibles().slice(desde, desde + this.tamanoPagina);
   });
 
   protected readonly areas = computed(() =>
@@ -121,14 +147,36 @@ export class CentrosPractica {
 
   protected buscar(valor: string): void {
     this.busqueda.set(valor);
+    this.pagina.set(0);
+  }
+
+  protected seleccionarArea(area: string): void {
+    this.areaSeleccionada.set(area);
+    this.pagina.set(0);
+  }
+
+  private cumpleFiltro(centro: CentroPractica): boolean {
+    switch (this.filtro()) {
+      case 'Todos': return true;
+      case 'Propuestos': return centro.estado === 'Propuesto';
+      case 'Dados de baja': return centro.estado === 'Dado de baja';
+      // El centro interno no necesita acuerdo: no cuenta como "sin acuerdo"
+      default: return !centro.esInterno && centro.acuerdo === this.filtro();
+    }
+  }
+
+  private abrir(plantilla: TemplateRef<unknown>, ancho: string): MatDialogRef<unknown> {
+    this.dialogoAbierto = this.dialogo.open(plantilla, { width: ancho, maxWidth: 'calc(100vw - 24px)', maxHeight: '94dvh' });
+    return this.dialogoAbierto;
   }
 
   protected reintentarCarga(): void {
     this.cargarCatalogo();
   }
 
-  protected seleccionarFiltroAcuerdo(valor: FiltroAcuerdo): void {
-    this.filtroAcuerdo.set(valor);
+  protected seleccionarFiltro(valor: FiltroCentro): void {
+    this.filtro.set(valor);
+    this.pagina.set(0);
   }
 
   protected seleccionarCentro(centro: CentroPractica): void {
@@ -143,7 +191,11 @@ export class CentrosPractica {
     this.limpiarFormulario();
     this.supervisoresFormulario.set([this.supervisorVacio()]);
     this.centroEditandoId.set(null);
-    this.mostrarFormularioNuevo.set(true);
+    this.abrirFormularioCentro();
+  }
+
+  private abrirFormularioCentro(): void {
+    this.abrir(this.plantillaCentro(), '760px').afterClosed().subscribe(() => this.limpiarFormulario());
   }
 
   protected editarCentro(): void {
@@ -163,7 +215,7 @@ export class CentrosPractica {
     this.cuposFormulario.set([...centro.cupos]);
     this.centroEditandoId.set(centro.id);
     this.centroOriginalAlEditar = this.serializarDatosEditablesCentro();
-    this.mostrarFormularioNuevo.set(true);
+    this.abrirFormularioCentro();
   }
 
   protected hayCambiosCentro(): boolean {
@@ -198,8 +250,10 @@ export class CentrosPractica {
   }
 
   protected supervisoresResumen(centro: CentroPractica): string {
-    const cantidad = centro.supervisores.length;
-    return cantidad === 0 ? 'Sin supervisores' : `${cantidad} ${cantidad === 1 ? 'supervisor(a)' : 'supervisores'}`;
+    const vigentes = centro.supervisores.filter((supervisor) => supervisor.estado !== 'De baja');
+    if (vigentes.length === 0) return 'Sin supervisor';
+    if (vigentes.length > 1) return `${vigentes.length} supervisores`;
+    return vigentes[0].estado === 'Propuesto' ? `${vigentes[0].nombre} (por aprobar)` : vigentes[0].nombre;
   }
 
   protected puedeActivarSupervisores(centro: CentroPractica): boolean {
@@ -290,8 +344,7 @@ export class CentrosPractica {
   }
 
   protected cerrarFormularioNuevo(): void {
-    this.mostrarFormularioNuevo.set(false);
-    this.limpiarFormulario();
+    this.dialogoAbierto?.close();
   }
 
   protected actualizarCampo(
@@ -350,29 +403,18 @@ export class CentrosPractica {
   }
 
   protected agregarCupo(): void {
-    const periodo = this.periodoNuevoCupo.trim();
+    const periodo = this.periodosCatalogo().find((item) => item.id === this.periodoNuevoCupoId);
     if (!periodo || !Number.isInteger(this.cantidadNuevoCupo) || this.cantidadNuevoCupo < 1) return;
-    const coincide = periodo.match(/([12])\D*sem(?:estre)?\D*(\d{4})/i);
-    const periodoRegistrado = coincide
-      ? this.periodosCatalogo().find(
-          (item) => item.semestre === Number(coincide[1]) && item.anio === Number(coincide[2]),
-        )
-      : undefined;
-    if (!periodoRegistrado) {
-      this.errorApi.set('El período debe existir en el sistema antes de asignarle cupos.');
-      return;
-    }
-    this.errorApi.set('');
     const cupo: CupoCentro = {
-      periodo,
-      periodoId: periodoRegistrado.id,
+      periodo: `${periodo.semestre}º semestre ${periodo.anio}`,
+      periodoId: periodo.id,
       categoria: this.categoriaNuevoCupo,
       total: this.cantidadNuevoCupo,
       ocupados: 0,
       libres: this.cantidadNuevoCupo,
     };
     this.cuposFormulario.update((cupos) => [
-      ...cupos.filter((item) => item.periodo !== cupo.periodo || item.categoria !== cupo.categoria),
+      ...cupos.filter((item) => item.periodoId !== cupo.periodoId || item.categoria !== cupo.categoria),
       cupo,
     ]);
   }
@@ -399,7 +441,7 @@ export class CentrosPractica {
     }
     const actual = this.centros().find((centro) => centro.id === centroEditando);
     const datos: CentroPractica = {
-      id: centroEditando ?? Math.max(0, ...this.centros().map((item) => item.id)) + 1,
+      id: centroEditando ?? 0,
       nombre: this.nuevoCentro.nombre.trim(),
       razonSocial: this.nuevoCentro.razonSocial.trim(),
       rut: this.nuevoCentro.rut.trim(),
@@ -434,8 +476,7 @@ export class CentrosPractica {
         );
         this.cerrarFormularioNuevo();
         this.areaSeleccionada.set('Todas');
-        this.filtroAcuerdo.set('Todos');
-        this.mostrarDadosDeBaja.set(false);
+        this.filtro.set('Todos');
       },
       error: (error: unknown) => {
         this.guardando.set(false);
@@ -448,11 +489,11 @@ export class CentrosPractica {
   protected iniciarBaja(): void {
     this.motivoBaja.set('');
     this.errorBaja.set('');
-    this.mostrarFormularioBaja.set(true);
+    this.abrir(this.plantillaBaja(), '480px');
   }
 
   protected cerrarBaja(): void {
-    this.mostrarFormularioBaja.set(false);
+    this.dialogoAbierto?.close();
     this.errorBaja.set('');
   }
 
@@ -500,10 +541,30 @@ export class CentrosPractica {
 
   protected mostrarFichaEstudiante(estudiante: EstudianteCentro): void {
     this.estudianteSeleccionado.set(estudiante);
+    this.abrir(this.plantillaEstudiante(), '420px');
   }
 
-  protected cerrarFichaEstudiante(): void {
-    this.estudianteSeleccionado.set(null);
+  protected abrirAcuerdo(): void {
+    this.abrir(this.plantillaAcuerdo(), '640px');
+  }
+
+  // El acuerdo con PDF y vigencia activa el centro: se vuelve a leer el catálogo
+  protected acuerdoGuardado(): void {
+    this.dialogoAbierto?.close();
+    this.cargarCatalogo();
+  }
+
+  protected textoTipoAcuerdo(tipo: string | null): string {
+    if (!tipo) return 'Sin registrar';
+    return tipo === 'con_equipamiento' ? 'Con equipamiento' : 'Tradicional';
+  }
+
+  protected textoCupos(cupos: CupoCentro[]): string {
+    return cupos.map((cupo) => `${cupo.categoria} ${cupo.libres} de ${cupo.total}`).join(', ');
+  }
+
+  protected textoResultado(estudiante: EstudianteCentro): string {
+    return estudiante.resultado ? this.etiquetaResultado(estudiante.resultado) : this.etiquetaEstadoPractica(estudiante.estado);
   }
 
   protected iniciales(nombre: string): string {
@@ -545,21 +606,31 @@ export class CentrosPractica {
     this.actualizarCampo('rut', `${cuerpoFormateado}-${digito}`);
   }
 
-  protected cuposResumen(centro: CentroPractica): string {
-    if (!centro.cupos.length) return 'Sin cupos definidos';
-    return centro.cupos
-      .map((cupo) => `${cupo.periodo}: ${cupo.categoria} ${cupo.libres}/${cupo.total}`)
-      .join(' · ');
+  // Cupos libres del período actual, o del más reciente que tenga definido
+  protected cuposLibres(centro: CentroPractica): string {
+    const ids = centro.cupos.map((cupo) => cupo.periodoId ?? 0);
+    if (!ids.length) return '—';
+    const actual = this.periodoActual()?.id;
+    const periodoId = actual !== undefined && ids.includes(actual) ? actual : Math.max(...ids);
+    const delPeriodo = centro.cupos.filter((cupo) => cupo.periodoId === periodoId);
+    return `${delPeriodo.reduce((suma, cupo) => suma + cupo.libres, 0)} de ${delPeriodo.reduce((suma, cupo) => suma + cupo.total, 0)}`;
+  }
+
+  // 1er semestre hasta junio y 2º desde julio, igual que Periodo::actual() en el backend
+  private periodoActual() {
+    const hoy = new Date();
+    const semestre = hoy.getMonth() >= 6 ? 2 : 1;
+    return this.periodosCatalogo().find((item) => item.anio === hoy.getFullYear() && item.semestre === semestre);
   }
 
   protected estadoCentroClass(estado: EstadoCentro): string {
     return estado === 'Activo'
-      ? 'status--active'
+      ? 'estado--exito'
       : estado === 'Propuesto'
-        ? 'status--proposed'
+        ? 'estado--info'
         : estado === 'Sin acuerdo'
-          ? 'status--neutral'
-          : 'status--inactive';
+          ? 'estado--advertencia'
+          : 'estado--error';
   }
 
   protected verAcuerdoPdf(): void {
@@ -591,12 +662,12 @@ export class CentrosPractica {
 
   protected estadoAcuerdoClass(estado: EstadoAcuerdo): string {
     return estado === 'Vigente'
-      ? 'status--active'
+      ? 'estado--exito'
       : estado === 'En trámite'
-        ? 'status--proposed'
+        ? 'estado--advertencia'
         : estado === 'Vencido'
-          ? 'status--inactive'
-          : 'status--neutral';
+          ? 'estado--error'
+          : 'estado--neutro';
   }
 
   private formularioVacio() {
@@ -622,7 +693,7 @@ export class CentrosPractica {
     this.cuposFormulario.set([]);
     this.supervisoresFormulario.set([]);
     this.intentoGuardar.set(false);
-    this.periodoNuevoCupo = '2° semestre 2026';
+    this.periodoNuevoCupoId = this.periodoActual()?.id ?? this.periodosCatalogo()[0]?.id ?? null;
     this.categoriaNuevoCupo = 'Laboral';
     this.cantidadNuevoCupo = 1;
   }

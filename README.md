@@ -159,6 +159,8 @@ y al salir del perfil. Las pruebas de autenticación y perfil verifican la base 
 
 Los crea `php artisan migrate --seed`. Contraseña de todos: `password`.
 
+Los mismos datos dejan listo el flujo completo del Sprint 1: 5 prácticas confirmadas en Documentos, 2 solicitudes por revisar y 1 devuelta en la bandeja, 2 estudiantes laborales sin centro, un centro propuesto y al estudiante de la tabla sin práctica, para enviar una solicitud desde cero. Los estudiantes de ejemplo entran con su correo (por ejemplo, `martin.lopez@alumnos.uta.cl`, que tiene la solicitud devuelta) y la misma contraseña.
+
 | Rol | Correo |
 |---|---|
 | Secretaria de Jefatura | secretaria@uta.cl |

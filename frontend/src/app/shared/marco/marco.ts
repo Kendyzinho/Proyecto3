@@ -1,4 +1,4 @@
-import { Component, computed, inject, input, signal } from '@angular/core';
+import { Component, computed, effect, inject, input, signal } from '@angular/core';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
@@ -11,7 +11,8 @@ import { PaginadorEnEspanol } from '../../core/i18n/paginador';
 import { NOMBRE_ROL } from '../../core/models/usuario';
 import { Auth } from '../../core/services/auth';
 import { MenuUsuario } from '../menu-usuario/menu-usuario';
-import { MENUS_POR_ROL } from './menus-por-rol';
+import { ContadorSolicitudes } from './contador-solicitudes';
+import { GRUPOS_POR_ROL, MENUS_POR_ROL } from './menus-por-rol';
 
 export interface OpcionMenu {
   texto: string;
@@ -42,16 +43,26 @@ export class Marco {
   protected readonly notificacionesAbiertas = signal(false);
 
   protected readonly auth = inject(Auth);
+  protected readonly contador = inject(ContadorSolicitudes);
   protected readonly nombreRol = computed(() => {
     const usuario = this.auth.usuario();
     return usuario ? NOMBRE_ROL[usuario.rol] : '';
   });
-  protected readonly grupoVisible = computed(() => this.perfil() ? `Área personal · ${this.nombreRol()}` : this.grupo());
+  protected readonly grupoVisible = computed(() => {
+    const rol = this.auth.usuario()?.rol;
+    return this.perfil() && rol ? GRUPOS_POR_ROL[rol] ?? '' : this.grupo();
+  });
   protected readonly menuVisible = computed<OpcionMenu[]>(() => {
     if (!this.perfil()) return this.menu() ?? [];
     const rol = this.auth.usuario()?.rol;
     return rol ? MENUS_POR_ROL[rol] ?? [] : [];
   });
+
+  constructor() {
+    effect(() => {
+      if (this.auth.usuario()?.rol === 'coordinadora') this.contador.actualizar();
+    });
+  }
 
   protected alternarMenu(): void {
     if (this.movil()) {

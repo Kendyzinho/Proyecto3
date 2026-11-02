@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\CentroPractica;
 use App\Models\Habilitacion;
+use App\Models\HistorialPractica;
 use App\Models\Periodo;
 use App\Models\Practica;
 use App\Models\Supervisor;
@@ -21,9 +22,11 @@ class PracticaExcepcionalService
                 ->where('periodo_id', $periodo->id)->where('cumple_prerrequisito', true)
                 ->whereHas('estudiante.usuario', fn ($q) => $q->whereNull('fecha_baja'))
                 ->whereDoesntHave('practicas')->get()->sortBy('estudiante.usuario.name')->values()
-                ->map(fn ($h) => ['id' => $h->id, 'estudiante' => $h->estudiante->usuario->name, 'tipo_practica' => $h->tipoPractica->nombre]),
+                ->map(fn ($h) => ['id' => $h->id, 'estudiante' => $h->estudiante->usuario->name, 'tipo_practica' => $h->tipoPractica->nombre, 'horas' => $h->horas_requeridas]),
             'supervisores' => Supervisor::with('centro')->whereNull('fecha_baja')
-                ->whereHas('centro', fn ($q) => $q->whereNull('fecha_baja'))->orderBy('nombre')->get()
+                ->whereNotNull('fecha_alta')->whereDate('fecha_alta', '<=', today())
+                ->whereHas('centro', fn ($q) => $q->whereNull('fecha_baja')->whereNotNull('fecha_alta')->whereDate('fecha_alta', '<=', today()))
+                ->orderBy('nombre')->get()
                 ->filter(fn ($s) => $s->centro->puedeRecibirEstudiantes())->values()
                 ->map(fn ($s) => ['id' => $s->id, 'nombre' => $s->nombre, 'centro' => $s->centro->nombre]),
         ];
@@ -44,11 +47,11 @@ class PracticaExcepcionalService
             }
             $supervisor = Supervisor::lockForUpdate()->findOrFail($datos['supervisor_id']);
             $centro = CentroPractica::lockForUpdate()->findOrFail($supervisor->centro_id);
-            if ($supervisor->fecha_baja !== null || $centro->fecha_baja !== null || ! $centro->puedeRecibirEstudiantes()) {
+            if (! $this->estaActivo($supervisor) || ! $this->estaActivo($centro) || ! $centro->puedeRecibirEstudiantes()) {
                 throw ValidationException::withMessages(['supervisor_id' => 'El supervisor o su centro ya no están disponibles; se requiere un acuerdo vigente.']);
             }
 
-            return Practica::create([
+            $practica = Practica::create([
                 'habilitacion_id' => $habilitacion->id,
                 'supervisor_id' => $supervisor->id,
                 'origen' => 'excepcional',
@@ -58,6 +61,22 @@ class PracticaExcepcionalService
                 'justificacion_excepcional' => trim($datos['justificacion_excepcional']),
                 'registrada_por' => $autora->id,
             ]);
+
+            // Sin este registro la práctica no tendría estado: no ocuparía cupo ni sacaría al estudiante de la HU-08
+            HistorialPractica::create([
+                'practica_id' => $practica->id,
+                'user_id' => $autora->id,
+                'fecha_hora' => now(),
+                'estado_nuevo' => 'confirmada',
+                'motivo' => null,
+            ]);
+
+            return $practica;
         }, 3);
+    }
+
+    private function estaActivo(Supervisor|CentroPractica $registro): bool
+    {
+        return $registro->fecha_baja === null && $registro->fecha_alta !== null && ! $registro->fecha_alta->isFuture();
     }
 }

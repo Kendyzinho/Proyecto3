@@ -4,12 +4,13 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { RouterLink } from '@angular/router';
 import { MetricasPracticas, PracticasApi } from './practicas-api';
 import { NuevaPractica } from './nueva-practica';
 
 @Component({
   selector: 'app-inicio-coordinacion',
-  imports: [MatButtonModule, MatIconModule],
+  imports: [MatButtonModule, MatIconModule, RouterLink],
   templateUrl: './inicio.html',
   styleUrl: './inicio.scss',
 })
@@ -38,12 +39,12 @@ export class InicioCoordinacion {
     const periodo = this.datos()?.periodo;
     if (!periodo || this.abierto()) return;
     this.abierto.set(true);
-    this.dialogo.open(NuevaPractica, { data: periodo, width: '620px', maxWidth: 'calc(100vw - 24px)', maxHeight: '94dvh' })
+    this.dialogo.open(NuevaPractica, { data: periodo, width: '640px', maxWidth: 'calc(100vw - 24px)', maxHeight: '94dvh' })
       .afterClosed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe((creada: boolean | undefined) => {
         this.abierto.set(false);
         if (creada) {
           this.recargar();
-          this.mensajes.open('Práctica excepcional registrada correctamente.', 'Cerrar', { duration: 6000 });
+          this.mensajes.open('Práctica registrada.', 'Cerrar', { duration: 6000 });
         }
       });
   }

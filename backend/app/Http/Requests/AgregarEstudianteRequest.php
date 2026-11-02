@@ -22,6 +22,8 @@ class AgregarEstudianteRequest extends FormRequest
             'anio_ingreso' => ['required', 'integer'],
             'tipo_practica_id' => ['required', 'integer'],
             'cumple_prerrequisito' => ['required', 'boolean'],
+            'area_ids' => ['sometimes', 'array'],
+            'area_ids.*' => ['integer', 'exists:areas,id'],
         ];
     }
 

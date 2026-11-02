@@ -5,8 +5,8 @@ import { AbstractControl, NonNullableFormBuilder, ReactiveFormsModule, Validator
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
+import { MatRadioModule } from '@angular/material/radio';
 import { MatSelectModule } from '@angular/material/select';
 import { CatalogoExcepcional, PeriodoPractica, PracticasApi } from './practicas-api';
 
@@ -17,7 +17,7 @@ export function fechasCoherentes(control: AbstractControl) {
 
 @Component({
   selector: 'app-nueva-practica',
-  imports: [ReactiveFormsModule, MatButtonModule, MatDialogModule, MatFormFieldModule, MatIconModule, MatInputModule, MatSelectModule],
+  imports: [ReactiveFormsModule, MatButtonModule, MatDialogModule, MatFormFieldModule, MatInputModule, MatRadioModule, MatSelectModule],
   templateUrl: './nueva-practica.html',
   styleUrl: './nueva-practica.scss',
 })
@@ -34,7 +34,7 @@ export class NuevaPractica {
   protected readonly form = inject(NonNullableFormBuilder).group({
     habilitacion_id: [0, Validators.min(1)],
     supervisor_id: [0, Validators.min(1)],
-    modalidad: ['presencial', [Validators.required, Validators.pattern(/^(presencial|mixta)$/)]],
+    modalidad: ['presencial', [Validators.required, Validators.pattern(/^(presencial|a_distancia|mixta)$/)]],
     fecha_inicio: ['', Validators.required],
     fecha_fin: ['', Validators.required],
     justificacion_excepcional: ['', [Validators.required, Validators.pattern(/\S/), Validators.maxLength(5000)]],
@@ -53,6 +53,12 @@ export class NuevaPractica {
 
   protected centro(): string {
     return this.catalogo()?.supervisores.find((s) => s.id === this.form.controls.supervisor_id.value)?.centro || '';
+  }
+
+  protected practica(): string {
+    const habilitacion = this.catalogo()?.habilitaciones.find((h) => h.id === this.form.controls.habilitacion_id.value);
+    if (!habilitacion) return '';
+    return habilitacion.horas ? `${habilitacion.tipo_practica} (${habilitacion.horas} h)` : habilitacion.tipo_practica;
   }
 
   protected mensaje(campo: string): string {

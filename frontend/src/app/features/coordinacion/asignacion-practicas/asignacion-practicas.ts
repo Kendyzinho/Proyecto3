@@ -1,12 +1,15 @@
 import { Component, computed, inject, signal } from '@angular/core';
+import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
+import { MatSelectModule } from '@angular/material/select';
 
 import { CentroAsignable, EstudianteAsignable, ModalidadPractica } from './asignacion-practicas.model';
 import { AsignacionPracticasService } from './asignacion-practicas.service';
 
 @Component({
   selector: 'app-asignacion-practicas',
-  imports: [MatIconModule],
+  imports: [MatButtonModule, MatFormFieldModule, MatIconModule, MatSelectModule],
   templateUrl: './asignacion-practicas.html',
   styleUrl: './asignacion-practicas.scss',
 })
@@ -92,13 +95,13 @@ export class AsignacionPracticas {
     this.aviso.set('');
   }
 
-  protected cambiarModalidad(event: Event): void {
-    this.modalidad.set((event.target as HTMLSelectElement).value as ModalidadPractica);
-  }
-
   protected contarCoincidencias(centro: CentroAsignable): number {
     const areas = this.estudiante()?.areas ?? [];
     return centro.areas.filter((area) => areas.includes(area)).length;
+  }
+
+  protected textoCoincidencia(centro: CentroAsignable, total: number): string {
+    return `coincide en ${this.contarCoincidencias(centro)} de ${total} ${total === 1 ? 'área' : 'áreas'}`;
   }
 
   protected iniciales(nombre: string): string {
@@ -125,7 +128,7 @@ export class AsignacionPracticas {
     }).subscribe({
       next: ({ message }) => {
         this.avisoExitoso.set(true);
-        this.aviso.set(`${message} Se encoló la notificación por correo.`);
+        this.aviso.set(`${message} Se avisará al estudiante por correo.`);
         this.guardando.set(false);
         this.cargarHabilitaciones();
       },
