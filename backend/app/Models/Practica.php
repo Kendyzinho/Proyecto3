@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -84,5 +85,15 @@ class Practica extends Model
     public function horarios(): HasMany
     {
         return $this->hasMany(Horario::class, 'practica_id');
+    }
+
+    // Cada cambio registra el horario completo: el vigente es la versión más reciente
+    public function horarioVigente(): Collection
+    {
+        $desde = $this->horarios->max(fn (Horario $horario) => $horario->vigente_desde->toDateString());
+
+        return $this->horarios
+            ->filter(fn (Horario $horario) => $horario->vigente_desde->toDateString() === $desde)
+            ->sortBy('dia_semana')->values();
     }
 }

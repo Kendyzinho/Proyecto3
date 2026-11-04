@@ -7,6 +7,7 @@ use App\Models\Estudiante;
 use App\Models\Habilitacion;
 use App\Models\Periodo;
 use App\Models\Practica;
+use App\Models\RequerimientoCentro;
 use App\Models\Supervisor;
 use App\Models\TipoPractica;
 use App\Models\User;
@@ -42,6 +43,7 @@ class PracticaExcepcionalTest extends TestCase
             'periodo_id' => Periodo::actual()->id, 'cumple_prerrequisito' => true, 'horas_requeridas' => 64]);
         $centro = CentroPractica::create(['nombre' => 'Centro de prueba UTA', 'razon_social' => 'UTA', 'es_interno' => true, 'fecha_alta' => '2025-01-01']);
         $this->supervisor = Supervisor::create(['centro_id' => $centro->id, 'nombre' => 'Supervisora de prueba', 'correo' => 'supervisora@example.test', 'fecha_alta' => '2025-01-01']);
+        Periodo::all()->each(fn (Periodo $periodo) => RequerimientoCentro::create(['centro_id' => $centro->id, 'periodo_id' => $periodo->id, 'categoria' => 'laboral', 'cupos' => 10]));
         $this->datos = ['periodo_id' => $this->habilitacion->periodo_id, 'habilitacion_id' => $this->habilitacion->id,
             'supervisor_id' => $this->supervisor->id, 'modalidad' => 'presencial', 'fecha_inicio' => '2026-11-01',
             'fecha_fin' => '2026-12-01', 'justificacion_excepcional' => 'Regularización autorizada por Jefatura.'];

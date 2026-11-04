@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Mail\PracticaAsignadaMail;
+use App\Models\Habilitacion;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -111,6 +112,22 @@ class AsignacionPracticaController extends Controller
         })->filter(fn ($centro) => $centro->cupos > $centro->ocupados)->values();
 
         return response()->json(['data' => $centros]);
+    }
+
+    // Sin áreas el estudiante no se puede asignar: la Coordinadora las define o corrige aquí
+    public function actualizarAreas(Request $request, Habilitacion $habilitacion): JsonResponse
+    {
+        $data = $request->validate([
+            'area_ids' => ['required', 'array', 'min:1'],
+            'area_ids.*' => ['required', 'integer', 'distinct', Rule::exists('areas', 'id')->whereNull('fecha_baja')],
+        ], [
+            'area_ids.required' => 'Selecciona al menos un área.',
+            'area_ids.min' => 'Selecciona al menos un área.',
+            'area_ids.*.exists' => 'El área seleccionada ya no está disponible.',
+        ]);
+        $habilitacion->estudiante->areas()->sync($data['area_ids']);
+
+        return response()->json(['data' => ['areas' => $habilitacion->estudiante->areas()->orderBy('nombre')->pluck('nombre')]]);
     }
 
     public function asignar(Request $request): JsonResponse

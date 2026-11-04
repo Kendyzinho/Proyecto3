@@ -1,0 +1,31 @@
+form {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+mat-dialog-content p {
+  margin: 0;
+}
+
+.practica {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.etiqueta-campo {
+  color: #5b6b80;
+  font-size: 12px;
+}
+
+.dias {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 4px 0 0 -8px;
+}
+
+@media (max-width: 520px) {
+  .dialogo-fila {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

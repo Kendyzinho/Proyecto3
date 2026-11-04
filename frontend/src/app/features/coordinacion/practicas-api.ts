@@ -16,6 +16,7 @@ export interface RegistroExcepcional {
   fecha_inicio: string;
   fecha_fin: string;
   justificacion_excepcional: string;
+  exceder_cupo?: boolean;
 }
 
 @Injectable({ providedIn: 'root' })

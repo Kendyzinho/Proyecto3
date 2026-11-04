@@ -7,6 +7,7 @@ use App\Models\Habilitacion;
 use App\Models\HistorialPractica;
 use App\Models\Periodo;
 use App\Models\Practica;
+use App\Models\RequerimientoCentro;
 use App\Models\Supervisor;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -51,6 +52,10 @@ class PracticaExcepcionalService
                 throw ValidationException::withMessages(['supervisor_id' => 'El supervisor o su centro ya no están disponibles; se requiere un acuerdo vigente.']);
             }
 
+            if (empty($datos['exceder_cupo'])) {
+                $this->avisarSiNoHayCupo($habilitacion, $centro);
+            }
+
             $practica = Practica::create([
                 'habilitacion_id' => $habilitacion->id,
                 'supervisor_id' => $supervisor->id,
@@ -73,6 +78,28 @@ class PracticaExcepcionalService
 
             return $practica;
         }, 3);
+    }
+
+    // HU-11 puede pasarse del cupo para regularizar un caso especial, pero la Coordinadora debe confirmarlo
+    private function avisarSiNoHayCupo(Habilitacion $habilitacion, CentroPractica $centro): void
+    {
+        $categoria = $habilitacion->tipoPractica->categoria;
+        $requerimiento = RequerimientoCentro::where('centro_id', $centro->id)
+            ->where('periodo_id', $habilitacion->periodo_id)->where('categoria', $categoria)->first();
+
+        if (! $requerimiento) {
+            throw ValidationException::withMessages(['exceder_cupo' => "Este centro no tiene cupos de práctica {$categoria} definidos en este período."]);
+        }
+
+        $ocupados = Practica::formalizadas()
+            ->whereHas('supervisor', fn ($q) => $q->where('centro_id', $centro->id))
+            ->whereHas('habilitacion', fn ($q) => $q->where('periodo_id', $habilitacion->periodo_id)
+                ->whereHas('tipoPractica', fn ($tipo) => $tipo->where('categoria', $categoria)))
+            ->count();
+
+        if ($ocupados >= $requerimiento->cupos) {
+            throw ValidationException::withMessages(['exceder_cupo' => "Este centro no tiene cupos libres de práctica {$categoria} en este período: {$ocupados} ocupados de {$requerimiento->cupos}."]);
+        }
     }
 
     private function estaActivo(Supervisor|CentroPractica $registro): bool

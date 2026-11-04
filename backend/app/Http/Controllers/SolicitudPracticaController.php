@@ -529,7 +529,7 @@ class SolicitudPracticaController extends Controller
             'por_revisar' => 'Por revisar', 'devuelta' => 'Devuelta', 'confirmada' => 'Aprobada',
             'en_curso' => 'En curso', 'finalizada' => 'Finalizada', 'cancelada' => 'Cancelada', default => 'Borrador',
         };
-        $horario = $practica->horarios->sortBy('dia_semana');
+        $horario = $practica->horarioVigente();
         $diaLabels = [1 => 'Lun', 2 => 'Mar', 3 => 'Mié', 4 => 'Jue', 5 => 'Vie', 6 => 'Sáb', 7 => 'Dom'];
         $firstSchedule = $horario->first();
 

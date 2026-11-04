@@ -53,12 +53,13 @@
         <mat-error>{{ mensaje('justificacion_excepcional') }}</mat-error>
       </mat-form-field>
     }
+    @if (mensajeCupo(); as cupo) { <p class="aviso aviso--cupo" role="alert">{{ cupo }}</p> }
     @if (errorGeneral()) { <p class="error-campo" role="alert">{{ errorGeneral() }}</p> }
   </mat-dialog-content>
   <mat-dialog-actions align="end">
     <button matButton type="button" (click)="cancelar()" [disabled]="enviando()">Cancelar</button>
     <button matButton="filled" type="submit" [disabled]="enviando() || cargando() || errorCarga() || !catalogo()?.habilitaciones?.length || !catalogo()?.supervisores?.length">
-      {{ enviando() ? 'Registrando…' : 'Registrar práctica' }}
+      {{ enviando() ? 'Registrando…' : mensajeCupo() ? 'Registrar de todos modos' : 'Registrar práctica' }}
     </button>
   </mat-dialog-actions>
 </form>

@@ -1,0 +1,48 @@
+<h2 mat-dialog-title>Fechas y horario</h2>
+<form [formGroup]="form" (ngSubmit)="guardar()">
+  <mat-dialog-content class="dialogo-campos" [attr.aria-busy]="enviando()">
+    <p class="practica">{{ practica.estudiante }}, {{ practica.centro }}</p>
+    <div class="dialogo-fila">
+      <mat-form-field subscriptSizing="dynamic">
+        <mat-label>Fecha de inicio</mat-label>
+        <input matInput type="date" formControlName="fecha_inicio" required />
+        <mat-error>{{ mensaje('fecha_inicio') }}</mat-error>
+      </mat-form-field>
+      <mat-form-field subscriptSizing="dynamic">
+        <mat-label>Fecha de término</mat-label>
+        <input matInput type="date" formControlName="fecha_fin" required />
+        <mat-error>{{ mensaje('fecha_fin') }}</mat-error>
+      </mat-form-field>
+    </div>
+    @if (form.hasError('fechas')) { <p class="error-campo" role="alert">La fecha de término debe ser igual o posterior al inicio.</p> }
+
+    <div role="group" aria-labelledby="dias-etiqueta">
+      <span id="dias-etiqueta" class="etiqueta-campo">Días</span>
+      <div class="dias">
+        @for (dia of dias; track dia.valor) {
+          <mat-checkbox [checked]="form.controls.dias.value.includes(dia.valor)" (change)="alternarDia(dia.valor, $event.checked)">{{ dia.etiqueta }}</mat-checkbox>
+        }
+      </div>
+      @if (form.controls.dias.touched && form.controls.dias.invalid) { <p class="error-campo" role="alert">Selecciona al menos un día.</p> }
+    </div>
+
+    <div class="dialogo-fila">
+      <mat-form-field subscriptSizing="dynamic">
+        <mat-label>Hora de inicio</mat-label>
+        <input matInput type="time" formControlName="hora_desde" required />
+        <mat-error>{{ mensaje('hora_desde') }}</mat-error>
+      </mat-form-field>
+      <mat-form-field subscriptSizing="dynamic">
+        <mat-label>Hora de término</mat-label>
+        <input matInput type="time" formControlName="hora_hasta" required />
+        <mat-error>{{ mensaje('hora_hasta') }}</mat-error>
+      </mat-form-field>
+    </div>
+    @if (form.hasError('horas')) { <p class="error-campo" role="alert">La hora de término debe ser posterior a la de inicio.</p> }
+    @if (errorGeneral()) { <p class="error-campo" role="alert">{{ errorGeneral() }}</p> }
+  </mat-dialog-content>
+  <mat-dialog-actions align="end">
+    <button matButton type="button" (click)="cancelar()" [disabled]="enviando()">Cancelar</button>
+    <button matButton="filled" type="submit" [disabled]="enviando()">{{ enviando() ? 'Guardando…' : 'Guardar' }}</button>
+  </mat-dialog-actions>
+</form>

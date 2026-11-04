@@ -2,7 +2,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
 
-import { CategoriaPractica, CentroAsignable, EstudianteAsignable, ModalidadPractica } from './asignacion-practicas.model';
+import { AreaOpcion, CalendarioPractica, CentroAsignable, EstudianteAsignable, HorarioPractica, ModalidadPractica } from './asignacion-practicas.model';
 
 interface Respuesta<T> {
   data: T;
@@ -78,6 +78,23 @@ export class AsignacionPracticasService {
     modalidad: ModalidadPractica;
   }): Observable<{ message: string }> {
     return this.http.post<{ message: string }>('/api/coordinacion/asignaciones', payload);
+  }
+
+  listarAreas(): Observable<AreaOpcion[]> {
+    return this.http.get<Respuesta<AreaOpcion[]>>('/api/areas').pipe(map(({ data }) => data));
+  }
+
+  actualizarAreas(habilitacionId: number, areaIds: number[]): Observable<string[]> {
+    return this.http.put<Respuesta<{ areas: string[] }>>(`/api/coordinacion/asignaciones/habilitaciones/${habilitacionId}/areas`, { area_ids: areaIds })
+      .pipe(map(({ data }) => data.areas));
+  }
+
+  listarCalendarios(): Observable<CalendarioPractica[]> {
+    return this.http.get<Respuesta<CalendarioPractica[]>>('/api/coordinacion/calendarios').pipe(map(({ data }) => data));
+  }
+
+  guardarCalendario(practicaId: number, datos: { fecha_inicio: string; fecha_fin: string } & HorarioPractica): Observable<{ message: string }> {
+    return this.http.put<{ message: string }>(`/api/coordinacion/calendarios/${practicaId}`, datos);
   }
 
   mensajeError(error: unknown, fallback: string): string {

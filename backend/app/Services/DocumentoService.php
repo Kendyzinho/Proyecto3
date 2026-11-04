@@ -150,7 +150,10 @@ class DocumentoService
     {
         $documentos = $practica->relationLoaded('documentos') ? $practica->documentos : $practica->documentos()->get();
 
-        return $documentos->where('tipo', $tipo)->sortByDesc('id')->first();
+        $documento = $documentos->where('tipo', $tipo)->sortByDesc('id')->first();
+
+        // La carta indica el período: si las fechas cambiaron después de generarla, hay que generarla de nuevo
+        return $tipo === 'carta' && $documento?->fecha->lt($practica->updated_at) ? null : $documento;
     }
 
     private function exigirAcuerdo(Practica $practica): void

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AsignacionPracticaController;
+use App\Http\Controllers\CalendarioPracticaController;
 use App\Http\Controllers\CentroPracticaController;
 use App\Http\Controllers\DocumentoController;
 use App\Http\Controllers\NominaController;
@@ -30,7 +31,12 @@ Route::middleware('auth:sanctum')->group(function () {
         // HU-08: asignación de prácticas laborales por perfil.
         Route::get('/asignaciones/habilitaciones', [AsignacionPracticaController::class, 'habilitaciones']);
         Route::get('/asignaciones/habilitaciones/{habilitacion}/centros', [AsignacionPracticaController::class, 'centros']);
+        Route::put('/asignaciones/habilitaciones/{habilitacion}/areas', [AsignacionPracticaController::class, 'actualizarAreas']);
         Route::post('/asignaciones', [AsignacionPracticaController::class, 'asignar']);
+
+        // Fechas y horario de las prácticas confirmadas (Art. 17)
+        Route::get('/calendarios', [CalendarioPracticaController::class, 'index']);
+        Route::put('/calendarios/{practica}', [CalendarioPracticaController::class, 'update']);
     });
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);

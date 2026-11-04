@@ -1,20 +1,29 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
+import { MatTableModule } from '@angular/material/table';
 
-import { CentroAsignable, EstudianteAsignable, ModalidadPractica } from './asignacion-practicas.model';
+import { AreaOpcion, CalendarioPractica, CentroAsignable, DIAS_SEMANA, EstudianteAsignable, HorarioPractica, ModalidadPractica } from './asignacion-practicas.model';
 import { AsignacionPracticasService } from './asignacion-practicas.service';
+import { FechasHorario } from './fechas-horario';
 
 @Component({
   selector: 'app-asignacion-practicas',
-  imports: [MatButtonModule, MatFormFieldModule, MatIconModule, MatSelectModule],
+  imports: [MatButtonModule, MatFormFieldModule, MatIconModule, MatSelectModule, MatTableModule],
   templateUrl: './asignacion-practicas.html',
   styleUrl: './asignacion-practicas.scss',
 })
 export class AsignacionPracticas {
   private readonly service = inject(AsignacionPracticasService);
+  private readonly dialogo = inject(MatDialog);
+  protected readonly columnasCalendario = ['estudiante', 'centro', 'fechas', 'horario', 'accion'];
+  protected readonly calendarios = signal<CalendarioPractica[]>([]);
+  protected readonly areasDisponibles = signal<AreaOpcion[]>([]);
+  protected readonly idsAreas = signal<number[]>([]);
+  protected readonly guardandoAreas = signal(false);
   protected readonly estudiantes = signal<EstudianteAsignable[]>([]);
   protected readonly centros = signal<CentroAsignable[]>([]);
   protected readonly estudianteId = signal<number | null>(null);
@@ -33,7 +42,84 @@ export class AsignacionPracticas {
   protected readonly centrosCompatibles = computed(() => this.centros().slice().sort((a, b) => this.contarCoincidencias(b) - this.contarCoincidencias(a)));
 
   constructor() {
+    this.service.listarAreas().subscribe({
+      next: (areas) => {
+        this.areasDisponibles.set(areas);
+        this.precargarAreas();
+      },
+      error: (error: unknown) => this.mostrarError(error, 'No se pudieron cargar las áreas.'),
+    });
+    this.cargarCalendarios();
     this.cargarHabilitaciones();
+  }
+
+  private cargarCalendarios(): void {
+    this.service.listarCalendarios().subscribe({
+      next: (calendarios) => this.calendarios.set(calendarios),
+      error: (error: unknown) => this.mostrarError(error, 'No se pudieron cargar las fechas y horarios.'),
+    });
+  }
+
+  private mostrarError(error: unknown, fallback: string): void {
+    this.avisoExitoso.set(false);
+    this.aviso.set(this.service.mensajeError(error, fallback));
+  }
+
+  private idsDe(nombres: string[]): number[] {
+    return this.areasDisponibles().filter((area) => nombres.includes(area.nombre)).map((area) => area.id);
+  }
+
+  private precargarAreas(): void {
+    this.idsAreas.set(this.idsDe(this.estudiante()?.areas ?? []));
+  }
+
+  // Sin áreas no hay centros compatibles: la Coordinadora las define al cerrar el selector
+  protected guardarAreas(): void {
+    const estudiante = this.estudiante();
+    if (!estudiante) return;
+    const ids = this.idsAreas();
+    const actuales = this.idsDe(estudiante.areas);
+    if (ids.length === actuales.length && ids.every((id) => actuales.includes(id))) return;
+    if (!ids.length) {
+      this.idsAreas.set(actuales);
+      this.avisoExitoso.set(false);
+      this.aviso.set('El estudiante debe tener al menos un área.');
+      return;
+    }
+    this.guardandoAreas.set(true);
+    this.aviso.set('');
+    this.service.actualizarAreas(estudiante.id, ids).subscribe({
+      next: (areas) => {
+        this.estudiantes.update((items) => items.map((item) => (item.id === estudiante.id ? { ...item, areas } : item)));
+        this.guardandoAreas.set(false);
+        this.centroId.set(null);
+        this.supervisorId.set(null);
+        this.centros.set([]);
+        this.cargarCentros(estudiante.id, estudiante.periodo);
+      },
+      error: (error: unknown) => {
+        this.idsAreas.set(actuales);
+        this.guardandoAreas.set(false);
+        this.mostrarError(error, 'No se pudieron guardar las áreas.');
+      },
+    });
+  }
+
+  protected abrirFechasHorario(practica: CalendarioPractica): void {
+    this.dialogo.open(FechasHorario, { data: practica, width: '560px', maxWidth: 'calc(100vw - 24px)', maxHeight: '94dvh' })
+      .afterClosed().subscribe((guardado) => {
+        if (guardado) this.cargarCalendarios();
+      });
+  }
+
+  protected textoFechas(practica: CalendarioPractica): string {
+    const formato = (fecha: string) => fecha.split('-').reverse().join('-');
+    return practica.fecha_inicio && practica.fecha_fin ? `${formato(practica.fecha_inicio)} a ${formato(practica.fecha_fin)}` : '';
+  }
+
+  protected textoHorario(horario: HorarioPractica): string {
+    const dias = horario.dias.map((dia) => DIAS_SEMANA.find((item) => item.valor === dia)?.etiqueta).join(', ');
+    return `${dias}, ${horario.hora_desde} a ${horario.hora_hasta}`;
   }
 
   protected cargarHabilitaciones(): void {
@@ -47,7 +133,7 @@ export class AsignacionPracticas {
       next: (items) => {
         this.estudiantes.set(items);
         const primerEstudiante = items[0];
-        if (primerEstudiante) this.seleccionarEstudiante(primerEstudiante.id);
+        if (primerEstudiante) this.abrirEstudiante(primerEstudiante.id);
         this.cargandoEstudiantes.set(false);
       },
       error: (error: unknown) => {
@@ -59,11 +145,16 @@ export class AsignacionPracticas {
   }
 
   protected seleccionarEstudiante(id: number): void {
+    this.aviso.set('');
+    this.abrirEstudiante(id);
+  }
+
+  private abrirEstudiante(id: number): void {
     this.estudianteId.set(id);
+    this.precargarAreas();
     this.centroId.set(null);
     this.supervisorId.set(null);
     this.centros.set([]);
-    this.aviso.set('');
     const periodo = this.estudiantes().find((item) => item.id === id)?.periodo ?? '';
     this.cargarCentros(id, periodo);
   }
@@ -131,6 +222,7 @@ export class AsignacionPracticas {
         this.aviso.set(`${message} Se avisará al estudiante por correo.`);
         this.guardando.set(false);
         this.cargarHabilitaciones();
+        this.cargarCalendarios();
       },
       error: (error: unknown) => {
         this.avisoExitoso.set(false);

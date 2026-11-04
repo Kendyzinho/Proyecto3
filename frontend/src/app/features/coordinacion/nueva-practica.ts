@@ -31,6 +31,7 @@ export class NuevaPractica {
   protected readonly errorCarga = signal(false);
   protected readonly enviando = signal(false);
   protected readonly errorGeneral = signal<string | null>(null);
+  private readonly avisoCupo = signal<{ mensaje: string; habilitacion_id: number; supervisor_id: number } | null>(null);
   protected readonly form = inject(NonNullableFormBuilder).group({
     habilitacion_id: [0, Validators.min(1)],
     supervisor_id: [0, Validators.min(1)],
@@ -66,16 +67,25 @@ export class NuevaPractica {
     return control?.getError('servidor') || (control?.hasError('maxlength') ? 'Máximo 5000 caracteres.' : 'Completa este campo con un valor válido.');
   }
 
+  // El aviso vale para el estudiante y el supervisor(a) con que se intentó; si cambian, hay que volver a comprobar
+  protected mensajeCupo(): string | null {
+    const aviso = this.avisoCupo();
+    const { habilitacion_id, supervisor_id } = this.form.getRawValue();
+    return aviso && aviso.habilitacion_id === habilitacion_id && aviso.supervisor_id === supervisor_id ? aviso.mensaje : null;
+  }
+
   protected cancelar(): void { if (!this.enviando()) this.referencia.close(false); }
 
   protected guardar(): void {
     if (this.enviando() || this.cargando() || this.errorCarga()) return;
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
+    const datos = this.form.getRawValue();
+    const excederCupo = this.mensajeCupo() !== null;
     this.enviando.set(true);
     this.form.disable();
     this.referencia.disableClose = true;
     this.errorGeneral.set(null);
-    this.api.registrar({ ...this.form.getRawValue(), periodo_id: this.periodo.id }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    this.api.registrar({ ...datos, periodo_id: this.periodo.id, ...(excederCupo ? { exceder_cupo: true } : {}) }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => this.referencia.close(true),
       error: (e: HttpErrorResponse) => {
         this.enviando.set(false);
@@ -84,6 +94,10 @@ export class NuevaPractica {
         const errores = e.error?.errors as Record<string, string[]> | undefined;
         if (e.status === 422 && errores) {
           for (const [campo, mensajes] of Object.entries(errores)) {
+            if (campo === 'exceder_cupo') {
+              this.avisoCupo.set({ mensaje: mensajes[0], habilitacion_id: datos.habilitacion_id, supervisor_id: datos.supervisor_id });
+              continue;
+            }
             const control = this.form.get(campo);
             if (control) { control.setErrors({ servidor: mensajes[0] }); control.markAsTouched(); }
             else this.errorGeneral.set(mensajes[0]);

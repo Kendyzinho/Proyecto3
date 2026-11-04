@@ -33,3 +33,29 @@ export interface AsignacionPractica {
   categoria: CategoriaPractica;
   creadaEn: string;
 }
+
+export const DIAS_SEMANA = [
+  { valor: 1, etiqueta: 'Lun' }, { valor: 2, etiqueta: 'Mar' }, { valor: 3, etiqueta: 'Mié' }, { valor: 4, etiqueta: 'Jue' },
+  { valor: 5, etiqueta: 'Vie' }, { valor: 6, etiqueta: 'Sáb' }, { valor: 7, etiqueta: 'Dom' },
+] as const;
+
+export interface HorarioPractica {
+  dias: number[];
+  hora_desde: string;
+  hora_hasta: string;
+}
+
+export interface CalendarioPractica {
+  id: number;
+  estudiante: string;
+  tipo_practica: string;
+  centro: string;
+  fecha_inicio: string | null;
+  fecha_fin: string | null;
+  horario: HorarioPractica | null;
+}
+
+export interface AreaOpcion {
+  id: number;
+  nombre: string;
+}

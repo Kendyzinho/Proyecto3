@@ -67,6 +67,40 @@ describe('NuevaPractica', () => {
     expect(req.request.body.origen).toBeUndefined();
     req.flush({ data: { id: 10 } }); expect(referencia.close).toHaveBeenCalledWith(true);
   });
+  it('avisa que el centro no tiene cupo y solo registra si se confirma', () => {
+    cargar(); completar(); guardar();
+    http.expectOne('/api/coordinacion/practicas-excepcionales').flush(
+      { errors: { exceder_cupo: ['Este centro no tiene cupos libres de práctica laboral en este período: 2 ocupados de 2.'] } }, { status: 422, statusText: 'Unprocessable' });
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Este centro no tiene cupos libres');
+    expect(fixture.nativeElement.querySelector('button[type=submit]').textContent).toContain('Registrar de todos modos');
+    expect(referencia.close).not.toHaveBeenCalled();
+
+    guardar();
+    const req = http.expectOne('/api/coordinacion/practicas-excepcionales');
+    expect(req.request.body.exceder_cupo).toBe(true);
+    req.flush({ data: { id: 10 } });
+    expect(referencia.close).toHaveBeenCalledWith(true);
+  });
+  it('la primera vez no pide exceder el cupo', () => {
+    cargar(); completar(); guardar();
+    const req = http.expectOne('/api/coordinacion/practicas-excepcionales');
+    expect(req.request.body.exceder_cupo).toBeUndefined();
+    req.flush({ data: { id: 10 } });
+  });
+  it('al cambiar de supervisor el aviso de cupo deja de valer', () => {
+    const otroCatalogo = { ...CATALOGO, supervisores: [...CATALOGO.supervisores, { id: 4, nombre: 'Marcela', centro: 'Otro centro' }] };
+    cargar(otroCatalogo); completar(); guardar();
+    http.expectOne('/api/coordinacion/practicas-excepcionales').flush(
+      { errors: { exceder_cupo: ['Este centro no tiene cupos libres de práctica laboral en este período: 2 ocupados de 2.'] } }, { status: 422, statusText: 'Unprocessable' });
+    form().patchValue({ supervisor_id: 4 }); fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).not.toContain('Este centro no tiene cupos libres');
+
+    guardar();
+    const req = http.expectOne('/api/coordinacion/practicas-excepcionales');
+    expect(req.request.body.exceder_cupo).toBeUndefined();
+    req.flush({ data: { id: 10 } });
+  });
   it('presenta la validación del backend y permite corregir', () => {
     cargar(); completar(); guardar();
     http.expectOne('/api/coordinacion/practicas-excepcionales').flush({ errors: { habilitacion_id: ['Esta habilitación ya tiene una práctica registrada.'] } }, { status: 422, statusText: 'Unprocessable' });
