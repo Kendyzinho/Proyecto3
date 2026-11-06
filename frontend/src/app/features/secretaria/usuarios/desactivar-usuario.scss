@@ -1,0 +1,19 @@
+.contenido {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  p {
+    margin: 0 0 8px;
+    font-size: 14px;
+    line-height: 20px;
+  }
+}
+
+.peligro {
+  --mat-button-filled-container-color: #b91c1c;
+}
+
+.error-general {
+  color: #b91c1c;
+}

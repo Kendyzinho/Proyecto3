@@ -1,0 +1,155 @@
+<header class="encabezado-pagina titulo">
+  <h1>Solicitud de Práctica Profesional</h1>
+  @if (solicitud(); as actual) {
+    <span class="estado" [class]="actual.estado === 'Aprobada' ? 'estado--exito' : actual.estado === 'Devuelta' ? 'estado--advertencia' : 'estado--info'">{{ actual.estado === 'Por revisar' ? 'En revisión' : actual.estado }}</span>
+  }
+</header>
+
+@if (service.errorApi()) { <p class="aviso aviso--error" role="alert">{{ service.errorApi() }}</p> }
+
+@if (service.cargando()) {
+  <p class="aviso" role="status">Cargando tu habilitación…</p>
+} @else if (!service.habilitacion().puedePostular && !solicitud()) {
+  <section class="tarjeta bloqueo" role="status">
+    <h2>Aún no puedes postular</h2>
+    <p>{{ service.habilitacion().motivo }}</p>
+  </section>
+} @else {
+  @if (solicitud()?.estado === 'Devuelta' && solicitud()?.motivoDevolucion) {
+    <p class="aviso" role="status"><strong>Motivo de devolución:</strong> {{ solicitud()?.motivoDevolucion }}</p>
+  }
+  @if (aviso()) { <p class="aviso" [class.aviso--exito]="avisoExitoso()" [class.aviso--error]="!avisoExitoso()" role="status">{{ aviso() }}</p> }
+
+  <form class="tarjeta" novalidate (ngSubmit)="enviarSolicitud()">
+    <fieldset class="campos-bloque" [disabled]="bloqueada()">
+      <section class="seccion">
+        <h2><mat-icon aria-hidden="true">domain</mat-icon>1. Centro de práctica</h2>
+        @if (formulario.modoCentro === 'Registrado') {
+          <mat-form-field subscriptSizing="dynamic">
+            <mat-label>Centro</mat-label>
+            <mat-select name="centro" [disabled]="bloqueada()" [ngModel]="formulario.centroId" (ngModelChange)="seleccionarCentro($event)">
+              @for (centro of centros(); track centro.id) { <mat-option [value]="centro.id">{{ centro.nombre }}</mat-option> }
+            </mat-select>
+            @if (mostrarError(centroSeleccionado() !== null)) { <mat-hint class="error-campo">Selecciona un centro o propón uno nuevo.</mat-hint> }
+          </mat-form-field>
+        } @else {
+          <div class="rejilla-dos">
+            <mat-form-field subscriptSizing="dynamic">
+              <mat-label>Razón social</mat-label>
+              <input matInput name="razonSocial" [(ngModel)]="formulario.centroRazonSocial" />
+              @if (mostrarError(!!formulario.centroRazonSocial.trim())) { <mat-hint class="error-campo">Ingresa la razón social.</mat-hint> }
+            </mat-form-field>
+            <mat-form-field subscriptSizing="dynamic">
+              <mat-label>RUT</mat-label>
+              <input matInput name="rutCentro" maxlength="12" [(ngModel)]="formulario.centroRut" (blur)="formatearRut()" />
+              @if (mostrarError(rutValido())) { <mat-hint class="error-campo">Ingresa un RUT válido.</mat-hint> }
+            </mat-form-field>
+          </div>
+        }
+        <div class="linea-accion">
+          @if (formulario.modoCentro === 'Propuesto') {
+            <span class="estado estado--info">Centro propuesto</span>
+            @if (!bloqueada()) { <button matButton type="button" (click)="volverACentroRegistrado()">Elegir un centro registrado</button> }
+          } @else {
+            @if (centroSeleccionado(); as centro) { <span class="estado estado--exito">{{ centro.esInterno ? 'Centro interno UTA' : 'Registrado con acuerdo vigente' }}</span> }
+            @if (!bloqueada()) { <button matButton type="button" (click)="proponerCentro()"><mat-icon>add</mat-icon>Proponer otro centro</button> }
+          }
+        </div>
+      </section>
+
+      <section class="seccion">
+        <h2><mat-icon aria-hidden="true">person_outline</mat-icon>2. Supervisor(a)</h2>
+        @if (formulario.modoSupervisor === 'Registrado' && supervisoresDisponibles().length) {
+          <mat-form-field subscriptSizing="dynamic">
+            <mat-label>Nombre completo</mat-label>
+            <mat-select name="supervisorExistente" [disabled]="bloqueada()" [ngModel]="formulario.supervisorId" (ngModelChange)="seleccionarSupervisor($event)">
+              @for (supervisor of supervisoresDisponibles(); track supervisor.correo) { <mat-option [value]="supervisor.correo">{{ supervisor.nombre }}</mat-option> }
+            </mat-select>
+          </mat-form-field>
+          @if (supervisorSeleccionado(); as supervisor) {
+            <dl class="datos-supervisor">
+              <div class="dato"><dt>Cargo</dt><dd>{{ supervisor.cargo || 'Sin informar' }}</dd></div>
+              <div class="dato"><dt>Correo</dt><dd>{{ supervisor.correo }}</dd></div>
+              <div class="dato"><dt>Teléfono</dt><dd>{{ supervisor.telefono || 'Sin informar' }}</dd></div>
+              <div class="dato"><dt>Unidad o área</dt><dd>{{ supervisor.unidad || 'Sin informar' }}</dd></div>
+            </dl>
+          }
+          @if (!bloqueada()) { <div class="linea-accion"><button matButton type="button" (click)="proponerSupervisor()"><mat-icon>person_add</mat-icon>Proponer uno nuevo</button></div> }
+        } @else if (formulario.modoCentro === 'Registrado' && !centroSeleccionado()) {
+          <p class="sin-centro">Selecciona un centro.</p>
+        } @else {
+          <div class="rejilla-dos">
+            <mat-form-field subscriptSizing="dynamic">
+              <mat-label>Nombre completo</mat-label>
+              <input matInput name="nombreSupervisor" [(ngModel)]="formulario.supervisorNombre" />
+              @if (mostrarError(!!formulario.supervisorNombre.trim())) { <mat-hint class="error-campo">Ingresa el nombre.</mat-hint> }
+            </mat-form-field>
+            <mat-form-field subscriptSizing="dynamic"><mat-label>Cargo</mat-label><input matInput name="cargoSupervisor" [(ngModel)]="formulario.supervisorCargo" /></mat-form-field>
+          </div>
+          <div class="rejilla-tres">
+            <mat-form-field subscriptSizing="dynamic">
+              <mat-label>Correo</mat-label>
+              <input matInput name="correoSupervisor" type="email" [(ngModel)]="formulario.supervisorCorreo" />
+              @if (mostrarError(correoValido(formulario.supervisorCorreo))) { <mat-hint class="error-campo">Ingresa un correo válido.</mat-hint> }
+            </mat-form-field>
+            <mat-form-field subscriptSizing="dynamic"><mat-label>Teléfono</mat-label><input matInput name="telefonoSupervisor" type="tel" [(ngModel)]="formulario.supervisorTelefono" /></mat-form-field>
+            <mat-form-field subscriptSizing="dynamic"><mat-label>Unidad o área</mat-label><input matInput name="unidadSupervisor" [(ngModel)]="formulario.supervisorUnidad" /></mat-form-field>
+          </div>
+          @if (formulario.modoCentro === 'Registrado' && supervisoresDisponibles().length && !bloqueada()) {
+            <div class="linea-accion"><button matButton type="button" (click)="seleccionarSupervisor(supervisoresDisponibles()[0].correo)">Elegir uno registrado</button></div>
+          }
+        }
+      </section>
+
+      <section class="seccion">
+        <h2><mat-icon aria-hidden="true">work_outline</mat-icon>3. Práctica</h2>
+        <span id="etiqueta-modalidad" class="etiqueta-campo">Modalidad</span>
+        <mat-radio-group name="modalidad" class="modalidad" aria-labelledby="etiqueta-modalidad" [disabled]="bloqueada()" [(ngModel)]="formulario.horario.modalidad">
+          @for (modalidad of ['Presencial', 'A distancia', 'Mixta']; track modalidad) { <mat-radio-button [value]="modalidad">{{ modalidad }}</mat-radio-button> }
+        </mat-radio-group>
+        @if (mostrarError(!!formulario.horario.modalidad)) { <p class="error-campo">Selecciona una modalidad.</p> }
+
+        <div class="rejilla-dos">
+          <mat-form-field subscriptSizing="dynamic">
+            <mat-label>Fecha de inicio</mat-label>
+            <input matInput name="fechaInicio" type="date" [min]="hoy" [(ngModel)]="formulario.horario.fechaInicio" />
+            @if (mostrarError(!!formulario.horario.fechaInicio)) { <mat-hint class="error-campo">Indica la fecha de inicio.</mat-hint> }
+          </mat-form-field>
+          <mat-form-field subscriptSizing="dynamic">
+            <mat-label>Fecha de término</mat-label>
+            <input matInput name="fechaTermino" type="date" [min]="formulario.horario.fechaInicio || hoy" [(ngModel)]="formulario.horario.fechaTermino" />
+            @if (mostrarError(!!formulario.horario.fechaTermino && formulario.horario.fechaTermino >= formulario.horario.fechaInicio)) { <mat-hint class="error-campo">Debe ser igual o posterior al inicio.</mat-hint> }
+          </mat-form-field>
+        </div>
+
+        <span class="etiqueta-campo">Horario</span>
+        <div class="horario">
+          <div class="filtros-dias">
+            @for (dia of dias; track dia) {
+              <button type="button" class="filtro" [class.filtro--activo]="formulario.horario.dias.includes(dia)" [attr.aria-pressed]="formulario.horario.dias.includes(dia)" (click)="alternarDia(dia)">
+                @if (formulario.horario.dias.includes(dia)) { <mat-icon>check</mat-icon> }{{ dia }}
+              </button>
+            }
+          </div>
+          <mat-form-field class="hora" subscriptSizing="dynamic"><mat-label>Desde</mat-label><input matInput name="horaDesde" type="time" [(ngModel)]="formulario.horario.horaDesde" /></mat-form-field>
+          <mat-form-field class="hora" subscriptSizing="dynamic"><mat-label>Hasta</mat-label><input matInput name="horaHasta" type="time" [(ngModel)]="formulario.horario.horaHasta" /></mat-form-field>
+        </div>
+        @if (mostrarError(formulario.horario.dias.length > 0 && !!formulario.horario.horaDesde && !!formulario.horario.horaHasta && formulario.horario.horaHasta > formulario.horario.horaDesde)) { <p class="error-campo">Selecciona al menos un día y un rango horario válido.</p> }
+
+        <mat-form-field class="tareas" subscriptSizing="dynamic">
+          <mat-label>Tareas que realizarás</mat-label>
+          <textarea matInput name="tareas" rows="3" [(ngModel)]="formulario.tareas"></textarea>
+          @if (mostrarError(!!formulario.tareas.trim())) { <mat-hint class="error-campo">Describe las tareas.</mat-hint> }
+        </mat-form-field>
+      </section>
+    </fieldset>
+
+    @if (!bloqueada()) {
+      <footer class="pie">
+        @if (solicitud()?.estado === 'Devuelta' && !hayCambiosEnSolicitud()) { <span class="pie__nota">Modifica algún dato para reenviar.</span> }
+        @if (solicitud()?.estado !== 'Devuelta') { <button matButton type="button" [disabled]="!hayCambiosEnSolicitud()" (click)="guardarBorrador()">Guardar borrador</button> }
+        <button matButton="filled" type="submit" [disabled]="solicitud()?.estado === 'Devuelta' && !hayCambiosEnSolicitud()"><mat-icon>send</mat-icon>{{ solicitud()?.estado === 'Devuelta' ? 'Corregir y reenviar' : 'Enviar solicitud' }}</button>
+      </footer>
+    }
+  </form>
+}

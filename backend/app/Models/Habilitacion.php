@@ -6,22 +6,18 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-// Un estudiante habilitado (o bloqueado por prerrequisito) para un tipo de práctica en un período
 class Habilitacion extends Model
 {
     protected $table = 'habilitaciones';
 
     protected $fillable = [
-        'carga_id', 'estudiante_id', 'tipo_practica_id', 'periodo_id',
-        'cumple_prerrequisito', 'horas_requeridas', 'fecha_induccion', 'observacion',
+        'carga_id', 'estudiante_id', 'tipo_practica_id', 'periodo_id', 'cumple_prerrequisito',
+        'horas_requeridas', 'fecha_induccion', 'observacion',
     ];
 
     protected function casts(): array
     {
-        return [
-            'cumple_prerrequisito' => 'boolean',
-            'fecha_induccion' => 'date',
-        ];
+        return ['cumple_prerrequisito' => 'boolean', 'fecha_induccion' => 'date'];
     }
 
     public function estudiante(): BelongsTo

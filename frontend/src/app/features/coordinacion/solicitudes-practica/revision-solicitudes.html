@@ -1,0 +1,95 @@
+<header class="encabezado-pagina">
+  <h1>Solicitudes de práctica</h1>
+  <button matButton="outlined" type="button" (click)="nuevaPractica()"><mat-icon>add</mat-icon>Nueva práctica</button>
+</header>
+
+@if (service.errorApi()) { <p class="aviso aviso--error" role="alert">{{ service.errorApi() }}</p> }
+@if (aviso()) { <p class="aviso aviso--exito" role="status">{{ aviso() }}</p> }
+
+<div class="columnas">
+  <section class="tarjeta" aria-labelledby="bandeja-titulo">
+    <div class="tarjeta__cabecera"><h2 id="bandeja-titulo">Bandeja</h2></div>
+    <div class="filtros" role="group" aria-label="Filtrar solicitudes por estado">
+      @for (filtro of filtros(); track filtro.estado) {
+        <button type="button" class="filtro" [class.filtro--activo]="estadosActivos().includes(filtro.estado)" [attr.aria-pressed]="estadosActivos().includes(filtro.estado)" (click)="cambiarFiltro(filtro.estado)">
+          @if (estadosActivos().includes(filtro.estado)) { <mat-icon>check</mat-icon> }
+          {{ filtro.texto }} ({{ filtro.cantidad }})
+        </button>
+      }
+    </div>
+    @if (service.cargando()) { <p class="vacio" role="status">Cargando solicitudes…</p> }
+    @else {
+      @for (solicitud of filtradas(); track solicitud.id) {
+        <button type="button" class="fila" [class.fila--activa]="seleccionada().id === solicitud.id" (click)="seleccionar(solicitud.id)">
+          <span class="avatar">{{ iniciales(solicitud.estudianteNombre) }}</span>
+          <span class="fila__nombre">{{ solicitud.estudianteNombre }}</span>
+          <span class="fila__fecha">{{ solicitud.actualizadaEn | date:'dd-MM HH:mm' }}</span>
+        </button>
+      } @empty {
+        <p class="vacio">No hay solicitudes para estos filtros.</p>
+      }
+    }
+  </section>
+
+  @if (seleccionada(); as solicitud) {
+    <section class="tarjeta" aria-labelledby="detalle-titulo">
+      <div class="tarjeta__cabecera detalle__cabecera">
+        <h2 id="detalle-titulo">Solicitud de {{ solicitud.estudianteNombre }}</h2>
+        <span class="estado" [class]="claseEstado(solicitud.estado)">{{ solicitud.estado }}</span>
+      </div>
+
+      <section class="seccion">
+        <h3><mat-icon>domain</mat-icon>Centro de práctica</h3>
+        <dl class="datos">
+          <div class="dato"><dt>Nombre</dt><dd>{{ nombreCentro(solicitud) }}</dd></div>
+          <div class="dato"><dt>Razón social</dt><dd>{{ solicitud.centroRazonSocial }}</dd></div>
+          <div class="dato"><dt>RUT</dt><dd>{{ solicitud.centroRut }}</dd></div>
+          <div class="dato"><dt>Dirección</dt><dd>{{ direccionCentro(solicitud) }}</dd></div>
+          <div class="dato datos__ancho"><dt>Estado del centro</dt><dd class="estado" [class]="claseEstadoCentro(solicitud)">{{ estadoCentro(solicitud) }}</dd></div>
+        </dl>
+      </section>
+
+      <section class="seccion">
+        <h3><mat-icon>person_outline</mat-icon>{{ solicitud.modoSupervisor === 'Propuesto' ? 'Supervisor(a) propuesto' : 'Supervisor(a)' }}</h3>
+        <dl class="datos">
+          <div class="dato"><dt>Nombre</dt><dd>{{ solicitud.supervisorNombre }}</dd></div>
+          <div class="dato"><dt>Cargo y unidad</dt><dd>{{ cargoYUnidad(solicitud) }}</dd></div>
+          <div class="dato"><dt>Contacto</dt><dd>{{ solicitud.supervisorCorreo }}@if (solicitud.supervisorTelefono) {<br />{{ solicitud.supervisorTelefono }}}</dd></div>
+        </dl>
+        @if (solicitud.modoSupervisor === 'Propuesto') { <p class="estado estado--advertencia nuevo">Supervisor nuevo</p> }
+      </section>
+
+      <section class="seccion">
+        <h3><mat-icon>work_outline</mat-icon>Práctica</h3>
+        <dl class="datos">
+          <div class="dato"><dt>Modalidad</dt><dd>{{ solicitud.horario.modalidad }}</dd></div>
+          <div class="dato"><dt>Período</dt><dd>{{ solicitud.horario.fechaInicio | date:'dd-MM' }} al {{ solicitud.horario.fechaTermino | date:'dd-MM-yyyy' }}</dd></div>
+          <div class="dato"><dt>Horario propuesto</dt><dd>{{ horario(solicitud) }}</dd></div>
+          <div class="dato datos__completo"><dt>Tareas</dt><dd class="tareas">{{ solicitud.tareas }}</dd></div>
+        </dl>
+        <p class="prerrequisito">
+          <mat-icon [class.estado--exito]="solicitud.habilitacionCumplida" [class.estado--error]="!solicitud.habilitacionCumplida">{{ solicitud.habilitacionCumplida ? 'check_circle_outline' : 'cancel' }}</mat-icon>
+          {{ solicitud.habilitacionCumplida ? 'Prerrequisito cumplido' : 'Prerrequisito no cumplido' }}
+        </p>
+      </section>
+
+      @if (solicitud.estado === 'Por revisar') {
+        <section class="decision">
+          <mat-form-field subscriptSizing="dynamic">
+            <mat-label>Motivo</mat-label>
+            <textarea matInput rows="2" [ngModel]="motivo()" (ngModelChange)="motivo.set($event)"></textarea>
+          </mat-form-field>
+          @if (error()) { <p class="error-campo" role="alert">{{ error() }}</p> }
+          <div class="decision__acciones">
+            <button matButton="outlined" type="button" [disabled]="guardando()" (click)="devolver()"><mat-icon>undo</mat-icon>Devolver al estudiante</button>
+            <button matButton="filled" type="button" [disabled]="guardando()" (click)="aprobar()"><mat-icon>check</mat-icon>Aprobar solicitud</button>
+          </div>
+        </section>
+      } @else if (solicitud.motivoDevolucion) {
+        <section class="seccion">
+          <div class="dato"><span class="dato__etiqueta">Motivo de devolución</span><p class="dato__valor">{{ solicitud.motivoDevolucion }}</p></div>
+        </section>
+      }
+    </section>
+  }
+</div>

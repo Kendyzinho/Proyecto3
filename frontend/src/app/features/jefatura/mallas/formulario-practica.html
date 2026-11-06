@@ -1,0 +1,72 @@
+<h2 mat-dialog-title>{{ practica ? 'Editar práctica' : 'Agregar práctica' }}</h2>
+
+<form [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+  <mat-dialog-content class="campos">
+    <p class="malla">{{ malla.nombre }}</p>
+
+    <div class="fila">
+      <mat-form-field class="ancho">
+        <mat-label>Nombre de la práctica</mat-label>
+        <input matInput formControlName="nombre" placeholder="Laboral I" />
+        @if (form.controls.nombre.hasError('required')) {
+          <mat-error>Ingresa el nombre de la práctica.</mat-error>
+        } @else if (form.controls.nombre.getError('servidor'); as mensaje) {
+          <mat-error>{{ mensaje }}</mat-error>
+        }
+      </mat-form-field>
+      <mat-form-field class="angosto">
+        <mat-label>Categoría</mat-label>
+        <mat-select formControlName="categoria">
+          @for (opcion of categorias; track opcion.valor) {
+            <mat-option [value]="opcion.valor">{{ opcion.texto }}</mat-option>
+          }
+        </mat-select>
+        @if (form.controls.categoria.getError('servidor'); as mensaje) {
+          <mat-error>{{ mensaje }}</mat-error>
+        }
+      </mat-form-field>
+    </div>
+
+    <div class="fila">
+      <mat-form-field class="angosto">
+        <mat-label>Horas requeridas</mat-label>
+        <input matInput type="number" min="1" formControlName="horas_requeridas" />
+        <span matTextSuffix>h</span>
+        <mat-hint>Ej.: 64, 96, 240 o 320</mat-hint>
+        @if (form.controls.horas_requeridas.hasError('required')) {
+          <mat-error>Ingresa las horas.</mat-error>
+        } @else if (form.controls.horas_requeridas.hasError('min') || form.controls.horas_requeridas.hasError('max')) {
+          <mat-error>Deben estar entre 1 y 1000.</mat-error>
+        } @else if (form.controls.horas_requeridas.getError('servidor'); as mensaje) {
+          <mat-error>{{ mensaje }}</mat-error>
+        }
+      </mat-form-field>
+      <mat-form-field class="ancho">
+        <mat-label>Prerrequisito (opcional)</mat-label>
+        <input matInput formControlName="prerrequisito" placeholder="Laboral I aprobada" />
+        @if (form.controls.prerrequisito.getError('servidor'); as mensaje) {
+          <mat-error>{{ mensaje }}</mat-error>
+        }
+      </mat-form-field>
+    </div>
+
+    @if (practica && !enPreparacion) {
+      <p class="nota">Los estudiantes ya habilitados conservan las horas con que se habilitaron; el cambio rige para las próximas habilitaciones.</p>
+    }
+
+    @if (errorGeneral(); as mensaje) {
+      <p class="error-general" role="alert">{{ mensaje }}</p>
+    }
+  </mat-dialog-content>
+
+  <mat-dialog-actions>
+    @if (practica && enPreparacion) {
+      <button matButton type="button" class="quitar" [disabled]="enviando()" (click)="quitar()">Quitar práctica</button>
+    }
+    <span class="espacio"></span>
+    <button matButton type="button" mat-dialog-close>Cancelar</button>
+    <button matButton="filled" type="submit" [disabled]="enviando()">
+      {{ enviando() ? 'Guardando…' : practica ? 'Guardar cambios' : 'Agregar práctica' }}
+    </button>
+  </mat-dialog-actions>
+</form>

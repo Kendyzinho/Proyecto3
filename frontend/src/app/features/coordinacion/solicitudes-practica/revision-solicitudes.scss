@@ -1,0 +1,155 @@
+.columnas {
+  display: grid;
+  grid-template-columns: minmax(280px, 400px) minmax(0, 1fr);
+  align-items: start;
+  gap: 24px;
+}
+
+.filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 24px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.fila {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 60px;
+  padding: 0 24px;
+  border: 0;
+  border-bottom: 1px solid #e2e8f0;
+  background: #fff;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  &:last-child {
+    border-bottom: 0;
+  }
+
+  &:hover {
+    background: #f7f9fc;
+  }
+}
+
+.fila--activa,
+.fila--activa:hover {
+  background: #e1edf8;
+}
+
+.fila__nombre {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+}
+
+.fila__fecha {
+  flex-shrink: 0;
+  color: #5b6b80;
+  font-size: 12px;
+}
+
+.vacio {
+  margin: 0;
+  padding: 24px;
+  color: #5b6b80;
+  font-size: 14px;
+}
+
+.detalle__cabecera {
+  justify-content: flex-start;
+  gap: 12px;
+}
+
+.seccion {
+  padding: 20px 24px;
+  border-bottom: 1px solid #e2e8f0;
+
+  &:last-child {
+    border-bottom: 0;
+  }
+
+  h3 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 12px;
+    font-size: 16px;
+    font-weight: 600;
+
+    mat-icon {
+      color: #5b6b80;
+    }
+  }
+}
+
+.datos {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px 24px;
+  margin: 0;
+}
+
+.datos__ancho {
+  grid-column: span 2;
+}
+
+.datos__completo {
+  grid-column: 1 / -1;
+}
+
+.tareas {
+  white-space: pre-wrap;
+}
+
+.nuevo {
+  margin: 12px 0 0;
+}
+
+.prerrequisito {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 16px 0 0;
+  font-size: 14px;
+}
+
+.decision {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px 24px;
+  background: #f7f9fc;
+
+  mat-form-field {
+    width: 100%;
+  }
+}
+
+.decision__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+@media (max-width: 1100px) {
+  .columnas {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 700px) {
+  .datos {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .datos__ancho {
+    grid-column: 1 / -1;
+  }
+}

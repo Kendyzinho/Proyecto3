@@ -19,7 +19,7 @@ type FilaTabla = Pick<FilaRevisada, 'rut' | 'nombre' | 'correo' | 'practica' | '
   errores?: string;
 };
 
-const ENCABEZADOS_CSV = ['RUT', 'Nombre', 'Correo', 'Año de ingreso', 'Práctica', 'Cumple prerrequisito', 'Error'];
+const ENCABEZADOS_CSV = ['RUT', 'Nombre', 'Correo', 'Año de ingreso', 'Práctica', 'Cumple prerrequisito', 'Áreas', 'Error'];
 
 // HU-07: la Secretaria carga la nómina del período desde una planilla y revisa quién cumple el prerrequisito
 @Component({
@@ -123,7 +123,7 @@ export class Nomina {
   protected descargarErrores(): void {
     const conError = (this.revision()?.filas ?? []).filter((f) => f.resultado === 'error');
     const lineas = conError.map((f) =>
-      [f.rut, f.nombre, f.correo, f.anio_ingreso, f.practica, f.cumple === null ? '' : f.cumple ? 'Sí' : 'No', motivos(f)]
+      [f.rut, f.nombre, f.correo, f.anio_ingreso, f.practica, f.cumple === null ? '' : f.cumple ? 'Sí' : 'No', (f.areas ?? []).join(', '), motivos(f)]
         .map(celdaCsv)
         .join(';'),
     );
@@ -160,7 +160,7 @@ export class Nomina {
       return;
     }
     this.dialogo
-      .open(AgregarEstudiante, { data: { periodo, practicas: catalogo.practicas }, width: '600px', autoFocus: 'first-tabbable' })
+      .open(AgregarEstudiante, { data: { periodo, practicas: catalogo.practicas, areas: catalogo.areas }, width: '600px', autoFocus: 'first-tabbable' })
       .afterClosed()
       .subscribe((agregado: boolean | undefined) => {
         if (agregado) {

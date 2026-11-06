@@ -9,17 +9,18 @@ const CATALOGO = {
   periodos: [{ id: 2, nombre: '2º semestre 2026' }],
   periodo_actual_id: 2,
   practicas: [{ id: 1, nombre: 'Laboral I', prerrequisito: 'Primer año aprobado' }],
+  areas: [{ id: 1, nombre: 'Fotografía' }],
 };
 
 const REVISION: Revision = {
   resumen: { total: 3, habilitados: 1, bloqueados: 1, con_error: 1 },
   filas: [
     { fila: 2, rut: '21.556.302-2', nombre: 'Ignacia Muñoz Vega', correo: 'ignacia.munoz@alumnos.uta.cl', anio_ingreso: 2025,
-      practica: 'Laboral I', prerrequisito: 'Primer año aprobado', cumple: true, resultado: 'habilitado', errores: [] },
+      practica: 'Laboral I', prerrequisito: 'Primer año aprobado', cumple: true, areas: [], resultado: 'habilitado', errores: [] },
     { fila: 3, rut: '21.902.330-8', nombre: 'Benjamín Castro Ríos', correo: 'benjamin.castro@alumnos.uta.cl', anio_ingreso: 2024,
-      practica: 'Laboral II', prerrequisito: 'Laboral I aprobada', cumple: false, resultado: 'bloqueado', errores: [] },
+      practica: 'Laboral II', prerrequisito: 'Laboral I aprobada', cumple: false, areas: [], resultado: 'bloqueado', errores: [] },
     { fila: 4, rut: '21.448.09-2', nombre: 'Tomás Flores Gutiérrez', correo: 'tomas.flores@gmail.com', anio_ingreso: 2025,
-      practica: 'Laboral I', prerrequisito: 'Primer año aprobado', cumple: true, resultado: 'error',
+      practica: 'Laboral I', prerrequisito: 'Primer año aprobado', cumple: true, areas: [], resultado: 'error',
       errores: { rut: 'RUT inválido', correo: 'Correo no institucional' } },
   ],
 };

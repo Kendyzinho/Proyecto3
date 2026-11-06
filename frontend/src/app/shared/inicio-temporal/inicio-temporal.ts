@@ -1,15 +1,21 @@
-import { Component, inject } from '@angular/core';
-import { MatButtonModule } from '@angular/material/button';
+import { Component, computed, inject } from '@angular/core';
+import { MatIconModule } from '@angular/material/icon';
+import { RouterLink } from '@angular/router';
 
 import { Auth } from '../../core/services/auth';
+import { MENUS_POR_ROL } from '../marco/menus-por-rol';
 
-// Pantalla provisoria para probar el login y el cierre de sesión mientras no exista el inicio de cada rol.
+// Inicio de los roles que aún no tienen uno propio: accesos a las opciones de su menú
 @Component({
   selector: 'app-inicio-temporal',
-  imports: [MatButtonModule],
+  imports: [MatIconModule, RouterLink],
   templateUrl: './inicio-temporal.html',
   styleUrl: './inicio-temporal.scss',
 })
 export class InicioTemporal {
-  protected readonly auth = inject(Auth);
+  private readonly auth = inject(Auth);
+  protected readonly accesos = computed(() => {
+    const rol = this.auth.usuario()?.rol;
+    return (rol ? MENUS_POR_ROL[rol] ?? [] : []).slice(1);
+  });
 }

@@ -8,11 +8,12 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 
-import { NominaApi, Periodo, Practica } from './nomina-api';
+import { Area, NominaApi, Periodo, Practica } from './nomina-api';
 
 export interface DatosAgregarEstudiante {
   periodo: Periodo;
   practicas: Practica[];
+  areas: Area[];
 }
 
 // HU-07: carga individual de un estudiante (pantalla 07b). Las reglas las revisa el backend
@@ -42,6 +43,7 @@ export class AgregarEstudiante {
     tipo_practica_id: [0, Validators.min(1)],
     anio_ingreso: [new Date().getFullYear(), Validators.required],
     cumple_prerrequisito: [true],
+    area_ids: [[] as number[]],
   });
   protected readonly enviando = signal(false);
   protected readonly errorGeneral = signal<string | null>(null);

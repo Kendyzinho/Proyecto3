@@ -54,6 +54,9 @@ return [
 
     'url' => env('APP_URL', 'http://localhost'),
 
+    // HU-02: el enlace de recuperación abre la pantalla de Angular, no la API
+    'frontend_url' => env('FRONTEND_URL', 'http://localhost:4200'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Timezone

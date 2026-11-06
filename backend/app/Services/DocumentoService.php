@@ -21,12 +21,13 @@ class DocumentoService
 {
     public const TIPOS = ['carta', 'seguro'];
 
-    // Prácticas del período que ya tienen centro (vía supervisor), con el estado de cada documento
+    // Prácticas aprobadas del período, con el estado de cada documento
     public function listar(Periodo $periodo): Collection
     {
         return $this->consulta()
             ->whereHas('habilitacion', fn ($q) => $q->where('periodo_id', $periodo->id))
             ->whereNotNull('supervisor_id')
+            ->formalizadas()
             ->get()
             ->sortBy(fn (Practica $p) => $p->habilitacion->estudiante->usuario->name)
             ->values()
@@ -149,7 +150,10 @@ class DocumentoService
     {
         $documentos = $practica->relationLoaded('documentos') ? $practica->documentos : $practica->documentos()->get();
 
-        return $documentos->where('tipo', $tipo)->sortByDesc('id')->first();
+        $documento = $documentos->where('tipo', $tipo)->sortByDesc('id')->first();
+
+        // La carta indica el período: si las fechas cambiaron después de generarla, hay que generarla de nuevo
+        return $tipo === 'carta' && $documento?->fecha->lt($practica->updated_at) ? null : $documento;
     }
 
     private function exigirAcuerdo(Practica $practica): void

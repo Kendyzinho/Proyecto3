@@ -1,0 +1,45 @@
+.campos {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 8px !important;
+}
+
+.malla {
+  margin: 0 0 8px;
+  color: #5b6b80;
+  font-size: 14px;
+}
+
+.fila {
+  display: flex;
+  gap: 16px;
+}
+
+.ancho {
+  flex: 1;
+}
+
+.angosto {
+  width: 200px;
+}
+
+.nota {
+  margin: 8px 0 0;
+  color: #5b6b80;
+  font-size: 13px;
+}
+
+.error-general {
+  margin: 12px 0 0;
+  color: #b91c1c;
+  font-size: 14px;
+}
+
+.quitar {
+  color: #b91c1c;
+}
+
+.espacio {
+  flex: 1;
+}

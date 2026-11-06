@@ -1,0 +1,65 @@
+<h2 mat-dialog-title>Nueva práctica</h2>
+<form [formGroup]="form" (ngSubmit)="guardar()">
+  <mat-dialog-content class="dialogo-campos" [attr.aria-busy]="cargando() || enviando()">
+    @if (cargando()) { <p role="status">Cargando estudiantes y supervisores…</p> }
+    @else if (errorCarga()) {
+      <p role="alert">No se pudieron cargar las opciones.</p>
+      <button matButton type="button" (click)="cargar()">Reintentar</button>
+    } @else if (catalogo(); as datos) {
+      @if (!datos.habilitaciones.length) { <p class="aviso" role="status">No hay estudiantes habilitados sin práctica en este período.</p> }
+      @if (!datos.supervisores.length) { <p class="aviso" role="status">No hay supervisores activos en centros con acuerdo vigente.</p> }
+      <div class="fila-estudiante">
+        <mat-form-field subscriptSizing="dynamic">
+          <mat-label>Estudiante</mat-label>
+          <mat-select formControlName="habilitacion_id" required>
+            @for (h of datos.habilitaciones; track h.id) { <mat-option [value]="h.id">{{ h.estudiante }}</mat-option> }
+          </mat-select>
+          <mat-error>{{ mensaje('habilitacion_id') }}</mat-error>
+        </mat-form-field>
+        <mat-form-field subscriptSizing="dynamic">
+          <mat-label>Práctica</mat-label>
+          <input matInput readonly tabindex="-1" [value]="practica()" />
+        </mat-form-field>
+      </div>
+      <div class="dialogo-fila">
+        <mat-form-field subscriptSizing="dynamic">
+          <mat-label>Supervisor(a)</mat-label>
+          <mat-select formControlName="supervisor_id" required>
+            @for (s of datos.supervisores; track s.id) { <mat-option [value]="s.id">{{ s.nombre }}</mat-option> }
+          </mat-select>
+          <mat-error>{{ mensaje('supervisor_id') }}</mat-error>
+        </mat-form-field>
+        <mat-form-field subscriptSizing="dynamic">
+          <mat-label>Centro de práctica</mat-label>
+          <input matInput readonly tabindex="-1" [value]="centro()" />
+        </mat-form-field>
+      </div>
+      <div>
+        <span id="modalidad-etiqueta" class="etiqueta-campo">Modalidad</span>
+        <mat-radio-group formControlName="modalidad" aria-labelledby="modalidad-etiqueta" class="modalidad">
+          <mat-radio-button value="presencial">Presencial</mat-radio-button>
+          <mat-radio-button value="a_distancia">A distancia</mat-radio-button>
+          <mat-radio-button value="mixta">Mixta</mat-radio-button>
+        </mat-radio-group>
+      </div>
+      <div class="dialogo-fila">
+        <mat-form-field subscriptSizing="dynamic"><mat-label>Fecha de inicio</mat-label><input matInput type="date" formControlName="fecha_inicio" required /><mat-error>{{ mensaje('fecha_inicio') }}</mat-error></mat-form-field>
+        <mat-form-field subscriptSizing="dynamic"><mat-label>Fecha de término</mat-label><input matInput type="date" formControlName="fecha_fin" required /><mat-error>{{ mensaje('fecha_fin') }}</mat-error></mat-form-field>
+      </div>
+      @if (form.hasError('fechas')) { <p class="error-campo" role="alert">La fecha de término debe ser igual o posterior al inicio.</p> }
+      <mat-form-field subscriptSizing="dynamic">
+        <mat-label>Motivo del registro excepcional</mat-label>
+        <textarea matInput formControlName="justificacion_excepcional" rows="2" maxlength="5000" required></textarea>
+        <mat-error>{{ mensaje('justificacion_excepcional') }}</mat-error>
+      </mat-form-field>
+    }
+    @if (mensajeCupo(); as cupo) { <p class="aviso aviso--cupo" role="alert">{{ cupo }}</p> }
+    @if (errorGeneral()) { <p class="error-campo" role="alert">{{ errorGeneral() }}</p> }
+  </mat-dialog-content>
+  <mat-dialog-actions align="end">
+    <button matButton type="button" (click)="cancelar()" [disabled]="enviando()">Cancelar</button>
+    <button matButton="filled" type="submit" [disabled]="enviando() || cargando() || errorCarga() || !catalogo()?.habilitaciones?.length || !catalogo()?.supervisores?.length">
+      {{ enviando() ? 'Registrando…' : mensajeCupo() ? 'Registrar de todos modos' : 'Registrar práctica' }}
+    </button>
+  </mat-dialog-actions>
+</form>

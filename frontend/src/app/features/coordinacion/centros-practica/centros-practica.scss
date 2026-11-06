@@ -1,0 +1,298 @@
+.filtros {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 16px;
+  padding: 16px 24px;
+}
+
+.buscador {
+  flex: 1 1 320px;
+  max-width: 380px;
+}
+
+.buscador mat-icon {
+  margin: 0 4px 0 12px;
+  color: #5b6b80;
+}
+
+.filtros__opciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.selector-area {
+  width: 200px;
+}
+
+.tabla-scroll {
+  overflow-x: auto;
+}
+
+.tabla-simple {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+
+  th {
+    height: 36px;
+    padding: 0 12px;
+    border-top: 1px solid #e2e8f0;
+    border-bottom: 1px solid #e2e8f0;
+    background: #f7f9fc;
+    color: #5b6b80;
+    font-size: 12px;
+    font-weight: 600;
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #e2e8f0;
+    vertical-align: middle;
+  }
+
+  th:first-child,
+  td:first-child {
+    padding-left: 24px;
+  }
+
+  th:last-child,
+  td:last-child {
+    padding-right: 24px;
+  }
+
+  small {
+    display: block;
+    color: #5b6b80;
+    font-size: 12px;
+  }
+}
+
+.tabla-centros .etiquetas {
+  max-width: 300px;
+}
+
+.secundario {
+  color: #5b6b80;
+}
+
+.fila-centro {
+  cursor: pointer;
+
+  &:hover {
+    background: #f7f9fc;
+  }
+}
+
+.enlace-centro {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.vacio {
+  margin: 0;
+  padding: 24px;
+  color: #5b6b80;
+  font-size: 14px;
+}
+
+.acciones-fila {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.persona-celda {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+// Ficha del centro
+.ficha__titulo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 12px;
+  min-width: 0;
+}
+
+.ficha__acciones,
+.cabecera__acciones {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 8px;
+}
+
+.boton-peligro {
+  --mat-button-text-label-text-color: #b91c1c;
+  --mat-button-text-state-layer-color: #b91c1c;
+}
+
+.ficha {
+  display: grid;
+  grid-template-columns: minmax(280px, 400px) minmax(0, 1fr);
+  align-items: start;
+  gap: 24px;
+}
+
+.lista-datos {
+  margin: 0;
+
+  .dato {
+    padding: 12px 24px;
+    border-bottom: 1px solid #e2e8f0;
+
+    &:last-child {
+      border-bottom: 0;
+    }
+  }
+}
+
+.lista-datos--dialogo .dato {
+  padding: 10px 0;
+}
+
+.supervisor-nuevo {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px 24px;
+  background: #f7f9fc;
+
+  h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  p {
+    margin: 0;
+  }
+}
+
+.rejilla-supervisor {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.supervisor-nuevo__acciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+// Diálogo de nuevo centro
+.formulario-dialogo {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.fila-direccion,
+.fila-tres {
+  display: grid;
+  gap: 16px;
+}
+
+.fila-direccion {
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+}
+
+.fila-tres {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.subtitulo-dialogo {
+  margin: 8px 0 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.bloque-supervisor {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.alinear-derecha {
+  align-self: flex-end;
+}
+
+.alinear-izquierda {
+  align-self: flex-start;
+}
+
+.fila-agregar,
+.fila-cupos {
+  display: grid;
+  align-items: center;
+  gap: 16px;
+}
+
+.fila-agregar {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.fila-cupos {
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) 90px auto;
+}
+
+.etiqueta-cupo {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+
+  button {
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    cursor: pointer;
+  }
+
+  mat-icon {
+    width: 16px;
+    height: 16px;
+    font-size: 16px;
+  }
+}
+
+mat-dialog-content p {
+  margin: 0;
+}
+
+@media (max-width: 1100px) {
+  .ficha {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 700px) {
+  .fila-direccion,
+  .fila-tres,
+  .fila-cupos,
+  .rejilla-supervisor {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

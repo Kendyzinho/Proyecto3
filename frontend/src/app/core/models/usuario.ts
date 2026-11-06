@@ -4,6 +4,7 @@ export type Rol = 'secretaria' | 'coordinadora' | 'jefe' | 'estudiante';
 export interface Usuario {
   id: number;
   name: string;
+  rut: string | null;
   email: string;
   rol: Rol;
 }

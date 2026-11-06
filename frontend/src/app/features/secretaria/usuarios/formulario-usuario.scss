@@ -1,0 +1,31 @@
+.campos {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 8px !important;
+}
+
+.fila {
+  display: flex;
+  gap: 16px;
+}
+
+.ancho {
+  flex: 1;
+}
+
+.angosto {
+  width: 200px;
+}
+
+.nota {
+  margin: 4px 0 0;
+  color: #5b6b80;
+  font-size: 13px;
+}
+
+.error-general {
+  margin: 12px 0 0;
+  color: #b91c1c;
+  font-size: 14px;
+}

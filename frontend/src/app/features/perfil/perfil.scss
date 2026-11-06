@@ -1,0 +1,55 @@
+.columnas {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 24px;
+}
+
+.datos {
+  margin: 0;
+
+  .dato {
+    padding: 12px 24px;
+    border-bottom: 1px solid #e2e8f0;
+  }
+}
+
+.nota {
+  margin: 0;
+  padding: 12px 24px;
+  color: #5b6b80;
+  font-size: 12px;
+}
+
+.campos {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+
+  mat-form-field {
+    width: 100%;
+  }
+
+  .aviso {
+    margin: 0;
+  }
+}
+
+.acciones {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.carga {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 32px 24px;
+  font-size: 14px;
+}
+
+@media (max-width: 800px) {
+  .columnas {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

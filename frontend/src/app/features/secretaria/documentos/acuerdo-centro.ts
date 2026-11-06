@@ -7,7 +7,6 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 
-import { descargar } from '../nomina/nomina-api';
 import { Acuerdo, DocumentosApi, TEXTO_ACUERDO } from './documentos-api';
 
 // HU-10: acuerdo de colaboración firmado del centro, con su vigencia (pestaña "Acuerdo")
@@ -57,9 +56,24 @@ export class AcuerdoCentro {
 
   protected verPdf(): void {
     const acuerdo = this.acuerdo();
-    if (acuerdo) {
-      this.api.archivoAcuerdo(acuerdo.id).subscribe((pdf) => descargar(pdf, 'Acuerdo de colaboración.pdf'));
+    if (!acuerdo?.tiene_archivo) return;
+    const ventana = window.open('', '_blank');
+    if (!ventana) {
+      this.error.set('Permite las ventanas emergentes para ver el PDF del acuerdo.');
+      return;
     }
+
+    this.api.archivoAcuerdo(acuerdo.id).subscribe({
+      next: (pdf) => {
+        const url = URL.createObjectURL(pdf);
+        ventana.location.href = url;
+        window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      },
+      error: () => {
+        ventana.close();
+        this.error.set('No se pudo abrir el PDF del acuerdo. Inténtalo otra vez.');
+      },
+    });
   }
 
   protected guardar(): void {

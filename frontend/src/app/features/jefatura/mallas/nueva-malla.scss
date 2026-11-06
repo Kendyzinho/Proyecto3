@@ -1,0 +1,16 @@
+.contenido {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  p {
+    margin: 0 0 8px;
+    color: #5b6b80;
+    font-size: 14px;
+    line-height: 20px;
+  }
+}
+
+.error-general {
+  color: #b91c1c;
+}

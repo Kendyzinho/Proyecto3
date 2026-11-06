@@ -1,0 +1,64 @@
+<div class="encabezado-pagina"><h1>Mi perfil</h1></div>
+
+<div class="columnas">
+  <section class="tarjeta" aria-labelledby="datos-titulo" [attr.aria-busy]="cargando()">
+    <div class="tarjeta__cabecera"><h2 id="datos-titulo">Datos personales</h2></div>
+
+    @if (cargando()) {
+      <div class="carga" role="status"><mat-spinner diameter="24" aria-label="Cargando perfil" />Cargando tus datos…</div>
+    } @else if (errorCarga(); as mensaje) {
+      <div class="tarjeta__cuerpo">
+        <p class="aviso aviso--error" role="alert">{{ mensaje }}</p>
+        <button matButton="outlined" type="button" (click)="cargarPerfil()">Reintentar</button>
+      </div>
+    } @else if (usuario(); as datos) {
+      <dl class="datos">
+        <div class="dato"><dt>Nombre</dt><dd>{{ datos.name }}</dd></div>
+        <div class="dato"><dt>RUT</dt><dd>{{ datos.rut || 'No registrado' }}</dd></div>
+        <div class="dato"><dt>Correo institucional</dt><dd>{{ datos.email }}</dd></div>
+        <div class="dato"><dt>Rol</dt><dd>{{ roles[datos.rol] }}</dd></div>
+      </dl>
+      <p class="nota">Para corregir tus datos, contacta a la Secretaría de Jefatura.</p>
+    } @else {
+      <div class="tarjeta__cuerpo">
+        <p role="status">No hay datos de perfil disponibles.</p>
+        <button matButton="outlined" type="button" (click)="cargarPerfil()">Volver a cargar</button>
+      </div>
+    }
+  </section>
+
+  <section class="tarjeta" aria-labelledby="clave-titulo">
+    <div class="tarjeta__cabecera"><h2 id="clave-titulo">Cambiar contraseña</h2></div>
+    <form class="tarjeta__cuerpo campos" [formGroup]="form" (ngSubmit)="guardar()" novalidate [attr.aria-busy]="guardando()">
+      @if (guardado()) {
+        <p class="aviso aviso--exito" role="status">Contraseña actualizada. Tu sesión sigue activa.</p>
+      }
+      @if (errorGuardado(); as mensaje) {
+        <p class="aviso aviso--error" role="alert">{{ mensaje }}</p>
+      }
+
+      @for (campo of campos; track campo.clave) {
+        <mat-form-field subscriptSizing="dynamic">
+          <mat-label>{{ campo.etiqueta }}</mat-label>
+          <input matInput [id]="campo.clave" [type]="visibles()[campo.clave] ? 'text' : 'password'"
+                 [formControlName]="campo.clave" [autocomplete]="campo.autocomplete"
+                 [errorStateMatcher]="erroresDeClave" />
+          <button mat-icon-button matSuffix type="button" [disabled]="guardando()"
+                  (click)="alternarVisibilidad(campo.clave)"
+                  [attr.aria-label]="(visibles()[campo.clave] ? 'Ocultar ' : 'Mostrar ') + campo.etiqueta.toLowerCase()"
+                  [attr.aria-pressed]="visibles()[campo.clave]">
+            <mat-icon>{{ visibles()[campo.clave] ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
+          @if (campo.clave === 'password') { <mat-hint>Al menos 8 caracteres, con una mayúscula y un número.</mat-hint> }
+          <mat-error>{{ mensajeCampo(campo.clave) }}</mat-error>
+        </mat-form-field>
+      }
+
+      <div class="acciones">
+        <button matButton="filled" type="submit" [disabled]="guardando() || cargando() || !usuario()">
+          {{ guardando() ? 'Guardando…' : 'Actualizar contraseña' }}
+        </button>
+      </div>
+    </form>
+  </section>
+</div>

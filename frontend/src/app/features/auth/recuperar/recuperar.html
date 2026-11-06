@@ -1,0 +1,51 @@
+<main class="login">
+  <section class="login__formulario">
+    <img class="marca" src="logos/dm-oscuro.svg" alt="Diseño Multimedia UTarapacá" width="138" height="56" />
+
+    @if (enviadoA(); as correo) {
+      <div class="campos" role="status">
+        <h1>Revisa tu correo</h1>
+        <p class="texto">
+          Si <strong>{{ correo }}</strong> pertenece a una cuenta activa, te enviamos un enlace para definir una
+          contraseña nueva. El enlace vence en 24 horas y sirve una sola vez.
+        </p>
+        <a class="ingresar" matButton="filled" routerLink="/auth">Volver a iniciar sesión</a>
+      </div>
+    } @else {
+      <form class="campos" [formGroup]="form" (ngSubmit)="enviar()" novalidate>
+        <h1>Recuperar contraseña</h1>
+
+        @if (error(); as mensaje) {
+          <div class="aviso" role="alert">
+            <mat-icon>error</mat-icon>
+            <span>{{ mensaje }}</span>
+          </div>
+        }
+
+        <mat-form-field>
+          <mat-label>Correo institucional</mat-label>
+          <input matInput type="email" formControlName="email" autocomplete="username" />
+          @if (form.controls.email.hasError('required')) {
+            <mat-error>Ingresa tu correo.</mat-error>
+          } @else if (form.controls.email.hasError('email')) {
+            <mat-error>El correo no es válido.</mat-error>
+          }
+        </mat-form-field>
+
+        <button class="ingresar" matButton="filled" type="submit" [disabled]="enviando()">
+          {{ enviando() ? 'Enviando…' : 'Enviar enlace' }}
+        </button>
+        <a class="volver" matButton routerLink="/auth">Volver a iniciar sesión</a>
+      </form>
+    }
+  </section>
+
+  <section class="login__panel" aria-hidden="true">
+    <div class="panel__logos">
+      <img src="logos/uta-blanco.png" alt="Universidad de Tarapacá" width="82" height="56" />
+      <span class="panel__separador"></span>
+      <img src="logos/edit-blanco.svg" alt="Escuela de Diseño e Innovación Tecnológica" width="193" height="44" />
+    </div>
+    <p class="panel__titulo">Sistema de Gestión de Prácticas</p>
+  </section>
+</main>

@@ -1,0 +1,124 @@
+<p class="migas"><span>Prácticas</span><span aria-hidden="true">/</span><span>Laborales sin centro</span></p>
+<div class="encabezado-pagina"><h1>Asignar centro de práctica</h1></div>
+
+@if (aviso()) {
+  <p class="aviso" [class.aviso--exito]="avisoExitoso()" [class.aviso--error]="!avisoExitoso()" role="status">{{ aviso() }}</p>
+}
+
+<div class="columnas">
+  <section class="tarjeta" aria-labelledby="sin-centro">
+    <div class="tarjeta__cabecera"><h2 id="sin-centro">Sin centro</h2></div>
+    @if (cargandoEstudiantes()) { <p class="vacio">Cargando estudiantes…</p> }
+    @for (item of estudiantesSinCentro(); track item.id) {
+      <button class="fila-estudiante" type="button" [class.fila-estudiante--activa]="estudianteId() === item.id" [attr.aria-pressed]="estudianteId() === item.id" (click)="seleccionarEstudiante(item.id)">
+        <span class="avatar">{{ iniciales(item.nombre) }}</span>
+        <span class="fila-estudiante__datos">
+          <span class="persona__nombre">{{ item.nombre }}</span>
+          <span class="etiquetas">
+            @for (area of item.areas; track area) { <span class="etiqueta">{{ area }}</span> }
+            @empty { <span class="etiqueta">Sin áreas registradas</span> }
+          </span>
+        </span>
+      </button>
+    } @empty {
+      @if (!cargandoEstudiantes()) { <p class="vacio">No hay estudiantes pendientes de asignación.</p> }
+    }
+  </section>
+
+  @if (estudiante(); as seleccionado) {
+    <section class="tarjeta" aria-labelledby="centros-titulo">
+      <div class="tarjeta__cabecera"><h2 id="centros-titulo">Centros para {{ seleccionado.nombre }}</h2></div>
+      <div class="areas">
+        <mat-form-field subscriptSizing="dynamic">
+          <mat-label>Áreas del estudiante</mat-label>
+          <mat-select multiple [disabled]="guardandoAreas()" [value]="idsAreas()" (selectionChange)="idsAreas.set($event.value)" (closed)="guardarAreas()">
+            @for (area of areasDisponibles(); track area.id) {
+              <mat-option [value]="area.id">{{ area.nombre }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+      <div role="radiogroup" aria-labelledby="centros-titulo">
+        @for (centro of centrosCompatibles(); track centro.id) {
+          <button class="fila-centro" type="button" role="radio" [attr.aria-checked]="centroId() === centro.id" (click)="seleccionarCentro(centro.id)">
+            <span class="radio" [class.radio--activo]="centroId() === centro.id" aria-hidden="true"></span>
+            <span class="fila-centro__nombre">{{ centro.nombre }}</span>
+            <span class="estado" [class.estado--exito]="contarCoincidencias(centro) === seleccionado.areas.length" [class.estado--advertencia]="contarCoincidencias(centro) !== seleccionado.areas.length">{{ textoCoincidencia(centro, seleccionado.areas.length) }}</span>
+          </button>
+        } @empty {
+          <p class="vacio">
+            @if (cargandoCentros()) { Buscando centros… }
+            @else if (!seleccionado.areas.length) { Selecciona las áreas del estudiante para ver sus centros. }
+            @else { No hay centros activos con acuerdo vigente, áreas coincidentes y cupos disponibles. }
+          </p>
+        }
+      </div>
+
+      @if (centroSeleccionado(); as centro) {
+        <div class="campos">
+          <mat-form-field subscriptSizing="dynamic">
+            <mat-label>Supervisor(a)</mat-label>
+            <mat-select [value]="supervisorId()" (selectionChange)="seleccionarSupervisor($event.value)">
+              @for (supervisor of centro.supervisores; track supervisor.id) {
+                <mat-option [value]="supervisor.id">{{ supervisor.nombre }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field subscriptSizing="dynamic">
+            <mat-label>Modalidad</mat-label>
+            <mat-select [value]="modalidad()" (selectionChange)="modalidad.set($event.value)">
+              <mat-option value="presencial">Presencial</mat-option>
+              <mat-option value="a_distancia">A distancia</mat-option>
+              <mat-option value="mixta">Mixta</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+      }
+
+      <div class="pie">
+        <button matButton="filled" type="button" [disabled]="!centroId() || !supervisorId() || guardando() || cargandoCentros()" (click)="asignar()">
+          <mat-icon>how_to_reg</mat-icon>{{ guardando() ? 'Asignando…' : 'Asignar y notificar' }}
+        </button>
+      </div>
+    </section>
+  }
+</div>
+
+<section class="tarjeta calendarios" aria-labelledby="calendarios-titulo">
+  <div class="tarjeta__cabecera"><h2 id="calendarios-titulo">Fechas y horario</h2></div>
+  @if (calendarios().length) {
+    <div class="calendarios__tabla">
+      <table mat-table class="tabla" [dataSource]="calendarios()" aria-labelledby="calendarios-titulo">
+        <ng-container matColumnDef="estudiante">
+          <th mat-header-cell *matHeaderCellDef>Estudiante</th>
+          <td mat-cell *matCellDef="let fila">{{ fila.estudiante }}</td>
+        </ng-container>
+        <ng-container matColumnDef="centro">
+          <th mat-header-cell *matHeaderCellDef>Centro</th>
+          <td mat-cell *matCellDef="let fila">{{ fila.centro }}</td>
+        </ng-container>
+        <ng-container matColumnDef="fechas">
+          <th mat-header-cell *matHeaderCellDef>Fechas</th>
+          <td mat-cell *matCellDef="let fila">{{ textoFechas(fila) }}</td>
+        </ng-container>
+        <ng-container matColumnDef="horario">
+          <th mat-header-cell *matHeaderCellDef>Horario</th>
+          <td mat-cell *matCellDef="let fila">
+            @if (fila.horario) { {{ textoHorario(fila.horario) }} }
+            @else { <span class="estado estado--advertencia">Sin definir</span> }
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="accion">
+          <th mat-header-cell *matHeaderCellDef aria-label="Acción"></th>
+          <td mat-cell *matCellDef="let fila" class="calendarios__accion">
+            <button matButton type="button" (click)="abrirFechasHorario(fila)">{{ fila.horario ? 'Editar' : 'Definir' }}</button>
+          </td>
+        </ng-container>
+        <tr mat-header-row *matHeaderRowDef="columnasCalendario"></tr>
+        <tr mat-row *matRowDef="let fila; columns: columnasCalendario"></tr>
+      </table>
+    </div>
+  } @else {
+    <p class="vacio">No hay prácticas confirmadas en este período.</p>
+  }
+</section>

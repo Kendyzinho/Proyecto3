@@ -1,0 +1,39 @@
+form {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+mat-dialog-content p {
+  margin: 0;
+}
+
+.fila-estudiante {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  gap: 16px;
+}
+
+.etiqueta-campo {
+  color: #5b6b80;
+  font-size: 12px;
+}
+
+.aviso--cupo {
+  background: #fdf1d6;
+  color: #6b4a00;
+}
+
+.modalidad {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+@media (max-width: 520px) {
+  .fila-estudiante,
+  .dialogo-fila {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

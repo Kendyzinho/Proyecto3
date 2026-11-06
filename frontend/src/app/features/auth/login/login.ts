@@ -17,7 +17,7 @@ import { Auth } from '../../../core/services/auth';
   styleUrl: './login.scss',
 })
 export class Login {
-  private readonly auth = inject(Auth);
+  protected readonly auth = inject(Auth);
   private readonly router = inject(Router);
 
   protected readonly form = inject(NonNullableFormBuilder).group({

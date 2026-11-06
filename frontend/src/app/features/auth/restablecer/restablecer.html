@@ -1,0 +1,73 @@
+<main class="login">
+  <section class="login__formulario">
+    <img class="marca" src="logos/dm-oscuro.svg" alt="Diseño Multimedia UTarapacá" width="138" height="56" />
+
+    @switch (estado()) {
+      @case ('listo') {
+        <div class="campos" role="status">
+          <h1>Contraseña actualizada</h1>
+          <p class="texto">Ya puedes iniciar sesión con tu nueva contraseña.</p>
+          <a class="ingresar" matButton="filled" routerLink="/auth">Ir a iniciar sesión</a>
+        </div>
+      }
+      @case ('enlace_invalido') {
+        <div class="campos" role="alert">
+          <h1>El enlace no es válido</h1>
+          <p class="texto">El enlace venció o ya se usó. Pide uno nuevo; cada enlace dura 24 horas y sirve una sola vez.</p>
+          <a class="ingresar" matButton="filled" routerLink="/auth/recuperar">Pedir un enlace nuevo</a>
+          <a class="volver" matButton routerLink="/auth">Volver a iniciar sesión</a>
+        </div>
+      }
+      @default {
+        <form class="campos" [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+          <h1>Nueva contraseña</h1>
+          <p class="texto">Cuenta: <strong>{{ email }}</strong></p>
+
+          @if (error(); as mensaje) {
+            <div class="aviso" role="alert">
+              <mat-icon>error</mat-icon>
+              <span>{{ mensaje }}</span>
+            </div>
+          }
+
+          <mat-form-field>
+            <mat-label>Nueva contraseña</mat-label>
+            <input matInput [type]="visibles().password ? 'text' : 'password'" formControlName="password"
+                   autocomplete="new-password" [errorStateMatcher]="erroresDeClave" aria-describedby="politica-clave" />
+            <button mat-icon-button matSuffix type="button" (click)="alternarVisibilidad('password')"
+                    [attr.aria-label]="visibles().password ? 'Ocultar contraseña' : 'Mostrar contraseña'">
+              <mat-icon>{{ visibles().password ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
+            <mat-error>{{ mensajeCampo('password') }}</mat-error>
+          </mat-form-field>
+
+          <mat-form-field>
+            <mat-label>Repite la nueva contraseña</mat-label>
+            <input matInput [type]="visibles().password_confirmation ? 'text' : 'password'" formControlName="password_confirmation"
+                   autocomplete="new-password" [errorStateMatcher]="erroresDeClave" />
+            <button mat-icon-button matSuffix type="button" (click)="alternarVisibilidad('password_confirmation')"
+                    [attr.aria-label]="visibles().password_confirmation ? 'Ocultar contraseña' : 'Mostrar contraseña'">
+              <mat-icon>{{ visibles().password_confirmation ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
+            <mat-error>{{ mensajeCampo('password_confirmation') }}</mat-error>
+          </mat-form-field>
+
+          <p class="politica" id="politica-clave">Al menos 8 caracteres, una letra mayúscula y un número.</p>
+
+          <button class="ingresar" matButton="filled" type="submit" [disabled]="guardando()">
+            {{ guardando() ? 'Guardando…' : 'Guardar contraseña' }}
+          </button>
+        </form>
+      }
+    }
+  </section>
+
+  <section class="login__panel" aria-hidden="true">
+    <div class="panel__logos">
+      <img src="logos/uta-blanco.png" alt="Universidad de Tarapacá" width="82" height="56" />
+      <span class="panel__separador"></span>
+      <img src="logos/edit-blanco.svg" alt="Escuela de Diseño e Innovación Tecnológica" width="193" height="44" />
+    </div>
+    <p class="panel__titulo">Sistema de Gestión de Prácticas</p>
+  </section>
+</main>

@@ -1,0 +1,362 @@
+@if (errorApi()) {
+  <p class="aviso aviso--error" role="alert">
+    {{ errorApi() }}
+    <button matButton type="button" (click)="reintentarCarga()">Reintentar</button>
+  </p>
+}
+
+@if (centroSeleccionado(); as centro) {
+  <p class="migas">
+    <button type="button" (click)="volverAlCatalogo()">Centros de práctica</button>
+    <span aria-hidden="true">/</span><span>Ficha</span>
+  </p>
+  <header class="encabezado-pagina">
+    <div class="ficha__titulo">
+      <h1>{{ centro.nombre }}</h1>
+      <span class="estado" [class]="estadoCentroClass(centro.estado)">{{ centro.estado }}</span>
+    </div>
+    <div class="ficha__acciones">
+      <button matButton="outlined" type="button" (click)="editarCentro()"><mat-icon>edit</mat-icon>Editar</button>
+      @if (centro.estado === 'Dado de baja') {
+        <button matButton type="button" [disabled]="guardando()" (click)="cambiarEstadoCentro()">Reactivar</button>
+      } @else {
+        <button matButton class="boton-peligro" type="button" (click)="cambiarEstadoCentro()"><mat-icon>block</mat-icon>Dar de baja</button>
+      }
+    </div>
+  </header>
+
+  <div class="ficha">
+    <div>
+      <section class="tarjeta">
+        <div class="tarjeta__cabecera"><h2>Datos del centro</h2></div>
+        <dl class="lista-datos">
+          <div class="dato"><dt>Áreas</dt><dd class="etiquetas">@for (area of centro.areas; track area) { <span class="etiqueta">{{ area }}</span> }</dd></div>
+          @for (grupo of cuposAgrupados(); track grupo.periodo) {
+            <div class="dato"><dt>Cupos libres {{ grupo.periodo }}</dt><dd>{{ textoCupos(grupo.cupos) }}</dd></div>
+          } @empty {
+            <div class="dato"><dt>Cupos</dt><dd>Sin definir</dd></div>
+          }
+          <div class="dato"><dt>Tipo</dt><dd>{{ centro.esInterno ? 'Interno' : 'Externo' }}</dd></div>
+          <div class="dato"><dt>Razón social</dt><dd>{{ centro.razonSocial }}</dd></div>
+          <div class="dato"><dt>RUT</dt><dd>{{ centro.rut }}</dd></div>
+          <div class="dato"><dt>Dirección</dt><dd>{{ centro.direccion || 'Sin registrar' }}</dd></div>
+          <div class="dato"><dt>Teléfono</dt><dd>{{ centro.telefono || 'Sin registrar' }}</dd></div>
+          @if (centro.motivoBaja) { <div class="dato"><dt>Motivo de baja</dt><dd>{{ centro.motivoBaja }}</dd></div> }
+        </dl>
+      </section>
+
+      <section class="tarjeta">
+        <div class="tarjeta__cabecera">
+          <h2>Acuerdo de colaboración</h2>
+          @if (!centro.esInterno) {
+            <div class="cabecera__acciones">
+              @if (centro.acuerdoArchivoId) { <button matButton type="button" (click)="verAcuerdoPdf()"><mat-icon>picture_as_pdf</mat-icon>Ver PDF</button> }
+              @if (centro.acuerdoDatos) {
+                <button matIconButton type="button" aria-label="Editar acuerdo" title="Editar acuerdo" (click)="abrirAcuerdo()"><mat-icon>edit</mat-icon></button>
+              } @else {
+                <button matButton type="button" aria-label="Subir acuerdo" (click)="abrirAcuerdo()"><mat-icon>upload_file</mat-icon>Subir</button>
+              }
+            </div>
+          }
+        </div>
+        <dl class="lista-datos">
+          @if (centro.esInterno) {
+            <div class="dato"><dt>Acuerdo</dt><dd>No aplica</dd></div>
+          } @else {
+            <div class="dato"><dt>Tipo</dt><dd>{{ textoTipoAcuerdo(centro.tipoAcuerdo) }}</dd></div>
+            <div class="dato"><dt>Representante legal</dt><dd>{{ centro.representanteLegal ?? 'Sin registrar' }}</dd></div>
+            <div class="dato"><dt>Vigencia</dt><dd>{{ centro.vigenciaAcuerdo ?? 'Sin registrar' }} <span class="estado" [class]="estadoAcuerdoClass(centro.acuerdo)">{{ centro.acuerdo }}</span></dd></div>
+          }
+        </dl>
+      </section>
+    </div>
+
+    <div>
+      <section class="tarjeta">
+        <div class="tarjeta__cabecera">
+          <h2>Supervisores(as)</h2>
+          <button matButton type="button" (click)="abrirFormularioSupervisor()" [disabled]="mostrarFormularioSupervisor() || guardandoSupervisor()"><mat-icon>person_add</mat-icon>Agregar</button>
+        </div>
+        @if (centro.supervisores.length) {
+          <div class="tabla-scroll">
+            <table class="tabla-simple">
+              <thead><tr><th>Nombre y cargo</th><th>Unidad</th><th>Contacto</th><th>Estado</th><th><span class="sr-only">Acciones</span></th></tr></thead>
+              <tbody>
+                @for (supervisor of centro.supervisores; track supervisor.id ?? supervisor.correo) {
+                  <tr>
+                    <td>{{ supervisor.nombre }}@if (supervisor.cargo) { <small>{{ supervisor.cargo }}</small> }</td>
+                    <td class="secundario">{{ supervisor.unidad }}</td>
+                    <td>{{ supervisor.correo }}</td>
+                    <td><span class="estado" [class]="supervisor.estado === 'Activo' ? 'estado--exito' : supervisor.estado === 'Propuesto' ? 'estado--info' : 'estado--neutro'">{{ supervisor.estado }}</span></td>
+                    <td class="acciones-fila">
+                      @if (supervisor.estado === 'Propuesto') {
+                        <button matButton type="button" [disabled]="guardando() || !puedeActivarSupervisores(centro)" [title]="puedeActivarSupervisores(centro) ? '' : 'El centro debe estar activo y tener acuerdo vigente'" (click)="cambiarEstadoSupervisor(supervisor)">Aprobar</button>
+                      } @else if (supervisor.estado === 'Activo') {
+                        <button matButton class="boton-peligro" type="button" [disabled]="guardando()" (click)="cambiarEstadoSupervisor(supervisor)">Dar de baja</button>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <p class="vacio">Sin supervisores registrados.</p>
+        }
+        @if (mostrarFormularioSupervisor()) {
+          <form class="supervisor-nuevo" (ngSubmit)="guardarSupervisorFicha()" novalidate>
+            <h3>Agregar supervisor(a)</h3>
+            <div class="rejilla-supervisor">
+              <mat-form-field subscriptSizing="dynamic">
+                <mat-label>Nombre completo</mat-label>
+                <input matInput name="supervisorFichaNombre" [ngModel]="nuevoSupervisorFicha().nombre" (ngModelChange)="actualizarSupervisorFicha('nombre', $event)" autocomplete="name" />
+                @if (mostrarErrorSupervisorFicha(nombreSupervisorFichaValido())) { <mat-hint class="error-campo">Ingresa el nombre completo.</mat-hint> }
+              </mat-form-field>
+              <mat-form-field subscriptSizing="dynamic">
+                <mat-label>Correo</mat-label>
+                <input matInput name="supervisorFichaCorreo" type="email" [ngModel]="nuevoSupervisorFicha().correo" (ngModelChange)="actualizarSupervisorFicha('correo', $event)" autocomplete="email" />
+                @if (mostrarErrorSupervisorFicha(correoSupervisorFichaValido())) { <mat-hint class="error-campo">{{ mensajeCorreoSupervisorFicha() }}</mat-hint> }
+              </mat-form-field>
+              <mat-form-field subscriptSizing="dynamic"><mat-label>Cargo</mat-label><input matInput name="supervisorFichaCargo" [ngModel]="nuevoSupervisorFicha().cargo" (ngModelChange)="actualizarSupervisorFicha('cargo', $event)" /></mat-form-field>
+              <mat-form-field subscriptSizing="dynamic"><mat-label>Unidad o área</mat-label><input matInput name="supervisorFichaUnidad" [ngModel]="nuevoSupervisorFicha().unidad" (ngModelChange)="actualizarSupervisorFicha('unidad', $event)" /></mat-form-field>
+              <mat-form-field subscriptSizing="dynamic"><mat-label>Teléfono</mat-label><input matInput name="supervisorFichaTelefono" type="tel" maxlength="30" [ngModel]="nuevoSupervisorFicha().telefono" (ngModelChange)="actualizarSupervisorFicha('telefono', $event)" /></mat-form-field>
+            </div>
+            @if (supervisorFichaError()) { <p class="error-campo" role="alert">{{ supervisorFichaError() }}</p> }
+            <div class="supervisor-nuevo__acciones">
+              <button matButton type="button" (click)="cancelarSupervisorFicha()">Cancelar</button>
+              <button matButton="filled" type="submit" [disabled]="guardandoSupervisor()">{{ guardandoSupervisor() ? 'Guardando…' : 'Guardar supervisor' }}</button>
+            </div>
+          </form>
+        }
+      </section>
+
+      <section class="tarjeta">
+        <div class="tarjeta__cabecera"><h2>Estudiantes en este centro</h2></div>
+        @if (centro.estudiantes.length) {
+          <div class="tabla-scroll">
+            <table class="tabla-simple">
+              <thead><tr><th>Estudiante</th><th>Período</th><th>Resultado</th><th><span class="sr-only">Acciones</span></th></tr></thead>
+              <tbody>
+                @for (estudiante of centro.estudiantes; track estudiante.id ?? estudiante.nombre + estudiante.periodo) {
+                  <tr>
+                    <td><span class="persona-celda"><span class="avatar">{{ iniciales(estudiante.nombre) }}</span>{{ estudiante.nombre }}</span></td>
+                    <td class="secundario">{{ estudiante.periodo }}</td>
+                    <td><span class="estado" [class]="estudiante.resultado ? 'estado--info' : 'estado--exito'">{{ textoResultado(estudiante) }}</span></td>
+                    <td class="acciones-fila"><button matButton type="button" (click)="mostrarFichaEstudiante(estudiante)">Ver ficha</button></td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <p class="vacio">Sin estudiantes en este centro.</p>
+        }
+      </section>
+    </div>
+  </div>
+} @else {
+  <header class="encabezado-pagina">
+    <h1>Centros de práctica</h1>
+    <button matButton="filled" type="button" (click)="abrirFormularioNuevo()"><mat-icon>add</mat-icon>Nuevo centro</button>
+  </header>
+
+  <section class="tarjeta" aria-label="Catálogo de centros de práctica">
+    <div class="filtros">
+      <mat-form-field class="buscador" subscriptSizing="dynamic">
+        <mat-icon matPrefix>search</mat-icon>
+        <input matInput type="search" placeholder="Buscar centro, RUT o supervisor" aria-label="Buscar centro, RUT o supervisor" [ngModel]="busqueda()" (ngModelChange)="buscar($event)" />
+      </mat-form-field>
+      <div class="filtros__opciones" role="group" aria-label="Filtrar centros">
+        @for (opcion of filtros; track opcion.valor) {
+          <button type="button" class="filtro" [class.filtro--activo]="filtro() === opcion.valor" [attr.aria-pressed]="filtro() === opcion.valor" (click)="seleccionarFiltro(opcion.valor)">
+            @if (filtro() === opcion.valor) { <mat-icon>check</mat-icon> }{{ opcion.texto }}
+          </button>
+        }
+      </div>
+      <mat-form-field class="selector-area" subscriptSizing="dynamic">
+        <mat-label>Área</mat-label>
+        <mat-select [value]="areaSeleccionada()" (selectionChange)="seleccionarArea($event.value)">
+          <mat-option value="Todas">Todas</mat-option>
+          @for (area of areas(); track area) { <mat-option [value]="area">{{ area }}</mat-option> }
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <div class="tabla-scroll">
+      <table class="tabla-simple tabla-centros">
+        <thead><tr><th>Centro</th><th>Áreas</th><th>Acuerdo</th><th>Cupos libres</th><th>Supervisor(a)</th><th>Estado</th></tr></thead>
+        <tbody>
+          @for (centro of centrosPagina(); track centro.id) {
+            <tr class="fila-centro" (click)="seleccionarCentro(centro)">
+              <td><button class="enlace-centro" type="button" (click)="seleccionarCentro(centro); $event.stopPropagation()">{{ centro.nombre }}</button></td>
+              <td><span class="etiquetas">@for (area of centro.areas; track area) { <span class="etiqueta">{{ area }}</span> }</span></td>
+              <td><span class="estado" [class]="centro.esInterno ? 'estado--neutro' : estadoAcuerdoClass(centro.acuerdo)">{{ centro.esInterno ? 'No aplica' : centro.acuerdo }}</span></td>
+              <td>{{ cuposLibres(centro) }}</td>
+              <td class="secundario">{{ supervisoresResumen(centro) }}</td>
+              <td><span class="estado" [class]="estadoCentroClass(centro.estado)">{{ centro.estado }}</span></td>
+            </tr>
+          } @empty {
+            <tr><td colspan="6" class="vacio">No hay centros que coincidan con los filtros.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <mat-paginator [length]="centrosVisibles().length" [pageIndex]="pagina()" [pageSize]="tamanoPagina" [hidePageSize]="true" (page)="pagina.set($event.pageIndex)" />
+  </section>
+}
+
+<ng-template #plantillaCentro>
+  <h2 mat-dialog-title>{{ tituloFormulario() }}</h2>
+  <form (ngSubmit)="guardarCentro()" novalidate class="formulario-dialogo">
+    <mat-dialog-content class="dialogo-campos">
+      <div class="dialogo-fila">
+        <mat-form-field subscriptSizing="dynamic">
+          <mat-label>Nombre del centro</mat-label>
+          <input matInput name="nombre" [ngModel]="nuevoCentro.nombre" (ngModelChange)="actualizarCampo('nombre', $event)" />
+          @if (errorCampo('nombre')) { <mat-hint class="error-campo">{{ errorCampo('nombre') }}</mat-hint> }
+        </mat-form-field>
+        <mat-form-field subscriptSizing="dynamic">
+          <mat-label>Razón social</mat-label>
+          <input matInput name="razonSocial" [ngModel]="nuevoCentro.razonSocial" (ngModelChange)="actualizarCampo('razonSocial', $event)" />
+          @if (errorCampo('razonSocial')) { <mat-hint class="error-campo">{{ errorCampo('razonSocial') }}</mat-hint> }
+        </mat-form-field>
+      </div>
+      <div class="dialogo-fila">
+        <mat-form-field subscriptSizing="dynamic">
+          <mat-label>RUT</mat-label>
+          <input matInput name="rut" autocomplete="off" [ngModel]="nuevoCentro.rut" (ngModelChange)="actualizarCampo('rut', $event)" (blur)="formatearRut()" />
+          @if (errorCampo('rut')) { <mat-hint class="error-campo">{{ errorCampo('rut') }}</mat-hint> }
+        </mat-form-field>
+        <mat-form-field subscriptSizing="dynamic">
+          <mat-label>Tipo</mat-label>
+          <mat-select name="tipoCentro" [disabled]="centroEditandoId() !== null && centroSeleccionado()?.estado !== 'Propuesto'" [ngModel]="nuevoCentro.esInterno ? 'Interno' : 'Externo'" (ngModelChange)="cambiarTipoCentro($event)">
+            <mat-option value="Externo">Externo</mat-option>
+            <mat-option value="Interno">Interno</mat-option>
+          </mat-select>
+          @if (errorTipoCentro()) { <mat-hint class="error-campo">{{ errorTipoCentro() }}</mat-hint> }
+        </mat-form-field>
+      </div>
+      <div class="fila-direccion">
+        <mat-form-field subscriptSizing="dynamic"><mat-label>Dirección</mat-label><input matInput name="direccion" [(ngModel)]="nuevoCentro.direccion" /></mat-form-field>
+        <mat-form-field subscriptSizing="dynamic"><mat-label>Teléfono</mat-label><input matInput name="telefono" type="tel" autocomplete="tel" [(ngModel)]="nuevoCentro.telefono" /></mat-form-field>
+      </div>
+
+      @if (centroEditandoId() === null) {
+        <h3 class="subtitulo-dialogo">Supervisores(as)</h3>
+        @for (supervisor of supervisoresFormulario(); track $index; let indice = $index) {
+          <div class="bloque-supervisor">
+            <div class="dialogo-fila">
+              <mat-form-field subscriptSizing="dynamic">
+                <mat-label>Nombre completo</mat-label>
+                <input matInput [name]="'supervisorNombre' + indice" [ngModel]="supervisor.nombre" (ngModelChange)="actualizarSupervisorFormulario(indice, 'nombre', $event)" />
+                @if (errorSupervisor(indice, 'nombre')) { <mat-hint class="error-campo">{{ errorSupervisor(indice, 'nombre') }}</mat-hint> }
+              </mat-form-field>
+              <mat-form-field subscriptSizing="dynamic">
+                <mat-label>Correo</mat-label>
+                <input matInput type="email" [name]="'supervisorCorreo' + indice" [ngModel]="supervisor.correo" (ngModelChange)="actualizarSupervisorFormulario(indice, 'correo', $event)" />
+                @if (errorSupervisor(indice, 'correo')) { <mat-hint class="error-campo">{{ errorSupervisor(indice, 'correo') }}</mat-hint> }
+              </mat-form-field>
+            </div>
+            <div class="fila-tres">
+              <mat-form-field subscriptSizing="dynamic"><mat-label>Cargo</mat-label><input matInput [name]="'supervisorCargo' + indice" [ngModel]="supervisor.cargo" (ngModelChange)="actualizarSupervisorFormulario(indice, 'cargo', $event)" /></mat-form-field>
+              <mat-form-field subscriptSizing="dynamic"><mat-label>Unidad o área</mat-label><input matInput [name]="'supervisorUnidad' + indice" [ngModel]="supervisor.unidad" (ngModelChange)="actualizarSupervisorFormulario(indice, 'unidad', $event)" /></mat-form-field>
+              <mat-form-field subscriptSizing="dynamic"><mat-label>Teléfono</mat-label><input matInput type="tel" [name]="'supervisorTelefono' + indice" [ngModel]="supervisor.telefono" (ngModelChange)="actualizarSupervisorFormulario(indice, 'telefono', $event)" /></mat-form-field>
+            </div>
+            @if (supervisoresFormulario().length > 1) {
+              <button matButton class="alinear-derecha" type="button" (click)="quitarSupervisorFormulario(indice)">Quitar</button>
+            }
+          </div>
+        }
+        <button matButton class="alinear-izquierda" type="button" (click)="agregarSupervisorFormulario()"><mat-icon>person_add</mat-icon>Agregar supervisor(a)</button>
+      }
+
+      <h3 class="subtitulo-dialogo">Áreas que ofrece</h3>
+      <div class="filtros__opciones">
+        @for (area of areasDisponiblesFormulario(); track area) {
+          <button type="button" class="filtro" [class.filtro--activo]="areasSeleccionadas().includes(area)" [attr.aria-pressed]="areasSeleccionadas().includes(area)" (click)="alternarArea(area)">
+            @if (areasSeleccionadas().includes(area)) { <mat-icon>check</mat-icon> }{{ area }}
+          </button>
+        }
+      </div>
+      <div class="fila-agregar">
+        <mat-form-field subscriptSizing="dynamic">
+          <mat-label>Otra área</mat-label>
+          <input matInput name="nuevaArea" [ngModel]="nuevaArea()" (ngModelChange)="nuevaArea.set($event)" (keydown.enter)="$event.preventDefault(); agregarAreaPersonalizada()" />
+        </mat-form-field>
+        <button matButton="outlined" type="button" (click)="agregarAreaPersonalizada()">Agregar</button>
+      </div>
+      @if (intentoGuardar() && areasSeleccionadas().length === 0) { <p class="error-campo">Selecciona o agrega al menos un área.</p> }
+
+      <h3 class="subtitulo-dialogo">Cupos</h3>
+      <div class="fila-cupos">
+        <mat-form-field subscriptSizing="dynamic">
+          <mat-label>Período</mat-label>
+          <mat-select name="periodoCupo" [(ngModel)]="periodoNuevoCupoId">
+            @for (periodo of periodosCatalogo(); track periodo.id) { <mat-option [value]="periodo.id">{{ periodo.semestre }}º semestre {{ periodo.anio }}</mat-option> }
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field subscriptSizing="dynamic">
+          <mat-label>Categoría</mat-label>
+          <mat-select name="categoriaCupo" [(ngModel)]="categoriaNuevoCupo">
+            <mat-option value="Laboral">Laboral</mat-option>
+            <mat-option value="Profesional">Profesional</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field subscriptSizing="dynamic"><mat-label>Cupos</mat-label><input matInput name="cantidadCupo" type="number" min="1" step="1" [(ngModel)]="cantidadNuevoCupo" /></mat-form-field>
+        <button matButton="outlined" type="button" (click)="agregarCupo()">Agregar</button>
+      </div>
+      @if (cuposFormulario().length) {
+        <div class="etiquetas">
+          @for (cupo of cuposFormulario(); track cupo.periodo + cupo.categoria) {
+            <span class="etiqueta etiqueta-cupo">{{ cupo.periodo }}, {{ cupo.categoria }}: {{ cupo.total }}
+              <button type="button" [attr.aria-label]="'Quitar cupo ' + cupo.periodo + ' ' + cupo.categoria" (click)="quitarCupo(cupo)"><mat-icon>close</mat-icon></button>
+            </span>
+          }
+        </div>
+      }
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+      <button matButton type="button" (click)="cerrarFormularioNuevo()">Cancelar</button>
+      <button matButton="filled" type="submit" [disabled]="guardando() || (centroEditandoId() !== null && !hayCambiosCentro())">{{ centroEditandoId() === null ? 'Guardar centro' : 'Guardar cambios' }}</button>
+    </mat-dialog-actions>
+  </form>
+</ng-template>
+
+<ng-template #plantillaBaja>
+  <h2 mat-dialog-title>Dar de baja el centro</h2>
+  <mat-dialog-content class="dialogo-campos">
+    <mat-form-field subscriptSizing="dynamic">
+      <mat-label>Motivo de baja</mat-label>
+      <textarea matInput rows="3" maxlength="1000" [ngModel]="motivoBaja()" (ngModelChange)="motivoBaja.set($event)"></textarea>
+      @if (errorBaja()) { <mat-hint class="error-campo">{{ errorBaja() }}</mat-hint> }
+    </mat-form-field>
+  </mat-dialog-content>
+  <mat-dialog-actions align="end">
+    <button matButton type="button" (click)="cerrarBaja()">Cancelar</button>
+    <button matButton="filled" class="boton-peligro-relleno" type="button" [disabled]="guardando()" (click)="confirmarBaja()">{{ guardando() ? 'Guardando…' : 'Dar de baja' }}</button>
+  </mat-dialog-actions>
+</ng-template>
+
+<ng-template #plantillaAcuerdo>
+  <h2 mat-dialog-title>Acuerdo de colaboración</h2>
+  <mat-dialog-content class="dialogo-campos">
+    @if (centroSeleccionado(); as centro) {
+      <app-acuerdo-centro [centroId]="centro.id" [acuerdo]="centro.acuerdoDatos ?? null" (guardado)="acuerdoGuardado()" />
+    }
+  </mat-dialog-content>
+</ng-template>
+
+<ng-template #plantillaEstudiante>
+  @if (estudianteSeleccionado(); as estudiante) {
+    <h2 mat-dialog-title>{{ estudiante.nombre }}</h2>
+    <mat-dialog-content>
+      <dl class="lista-datos lista-datos--dialogo">
+        <div class="dato"><dt>Período</dt><dd>{{ estudiante.periodo }}</dd></div>
+        <div class="dato"><dt>Estado</dt><dd>{{ etiquetaEstadoPractica(estudiante.estado) }}</dd></div>
+        <div class="dato"><dt>Resultado</dt><dd>{{ etiquetaResultado(estudiante.resultado) }}</dd></div>
+        <div class="dato"><dt>Centro</dt><dd>{{ centroSeleccionado()?.nombre }}</dd></div>
+      </dl>
+    </mat-dialog-content>
+    <mat-dialog-actions align="end"><button matButton type="button" mat-dialog-close>Cerrar</button></mat-dialog-actions>
+  }
+</ng-template>
