@@ -28,6 +28,8 @@ export default [
         title: 'Solicitudes de práctica',
         loadComponent: () => import('./solicitudes-practica/revision-solicitudes').then((m) => m.RevisionSolicitudes),
       },
+      { path: 'alertas', title: 'Alertas', loadComponent: () => import('./alertas/alertas').then((m) => m.Alertas) },
+
       {
         path: 'documentos',
         title: 'Documentos',
