@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\PortafolioController;
 use App\Http\Controllers\AsignacionPracticaController;
 use App\Http\Controllers\CalendarioPracticaController;
 use App\Http\Controllers\CentroPracticaController;
@@ -23,6 +24,10 @@ Route::post('/recuperar-contrasena', [AuthController::class, 'solicitarRecuperac
 Route::post('/restablecer-contrasena', [AuthController::class, 'restablecerContrasena'])->middleware('throttle:6,1');
 
 Route::middleware('auth:sanctum')->group(function () {
+    Route::middleware('rol:estudiante')->group(function () {
+        Route::get('/estudiante/portafolios', [PortafolioController::class, 'index']);
+        Route::put('/estudiante/practicas/{practica}/portafolio', [PortafolioController::class, 'update']);
+    });
     Route::middleware('rol:coordinadora')->prefix('coordinacion')->group(function () {
         Route::get('/metricas', [PracticaExcepcionalController::class, 'metricas']);
         Route::get('/practicas-excepcionales/catalogo', [PracticaExcepcionalController::class, 'catalogo']);

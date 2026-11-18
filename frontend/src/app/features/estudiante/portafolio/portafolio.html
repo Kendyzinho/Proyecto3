@@ -1,0 +1,29 @@
+<header class="encabezado-pagina"><h1>Portafolio digital</h1></header>
+@if (cargando()) { <p role="status">Cargando tus prácticas…</p> }
+@if (error()) { <p class="aviso aviso--error" role="alert">{{ error() }}</p> }
+@if (mensaje()) { <p class="aviso aviso--exito" role="status">{{ mensaje() }}</p> }
+@if (!cargando() && practicas().length) {
+  <section class="tarjeta">
+    <div class="tarjeta__cabecera"><h2>Vincular portafolio en UTAMed</h2></div>
+    <div class="tarjeta__cuerpo">
+      <p>Pega el enlace de tu portafolio publicado en UTAMed para la revisión académica.</p>
+      <mat-form-field><mat-label>Práctica</mat-label>
+        <mat-select [value]="seleccion" (selectionChange)="seleccionar($event.value)" [disabled]="guardando()">
+          @for (p of practicas(); track p.id) { <mat-option [value]="p.id">#{{ p.id }} · {{ p.tipo }} · {{ p.centro || 'Centro pendiente' }}</mat-option> }
+        </mat-select>
+      </mat-form-field>
+      @if (seleccion !== null) {
+        <form (ngSubmit)="guardar()">
+          <mat-form-field><mat-label>Enlace del portafolio en UTAMed</mat-label>
+            <input matInput type="url" name="url" [(ngModel)]="url" required maxlength="255" [disabled]="guardando()" placeholder="https://" />
+            <mat-hint>Solo se registra el enlace. No se suben archivos.</mat-hint>
+            <mat-error>Ingresa el enlace de tu portafolio.</mat-error>
+          </mat-form-field>
+          <div class="acciones"><button mat-flat-button type="submit" [disabled]="guardando()">{{ guardando() ? 'Guardando…' : 'Guardar enlace' }}</button>
+            @if (guardada(); as enlace) { <a mat-button [href]="enlace" target="_blank" rel="noopener noreferrer">Abrir portafolio</a> }
+          </div>
+        </form>
+      }
+    </div>
+  </section>
+} @else if (!cargando() && !error()) { <p role="status">No tienes prácticas asociadas para vincular un portafolio.</p> }
