@@ -1,19 +1,18 @@
 <?php
 
-use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AsignacionPracticaController;
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CalendarioPracticaController;
 use App\Http\Controllers\CentroPracticaController;
 use App\Http\Controllers\DocumentoController;
+use App\Http\Controllers\ListadoPracticasController;
+use App\Http\Controllers\MallaController;
 use App\Http\Controllers\NominaController;
 use App\Http\Controllers\PracticaExcepcionalController;
 use App\Http\Controllers\SolicitudPracticaController;
 use App\Http\Controllers\UsuarioController;
 use App\Models\Periodo;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\MallaController;
-
-
 
 // HU-01: máximo 6 intentos por minuto para frenar ataques de fuerza bruta
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:6,1');
@@ -37,6 +36,9 @@ Route::middleware('auth:sanctum')->group(function () {
         // Fechas y horario de las prácticas confirmadas (Art. 17)
         Route::get('/calendarios', [CalendarioPracticaController::class, 'index']);
         Route::put('/calendarios/{practica}', [CalendarioPracticaController::class, 'update']);
+
+        Route::get('/practicas', [ListadoPracticasController::class, 'index']);
+        Route::get('/practicas/exportar', [ListadoPracticasController::class, 'exportar']);
     });
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
@@ -63,7 +65,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/{usuario}/reactivar', [UsuarioController::class, 'reactivar']);
     });
     // HU-06: mallas y prácticas (Jefe de Carrera)
-Route::middleware('rol:jefe')->group(function () {
+    Route::middleware('rol:jefe')->group(function () {
         Route::get('/mallas', [MallaController::class, 'index']);
         Route::post('/mallas', [MallaController::class, 'store']);
         Route::post('/mallas/{malla}/publicar', [MallaController::class, 'publicar']);

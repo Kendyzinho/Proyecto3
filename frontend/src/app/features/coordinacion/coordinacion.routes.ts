@@ -19,6 +19,11 @@ export default [
         loadComponent: () => import('./asignacion-practicas/asignacion-practicas').then((m) => m.AsignacionPracticas),
       },
       {
+        path: 'practicas',
+        title: 'Lista general de prácticas',
+        loadComponent: () => import('./listado-practicas/listado-practicas').then((m) => m.ListadoPracticas),
+      },
+      {
         path: 'centros',
         title: 'Centros de práctica',
         loadComponent: () => import('./centros-practica/centros-practica').then((m) => m.CentrosPractica),
