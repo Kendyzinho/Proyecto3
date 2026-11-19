@@ -20,6 +20,7 @@ export const MENUS_POR_ROL: Record<'coordinadora' | 'secretaria' | 'jefe' | 'est
   ],
   estudiante: [
     { texto: 'Inicio', icono: 'home', ruta: '/estudiante' },
+    { texto: 'Portafolio digital', icono: 'link', ruta: '/estudiante/portafolio' },
     { texto: 'Solicitud de práctica', icono: 'send', ruta: '/estudiante/solicitud' },
     { texto: 'Percepción del centro', icono: 'rate_review', ruta: '/estudiante/percepcion-centro' },
   ],

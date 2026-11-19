@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\PortafolioController;
 use App\Http\Controllers\AsignacionPracticaController;
 use App\Http\Controllers\CalendarioPracticaController;
 use App\Http\Controllers\CentroPracticaController;
@@ -25,6 +26,8 @@ Route::post('/restablecer-contrasena', [AuthController::class, 'restablecerContr
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('rol:estudiante')->group(function () {
+        Route::get('/estudiante/portafolios', [PortafolioController::class, 'index']);
+        Route::put('/estudiante/practicas/{practica}/portafolio', [PortafolioController::class, 'update']);
         Route::get('/estudiante/percepciones-centro', [PercepcionCentroController::class, 'index']);
         Route::put('/estudiante/practicas/{practica}/percepcion-centro', [PercepcionCentroController::class, 'store']);
     });
