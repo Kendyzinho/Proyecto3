@@ -12,6 +12,7 @@ use App\Http\Controllers\UsuarioController;
 use App\Models\Periodo;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\MallaController;
+use App\Http\Controllers\ConfirmacionSemanalController;
 
 
 
@@ -21,6 +22,14 @@ Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:6,
 // HU-02: recuperación de contraseña sin sesión iniciada
 Route::post('/recuperar-contrasena', [AuthController::class, 'solicitarRecuperacion'])->middleware('throttle:6,1');
 Route::post('/restablecer-contrasena', [AuthController::class, 'restablecerContrasena'])->middleware('throttle:6,1');
+// HU-26: el supervisor no tiene cuenta; la firma del enlace reemplaza la sesión.
+// GET y POST comparten URI, así que la misma firma sirve para ver y para confirmar.
+Route::middleware(['signed:relative', 'throttle:30,1'])->prefix('supervision')->group(function () {
+    Route::get('/practicas/{practica}/semanas/{semana}', [ConfirmacionSemanalController::class, 'show'])
+        ->whereNumber('practica')->where('semana', '\d{4}-\d{2}-\d{2}')->name('supervision.semana');
+    Route::post('/practicas/{practica}/semanas/{semana}', [ConfirmacionSemanalController::class, 'store'])
+        ->whereNumber('practica')->where('semana', '\d{4}-\d{2}-\d{2}');
+});
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('rol:coordinadora')->prefix('coordinacion')->group(function () {

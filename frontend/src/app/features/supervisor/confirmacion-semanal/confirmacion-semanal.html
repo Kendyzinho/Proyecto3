@@ -1,0 +1,82 @@
+<main class="confirmacion">
+  <img class="marca" src="logos/dm-oscuro.svg" alt="Diseño Multimedia UTarapacá" width="138" height="56" />
+
+  @switch (estado()) {
+    @case ('cargando') {
+      <p role="status">Cargando la semana…</p>
+    }
+    @case ('enlace_invalido') {
+      <div role="alert">
+        <h1>El enlace no es válido</h1>
+        <p class="texto">El enlace venció o ya no corresponde a esta práctica. Escribe a la Coordinación de Prácticas para recibir uno nuevo.</p>
+      </div>
+    }
+    @case ('error') {
+      <div role="alert">
+        <h1>No pudimos cargar la semana</h1>
+        <p class="texto">{{ error() }}</p>
+      </div>
+    }
+    @default {
+      @if (semana(); as s) {
+        <h1>Asistencia de {{ s.estudiante }}</h1>
+        <p class="texto">{{ s.centro }} · Semana del {{ fecha(s.semana.desde) }} al {{ fecha(s.semana.hasta) }}</p>
+
+        @if (s.confirmada_en) {
+          <div class="aviso aviso--ok" role="status">
+            <mat-icon>check_circle</mat-icon>
+            <span>Confirmación enviada el {{ s.confirmada_en | date: 'dd/MM/yyyy HH:mm' }}. Ya no se puede modificar.</span>
+          </div>
+        }
+        @if (error(); as mensaje) {
+          <div class="aviso" role="alert">
+            <mat-icon>error</mat-icon>
+            <span>{{ mensaje }}</span>
+          </div>
+        }
+
+        <ul class="dias">
+          @for (d of s.dias; track d.id) {
+            <li class="dia">
+              <div class="dia__datos">
+                <strong>{{ dia(d.fecha) }}</strong>
+                <span>{{ d.hora_entrada ?? '—' }} – {{ d.hora_salida ?? '—' }} · {{ d.horas }} h</span>
+                @if (d.actividades) {
+                  <p>{{ d.actividades }}</p>
+                }
+              </div>
+
+              @if (s.confirmada_en) {
+                <span class="resultado" [class.resultado--rechazado]="d.validacion === 'rechazado'">
+                  {{ d.validacion === 'confirmado' ? 'Confirmado' : 'Rechazado' }}
+                </span>
+              } @else {
+                <mat-button-toggle-group [value]="decisiones()[d.id]" (change)="decidir(d.id, $event.value)"
+                                         [attr.aria-label]="'Asistencia del ' + dia(d.fecha)">
+                  <mat-button-toggle value="confirmado">Confirmar</mat-button-toggle>
+                  <mat-button-toggle value="rechazado">Rechazar</mat-button-toggle>
+                </mat-button-toggle-group>
+              }
+            </li>
+          }
+        </ul>
+
+        @if (s.confirmada_en) {
+          @if (s.observacion) {
+            <p class="texto">Observación: {{ s.observacion }}</p>
+          }
+        } @else {
+          <mat-form-field class="observacion">
+            <mat-label>Observación (opcional)</mat-label>
+            <textarea matInput rows="3" maxlength="1000" [value]="observacion()"
+                      (input)="observacion.set($any($event.target).value)"></textarea>
+          </mat-form-field>
+          <p class="texto">Una vez enviada, la confirmación no se puede modificar.</p>
+          <button matButton="filled" type="button" [disabled]="!completa() || enviando()" (click)="enviar()">
+            {{ enviando() ? 'Enviando…' : 'Enviar confirmación' }}
+          </button>
+        }
+      }
+    }
+  }
+</main>
