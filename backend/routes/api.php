@@ -7,6 +7,7 @@ use App\Http\Controllers\CentroPracticaController;
 use App\Http\Controllers\DocumentoController;
 use App\Http\Controllers\NominaController;
 use App\Http\Controllers\PracticaExcepcionalController;
+use App\Http\Controllers\PercepcionCentroController;
 use App\Http\Controllers\SolicitudPracticaController;
 use App\Http\Controllers\UsuarioController;
 use App\Models\Periodo;
@@ -23,6 +24,10 @@ Route::post('/recuperar-contrasena', [AuthController::class, 'solicitarRecuperac
 Route::post('/restablecer-contrasena', [AuthController::class, 'restablecerContrasena'])->middleware('throttle:6,1');
 
 Route::middleware('auth:sanctum')->group(function () {
+    Route::middleware('rol:estudiante')->group(function () {
+        Route::get('/estudiante/percepciones-centro', [PercepcionCentroController::class, 'index']);
+        Route::put('/estudiante/practicas/{practica}/percepcion-centro', [PercepcionCentroController::class, 'store']);
+    });
     Route::middleware('rol:coordinadora')->prefix('coordinacion')->group(function () {
         Route::get('/metricas', [PracticaExcepcionalController::class, 'metricas']);
         Route::get('/practicas-excepcionales/catalogo', [PracticaExcepcionalController::class, 'catalogo']);
