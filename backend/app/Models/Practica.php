@@ -101,6 +101,11 @@ class Practica extends Model
         return $this->hasMany(Horario::class, 'practica_id');
     }
 
+    public function registrosDiarios(): HasMany
+    {
+        return $this->hasMany(RegistroDiario::class, 'practica_id')->orderByDesc('fecha')->orderByDesc('id');
+    }
+
     // Cada cambio registra el horario completo: el vigente es la versión más reciente
     public function horarioVigente(): Collection
     {

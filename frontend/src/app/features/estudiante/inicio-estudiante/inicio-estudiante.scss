@@ -1,0 +1,8 @@
+:host { display: block; }
+.eyebrow { margin: 0 0 6px; color: #355085; font-size: 12px; font-weight: 700; letter-spacing: .04em; }
+.encabezado-pagina > div > p:last-child { margin: 8px 0 0; color: #5b6b80; }
+.accesos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
+.acceso { display: flex; align-items: center; gap: 12px; margin: 0; padding: 24px; color: inherit; font-size: 16px; font-weight: 600; text-decoration: none; }
+.acceso mat-icon { color: #355085; }
+.acceso:hover { background: #f7f9fc; }
+@media (max-width: 900px) { .accesos { grid-template-columns: minmax(0, 1fr); } }

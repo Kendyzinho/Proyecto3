@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\BitacoraController;
 use App\Http\Controllers\PortafolioController;
 use App\Http\Controllers\AsignacionPracticaController;
 use App\Http\Controllers\CalendarioPracticaController;
@@ -26,6 +27,10 @@ Route::post('/restablecer-contrasena', [AuthController::class, 'restablecerContr
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('rol:estudiante')->group(function () {
+        // HU-13: registro diario de asistencia, actividades, inasistencias y progreso.
+        Route::get('/estudiante/bitacora', [BitacoraController::class, 'index']);
+        Route::get('/estudiante/practicas/{practica}/bitacora', [BitacoraController::class, 'show']);
+        Route::put('/estudiante/practicas/{practica}/bitacora/{fecha}', [BitacoraController::class, 'guardar']);
         Route::get('/estudiante/portafolios', [PortafolioController::class, 'index']);
         Route::put('/estudiante/practicas/{practica}/portafolio', [PortafolioController::class, 'update']);
         Route::get('/estudiante/percepciones-centro', [PercepcionCentroController::class, 'index']);
