@@ -577,7 +577,7 @@ class SolicitudPracticaController extends Controller
 
     private function requireCoordinator(Request $request): void
     {
-        abort_unless($request->user()?->rol === 'coordinadora', 403, 'Esta acción es exclusiva de la Coordinadora.');
+        abort_unless($request->user()?->gestionaPracticas(), 403, 'Esta acción es exclusiva de la Coordinadora o el Jefe de Carrera.');
     }
 
     private function requireStudent(Request $request): void

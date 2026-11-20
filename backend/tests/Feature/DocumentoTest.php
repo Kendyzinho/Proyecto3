@@ -150,12 +150,12 @@ class DocumentoTest extends TestCase
             ->assertJson(['id' => $this->periodo->id, 'nombre' => '2º semestre 2026']);
     }
 
-    public function test_pueden_entrar_la_secretaria_y_la_coordinadora(): void
+    public function test_pueden_entrar_la_secretaria_la_coordinadora_y_el_jefe(): void
     {
         $url = '/api/documentos?periodo_id='.$this->periodo->id;
 
         $this->actingAs(User::where('rol', 'coordinadora')->first())->getJson($url)->assertOk();
-        $this->actingAs(User::where('rol', 'jefe')->first())->getJson($url)->assertForbidden();
+        $this->actingAs(User::where('rol', 'jefe')->first())->getJson($url)->assertOk();
         $this->actingAs(User::whereNull('rol')->first())->getJson($url)->assertForbidden();
     }
 }
