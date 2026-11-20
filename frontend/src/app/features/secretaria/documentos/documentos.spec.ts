@@ -17,8 +17,8 @@ const DIEGO: PracticaPorFormalizar = {
 const DETALLE: DetallePractica = {
   ...DIEGO,
   textos: {
-    carta: { unidad: 'Escuela', lugar_fecha: 'Arica, 17 de octubre de 2026', destinatario: [], parrafos: ['Presento a Diego'], firma: ['Jefe', 'Jefe(a) de Carrera'] },
-    seguro: { unidad: 'Escuela', titulo: 'Guía del seguro escolar', datos: {}, secciones: [] },
+    carta: { titulo: 'Carta de presentación', lugar_fecha: 'Arica, 17 de octubre de 2026', destinatario: [], parrafos: ['Presento a Diego'], firma: ['Jefe', 'Jefe de Carrera - Diseño Multimedia', 'Universidad de Tarapacá'], pie: 'Avda. 18 de septiembre 2222' },
+    seguro: { titulo: 'Guía del seguro escolar', lugar_fecha: 'Arica, 17 de octubre de 2026', datos: {}, secciones: [], pie: 'Avda. 18 de septiembre 2222' },
   },
   centro_id: 4, centro_interno: false,
   acuerdo: { id: 4, tipo: 'tradicional', representante_legal: 'María', fecha_inicio: null, fecha_termino: null, estado: 'en_tramite', tiene_archivo: false },

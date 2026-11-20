@@ -2,16 +2,15 @@
 <html lang="es">
 <head>
     <meta charset="utf-8">
-    <title>Carta de presentación</title>
+    <title>{{ $contenido['titulo'] }}</title>
     @include('pdf._estilos')
 </head>
 <body>
-    <div class="membrete">
-        <img src="{{ $logo }}" alt="Universidad de Tarapacá">
-        <p>{{ $contenido['unidad'] }}</p>
-    </div>
+    @include('pdf._membrete')
 
-    <p class="derecha">{{ $contenido['lugar_fecha'] }}</p>
+    <p class="fecha">{{ $contenido['lugar_fecha'] }}</p>
+
+    <h1>{{ $contenido['titulo'] }}</h1>
 
     <div class="bloque">
         @foreach ($contenido['destinatario'] as $linea)
@@ -20,12 +19,15 @@
     </div>
 
     @foreach ($contenido['parrafos'] as $parrafo)
-        <p>{{ $parrafo }}</p>
+        <p class="sangria">{{ $parrafo }}</p>
     @endforeach
 
     <div class="firma">
+        <p class="linea"></p>
         <p class="nombre">{{ $contenido['firma'][0] }}</p>
-        <p class="cargo">{{ $contenido['firma'][1] }}</p>
+        @foreach (array_slice($contenido['firma'], 1) as $linea)
+            <p>{{ $linea }}</p>
+        @endforeach
     </div>
 </body>
 </html>

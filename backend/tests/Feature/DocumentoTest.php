@@ -67,6 +67,10 @@ class DocumentoTest extends TestCase
             $carta['parrafos'][0],
         );
         $this->assertSame('Jefe de Carrera de prueba', $carta['firma'][0]);
+        // Formato oficial de la Carrera: firma como en los acuerdos y pie institucional
+        $this->assertSame('Carta de presentación', $carta['titulo']);
+        $this->assertSame(['Jefe de Carrera de prueba', 'Jefe de Carrera - Diseño Multimedia', 'Universidad de Tarapacá'], $carta['firma']);
+        $this->assertSame('Avda. 18 de septiembre 2222 - Teléfono 58-2205624 - dimul@gestion.uta.cl', $carta['pie']);
     }
 
     public function test_descarga_la_carta_en_pdf_y_la_registra_una_sola_vez(): void

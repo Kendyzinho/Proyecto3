@@ -25,19 +25,22 @@ export interface PracticaPorFormalizar {
   seguro: { estado: EstadoDocumento; documento_id: number | null };
 }
 
+// Textos de la carta y la guía con el formato oficial de la Carrera (logos UTA y DM, firma centrada, pie institucional)
 export interface ContenidoCarta {
-  unidad: string;
+  titulo: string;
   lugar_fecha: string;
   destinatario: string[];
   parrafos: string[];
-  firma: [string, string];
+  firma: string[];
+  pie: string;
 }
 
 export interface ContenidoSeguro {
-  unidad: string;
   titulo: string;
+  lugar_fecha: string;
   datos: Record<string, string>;
   secciones: { titulo: string; texto?: string; pasos?: string[] }[];
+  pie: string;
 }
 
 export interface Acuerdo {

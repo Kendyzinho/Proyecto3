@@ -21,6 +21,9 @@ class DocumentoService
 {
     public const TIPOS = ['carta', 'seguro'];
 
+    // Pie de página del formato oficial de la Carrera (acuerdos de colaboración)
+    public const PIE = 'Avda. 18 de septiembre 2222 - Teléfono 58-2205624 - dimul@gestion.uta.cl';
+
     // Prácticas aprobadas del período, con el estado de cada documento
     public function listar(Periodo $periodo): Collection
     {
@@ -68,8 +71,10 @@ class DocumentoService
 
         $vista = $tipo === 'carta' ? 'pdf.carta' : 'pdf.seguro';
         $contenido = $tipo === 'carta' ? $this->contenidoCarta($practica) : $this->contenidoSeguro($practica);
-        $pdf = Pdf::loadView($vista, ['contenido' => $contenido, 'logo' => public_path('logos/uta-horizontal.png')])
+        // Con subconjunto de la fuente el PDF pesa decenas de kB y no más de 1 MB
+        $pdf = Pdf::loadView($vista, ['contenido' => $contenido])
             ->setPaper('letter')
+            ->setOption('isFontSubsettingEnabled', true)
             ->output();
 
         $ruta = "documentos/{$practica->id}/{$tipo}_".now()->format('Ymd_His').'.pdf';
@@ -178,7 +183,7 @@ class DocumentoService
             : '';
 
         return [
-            'unidad' => 'Escuela de Diseño e Innovación Tecnológica, Diseño Multimedia',
+            'titulo' => 'Carta de presentación',
             'lugar_fecha' => 'Arica, '.$this->fecha(now()),
             'destinatario' => [
                 $practica->supervisor->nombre,
@@ -190,7 +195,8 @@ class DocumentoService
                     ."Práctica {$tipo->nombre} de {$habilitacion->horas_requeridas} horas{$periodo}, en las tareas acordadas con su institución.",
                 'Cuenta con el seguro escolar (Ley 16.744) durante todo el período de práctica.',
             ],
-            'firma' => [$jefe?->name ?? 'Jefe(a) de Carrera', 'Jefe(a) de Carrera, Diseño Multimedia'],
+            'firma' => [$jefe?->name ?? 'Jefe(a) de Carrera', 'Jefe de Carrera - Diseño Multimedia', 'Universidad de Tarapacá'],
+            'pie' => self::PIE,
         ];
     }
 
@@ -202,8 +208,8 @@ class DocumentoService
         $coordinadora = User::where('rol', 'coordinadora')->whereNull('fecha_baja')->orderBy('id')->first();
 
         return [
-            'unidad' => 'Escuela de Diseño e Innovación Tecnológica, Diseño Multimedia',
             'titulo' => 'Guía del seguro escolar',
+            'lugar_fecha' => 'Arica, '.$this->fecha(now()),
             'datos' => [
                 'Estudiante' => "{$usuario->name}, RUT {$usuario->rut}",
                 'Práctica' => $practica->habilitacion->tipoPractica->nombre,
@@ -232,6 +238,7 @@ class DocumentoService
                         .'en la red pública de salud.',
                 ],
             ],
+            'pie' => self::PIE,
         ];
     }
 

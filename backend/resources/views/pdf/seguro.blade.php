@@ -6,10 +6,9 @@
     @include('pdf._estilos')
 </head>
 <body>
-    <div class="membrete">
-        <img src="{{ $logo }}" alt="Universidad de Tarapacá">
-        <p>{{ $contenido['unidad'] }}</p>
-    </div>
+    @include('pdf._membrete')
+
+    <p class="fecha">{{ $contenido['lugar_fecha'] }}</p>
 
     <h1>{{ $contenido['titulo'] }}</h1>
 
@@ -20,16 +19,16 @@
     </table>
 
     @foreach ($contenido['secciones'] as $seccion)
-        <h2>{{ $seccion['titulo'] }}</h2>
+        <p class="seccion">{{ $seccion['titulo'] }}</p>
         @isset($seccion['texto'])
-            <p>{{ $seccion['texto'] }}</p>
+            <p class="sangria">{{ $seccion['texto'] }}</p>
         @endisset
         @isset($seccion['pasos'])
-            <ol>
+            <ul>
                 @foreach ($seccion['pasos'] as $paso)
                     <li>{{ $paso }}</li>
                 @endforeach
-            </ol>
+            </ul>
         @endisset
     @endforeach
 </body>

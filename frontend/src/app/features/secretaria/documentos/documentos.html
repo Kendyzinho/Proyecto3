@@ -48,22 +48,25 @@
             @if (actual.con_acuerdo) {
               <article class="hoja">
                 <div class="membrete">
-                  <img src="logos/uta-horizontal.png" alt="Universidad de Tarapacá" width="145" height="40" />
-                  <p>{{ actual.textos.carta.unidad }}</p>
+                  <img src="logos/membrete-uta.png" alt="Universidad de Tarapacá" width="174" height="38" />
+                  <img src="logos/membrete-dm.png" alt="Diseño Multimedia" width="97" height="37" />
                 </div>
                 <p class="hoja__fecha">{{ actual.textos.carta.lugar_fecha }}</p>
+                <h3 class="hoja__titulo">{{ actual.textos.carta.titulo }}</h3>
                 <div class="hoja__bloque">
                   @for (linea of actual.textos.carta.destinatario; track $index) {
                     <p>{{ linea }}</p>
                   }
                 </div>
                 @for (parrafo of actual.textos.carta.parrafos; track $index) {
-                  <p>{{ parrafo }}</p>
+                  <p class="hoja__sangria">{{ parrafo }}</p>
                 }
                 <div class="hoja__firma">
-                  <p class="hoja__firma-nombre">{{ actual.textos.carta.firma[0] }}</p>
-                  <p class="hoja__firma-cargo">{{ actual.textos.carta.firma[1] }}</p>
+                  @for (linea of actual.textos.carta.firma; track $index) {
+                    <p [class.hoja__firma-nombre]="$first">{{ linea }}</p>
+                  }
                 </div>
+                <p class="hoja__pie">{{ actual.textos.carta.pie }}</p>
               </article>
             } @else {
               <p class="bloqueo">El centro no tiene un acuerdo de colaboración vigente (Art. 15).</p>
@@ -76,9 +79,10 @@
             @if (actual.con_acuerdo) {
               <article class="hoja">
                 <div class="membrete">
-                  <img src="logos/uta-horizontal.png" alt="Universidad de Tarapacá" width="145" height="40" />
-                  <p>{{ actual.textos.seguro.unidad }}</p>
+                  <img src="logos/membrete-uta.png" alt="Universidad de Tarapacá" width="174" height="38" />
+                  <img src="logos/membrete-dm.png" alt="Diseño Multimedia" width="97" height="37" />
                 </div>
+                <p class="hoja__fecha">{{ actual.textos.seguro.lugar_fecha }}</p>
                 <h3 class="hoja__titulo">{{ actual.textos.seguro.titulo }}</h3>
                 <dl class="hoja__datos">
                   @for (dato of actual.textos.seguro.datos | keyvalue: sinOrden; track dato.key) {
@@ -89,16 +93,17 @@
                 @for (seccion of actual.textos.seguro.secciones; track seccion.titulo) {
                   <h4>{{ seccion.titulo }}</h4>
                   @if (seccion.texto) {
-                    <p>{{ seccion.texto }}</p>
+                    <p class="hoja__sangria">{{ seccion.texto }}</p>
                   }
                   @if (seccion.pasos) {
-                    <ol>
+                    <ul>
                       @for (paso of seccion.pasos; track $index) {
                         <li>{{ paso }}</li>
                       }
-                    </ol>
+                    </ul>
                   }
                 }
+                <p class="hoja__pie">{{ actual.textos.seguro.pie }}</p>
               </article>
             } @else {
               <p class="bloqueo">El centro no tiene un acuerdo de colaboración vigente (Art. 15).</p>
