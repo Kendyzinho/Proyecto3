@@ -77,12 +77,44 @@
   font-size: 12px;
 }
 
-.vacio,
-.bloqueo {
+.vacio {
   margin: 0;
   padding: 32px 24px;
   color: #5b6b80;
   font-size: 14px;
+}
+
+// Acuerdo del centro: requisito previo de la carta y el seguro
+.franja-acuerdo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  padding: 10px 24px;
+  border-bottom: 1px solid #e2e8f0;
+  color: #4e6077;
+  font-size: 14px;
+
+  p {
+    margin: 0;
+  }
+}
+
+.franja-acuerdo--bloqueo {
+  margin: 20px 24px 24px;
+  padding: 16px 20px;
+  border: 0;
+  border-radius: 8px;
+  background: #e1edf8;
+  color: #212d4a;
+  line-height: 1.5;
+}
+
+.franja-acuerdo__acciones {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
 }
 
 .hoja-contenedor {

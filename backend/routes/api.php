@@ -99,6 +99,7 @@ Route::middleware('rol:jefe')->group(function () {
         Route::get('/practicas/{practica}/documentos/{tipo}', [DocumentoController::class, 'descargar']);
         Route::post('/practicas/{practica}/documentos/enviar', [DocumentoController::class, 'enviar']);
         Route::post('/centros/{centro}/acuerdo', [DocumentoController::class, 'guardarAcuerdo']);
+        Route::post('/centros/{centro}/acuerdo/borrador', [DocumentoController::class, 'borradorAcuerdo']);
         Route::get('/acuerdos/{acuerdo}/archivo', [DocumentoController::class, 'archivoAcuerdo']);
     });
 
