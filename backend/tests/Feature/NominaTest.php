@@ -243,11 +243,11 @@ class NominaTest extends TestCase
         $this->assertSame(['Ignacia Muñoz Vega', '2025', 'Sí'], [$filas[1]['nombre'], $filas[1]['anio_ingreso'], $filas[1]['cumple']]);
     }
 
-    public function test_solo_la_secretaria_puede_cargar_la_nomina(): void
+    public function test_solo_la_secretaria_y_el_jefe_pueden_cargar_la_nomina(): void
     {
         $this->getJson('/api/nomina/catalogo')->assertUnauthorized();
 
-        foreach (['coordinadora', 'jefe', null] as $rol) {
+        foreach (['coordinadora', null] as $rol) {
             $this->actingAs(User::factory()->create(['rol' => $rol]))
                 ->getJson('/api/nomina/catalogo')
                 ->assertForbidden();

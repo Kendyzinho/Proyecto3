@@ -60,7 +60,8 @@ export class Marco {
 
   constructor() {
     effect(() => {
-      if (this.auth.usuario()?.rol === 'coordinadora') this.contador.actualizar();
+      const rol = this.auth.usuario()?.rol;
+      if (rol === 'coordinadora' || rol === 'jefe') this.contador.actualizar();
     });
   }
 

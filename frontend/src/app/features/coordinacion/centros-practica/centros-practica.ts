@@ -556,7 +556,7 @@ export class CentrosPractica {
 
   protected textoTipoAcuerdo(tipo: string | null): string {
     if (!tipo) return 'Sin registrar';
-    return tipo === 'con_equipamiento' ? 'Con equipamiento' : 'Tradicional';
+    return tipo === 'con_equipamiento' ? 'Con equipamiento' : 'Sin equipamiento';
   }
 
   protected textoCupos(cupos: CupoCentro[]): string {

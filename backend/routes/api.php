@@ -1,12 +1,14 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\PortafolioController;
 use App\Http\Controllers\AsignacionPracticaController;
 use App\Http\Controllers\CalendarioPracticaController;
 use App\Http\Controllers\CentroPracticaController;
 use App\Http\Controllers\DocumentoController;
 use App\Http\Controllers\NominaController;
 use App\Http\Controllers\PracticaExcepcionalController;
+use App\Http\Controllers\PercepcionCentroController;
 use App\Http\Controllers\SolicitudPracticaController;
 use App\Http\Controllers\UsuarioController;
 use App\Models\Periodo;
@@ -32,7 +34,14 @@ Route::middleware(['signed:relative', 'throttle:30,1'])->prefix('supervision')->
 });
 
 Route::middleware('auth:sanctum')->group(function () {
-    Route::middleware('rol:coordinadora')->prefix('coordinacion')->group(function () {
+    Route::middleware('rol:estudiante')->group(function () {
+        Route::get('/estudiante/portafolios', [PortafolioController::class, 'index']);
+        Route::put('/estudiante/practicas/{practica}/portafolio', [PortafolioController::class, 'update']);
+        Route::get('/estudiante/percepciones-centro', [PercepcionCentroController::class, 'index']);
+        Route::put('/estudiante/practicas/{practica}/percepcion-centro', [PercepcionCentroController::class, 'store']);
+    });
+    // El Jefe de Carrera puede hacer todo lo que hacen la Coordinadora y la Secretaría (reunión 4)
+    Route::middleware('rol:coordinadora,jefe')->prefix('coordinacion')->group(function () {
         Route::get('/metricas', [PracticaExcepcionalController::class, 'metricas']);
         Route::get('/practicas-excepcionales/catalogo', [PracticaExcepcionalController::class, 'catalogo']);
         Route::post('/practicas-excepcionales', [PracticaExcepcionalController::class, 'store']);
@@ -63,8 +72,8 @@ Route::middleware('auth:sanctum')->group(function () {
         return response()->json($periodo ? ['id' => $periodo->id, 'nombre' => $periodo->nombre()] : null);
     });
 
-    // HU-05: cuentas de usuario, solo la Secretaria de Jefatura.
-    Route::middleware('rol:secretaria')->prefix('usuarios')->group(function () {
+    // HU-05: cuentas de usuario (Secretaria de Jefatura y Jefe de Carrera).
+    Route::middleware('rol:secretaria,jefe')->prefix('usuarios')->group(function () {
         Route::get('/', [UsuarioController::class, 'index']);
         Route::post('/', [UsuarioController::class, 'store']);
         Route::put('/{usuario}', [UsuarioController::class, 'update']);
@@ -81,8 +90,8 @@ Route::middleware('rol:jefe')->group(function () {
         Route::delete('/tipos-practica/{tipo}', [MallaController::class, 'quitarPractica']);
     });
 
-    // HU-07: nómina de estudiantes, solo la Secretaria de Jefatura
-    Route::middleware('rol:secretaria')->prefix('nomina')->group(function () {
+    // HU-07: nómina de estudiantes (Secretaria de Jefatura y Jefe de Carrera)
+    Route::middleware('rol:secretaria,jefe')->prefix('nomina')->group(function () {
         Route::get('/', [NominaController::class, 'index']);
         Route::get('/catalogo', [NominaController::class, 'catalogo']);
         Route::get('/plantilla', [NominaController::class, 'plantilla']);
@@ -93,16 +102,17 @@ Route::middleware('rol:jefe')->group(function () {
     });
 
     // HU-10: documentos de prácticas y acuerdos de colaboración.
-    Route::middleware('rol:secretaria,coordinadora')->group(function () {
+    Route::middleware('rol:secretaria,coordinadora,jefe')->group(function () {
         Route::get('/documentos', [DocumentoController::class, 'index']);
         Route::get('/practicas/{practica}/documentos', [DocumentoController::class, 'show']);
         Route::get('/practicas/{practica}/documentos/{tipo}', [DocumentoController::class, 'descargar']);
         Route::post('/practicas/{practica}/documentos/enviar', [DocumentoController::class, 'enviar']);
         Route::post('/centros/{centro}/acuerdo', [DocumentoController::class, 'guardarAcuerdo']);
+        Route::post('/centros/{centro}/acuerdo/borrador', [DocumentoController::class, 'borradorAcuerdo']);
         Route::get('/acuerdos/{acuerdo}/archivo', [DocumentoController::class, 'archivoAcuerdo']);
     });
 
-    // HU-12: catálogo de centros; las mutaciones y bajas verifican rol coordinadora.
+    // HU-12: catálogo de centros; las mutaciones y bajas verifican rol coordinadora o jefe.
     Route::get('/areas', [CentroPracticaController::class, 'areas']);
     Route::post('/areas', [CentroPracticaController::class, 'storeArea']);
     Route::get('/periodos', [CentroPracticaController::class, 'periodos']);

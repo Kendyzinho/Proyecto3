@@ -58,4 +58,10 @@ class User extends Authenticatable
     {
         return $this->hasOne(Estudiante::class);
     }
+
+    // El Jefe de Carrera puede hacer todo lo que hace la Coordinadora (reunión 4 con el cliente)
+    public function gestionaPracticas(): bool
+    {
+        return in_array($this->rol, ['coordinadora', 'jefe'], true);
+    }
 }

@@ -3,7 +3,9 @@
 namespace App\Services;
 
 use App\Mail\DocumentosPractica;
+use App\Models\CentroPractica;
 use App\Models\Documento;
+use App\Models\Malla;
 use App\Models\Periodo;
 use App\Models\Practica;
 use App\Models\User;
@@ -16,10 +18,13 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 // HU-10: carta de presentación y guía del seguro escolar en PDF, y su envío al estudiante y al centro.
-// Sin acuerdo de colaboración vigente no se generan (Art. 15).
+// Sin acuerdo de colaboración vigente no se generan (Art. 15). También genera el acuerdo que el centro firma.
 class DocumentoService
 {
     public const TIPOS = ['carta', 'seguro'];
+
+    // Pie de página del formato oficial de la Carrera (acuerdos de colaboración)
+    public const PIE = 'Avda. 18 de septiembre 2222 - Teléfono 58-2205624 - dimul@gestion.uta.cl';
 
     // Prácticas aprobadas del período, con el estado de cada documento
     public function listar(Periodo $periodo): Collection
@@ -68,8 +73,10 @@ class DocumentoService
 
         $vista = $tipo === 'carta' ? 'pdf.carta' : 'pdf.seguro';
         $contenido = $tipo === 'carta' ? $this->contenidoCarta($practica) : $this->contenidoSeguro($practica);
-        $pdf = Pdf::loadView($vista, ['contenido' => $contenido, 'logo' => public_path('logos/uta-horizontal.png')])
+        // Con subconjunto de la fuente el PDF pesa decenas de kB y no más de 1 MB
+        $pdf = Pdf::loadView($vista, ['contenido' => $contenido])
             ->setPaper('letter')
+            ->setOption('isFontSubsettingEnabled', true)
             ->output();
 
         $ruta = "documentos/{$practica->id}/{$tipo}_".now()->format('Ymd_His').'.pdf';
@@ -178,7 +185,7 @@ class DocumentoService
             : '';
 
         return [
-            'unidad' => 'Escuela de Diseño e Innovación Tecnológica, Diseño Multimedia',
+            'titulo' => 'Carta de presentación',
             'lugar_fecha' => 'Arica, '.$this->fecha(now()),
             'destinatario' => [
                 $practica->supervisor->nombre,
@@ -190,7 +197,8 @@ class DocumentoService
                     ."Práctica {$tipo->nombre} de {$habilitacion->horas_requeridas} horas{$periodo}, en las tareas acordadas con su institución.",
                 'Cuenta con el seguro escolar (Ley 16.744) durante todo el período de práctica.',
             ],
-            'firma' => [$jefe?->name ?? 'Jefe(a) de Carrera', 'Jefe(a) de Carrera, Diseño Multimedia'],
+            'firma' => [$jefe?->name ?? 'Jefe(a) de Carrera', 'Jefe de Carrera - Diseño Multimedia', 'Universidad de Tarapacá'],
+            'pie' => self::PIE,
         ];
     }
 
@@ -202,8 +210,8 @@ class DocumentoService
         $coordinadora = User::where('rol', 'coordinadora')->whereNull('fecha_baja')->orderBy('id')->first();
 
         return [
-            'unidad' => 'Escuela de Diseño e Innovación Tecnológica, Diseño Multimedia',
             'titulo' => 'Guía del seguro escolar',
+            'lugar_fecha' => 'Arica, '.$this->fecha(now()),
             'datos' => [
                 'Estudiante' => "{$usuario->name}, RUT {$usuario->rut}",
                 'Práctica' => $practica->habilitacion->tipoPractica->nombre,
@@ -232,6 +240,77 @@ class DocumentoService
                         .'en la red pública de salud.',
                 ],
             ],
+            'pie' => self::PIE,
+        ];
+    }
+
+    // Acuerdo de colaboración para firmar, con el formato oficial de la Carrera. No se guarda: el acuerdo
+    // queda registrado cuando se sube firmado, así un borrador nunca reemplaza a un acuerdo vigente
+    public function generarAcuerdo(
+        CentroPractica $centro, string $tipo, string $representante, CarbonInterface $inicio, CarbonInterface $termino,
+    ): string {
+        return Pdf::loadView('pdf.acuerdo', ['contenido' => $this->contenidoAcuerdo($centro, $tipo, $representante, $inicio, $termino)])
+            ->setPaper('letter')
+            ->setOption('isFontSubsettingEnabled', true)
+            ->output();
+    }
+
+    // Texto de los formatos "Acuerdo de colaboración Prácticas Profesionales" (con equipamiento) y
+    // "sin equipamiento" que entregó la Coordinación. El formato decía Ley 19.744: la del seguro escolar es la 16.744.
+    // El formato no traía vigencia; se agrega porque el acuerdo indica cuándo empieza y termina (reunión 4)
+    public function contenidoAcuerdo(
+        CentroPractica $centro, string $tipo, string $representante, CarbonInterface $inicio, CarbonInterface $termino,
+    ): array {
+        $jefe = User::where('rol', 'jefe')->whereNull('fecha_baja')->orderBy('id')->first();
+        $horas = Malla::vigente()?->tiposPractica()->where('categoria', 'profesional')->whereNull('fecha_baja')->orderBy('id')
+            ->get()->map(fn ($practica) => "Práctica {$practica->nombre} ({$practica->horas_requeridas} horas)")->all() ?? [];
+
+        $carrera = [
+            ['texto' => 'Designar un/a Coordinador/a de prácticas como representante de la Carrera para fiscalizar y supervisar el cumplimiento del presente Acuerdo de Cooperación.'],
+            ['texto' => 'Designar estudiantes para desarrollar Prácticas Profesionales.'],
+            ['texto' => 'Que el/las estudiante practicante desarrolle soluciones del ámbito del diseño y afines como Fotografía, Ilustración, Diseño y Diagramación, Diseño Web y Video.'],
+            ['texto' => 'Colaborar en la publicidad de las actividades a desarrollar en conjunto, que sean coherentes con la imagen corporativa de la carrera.'],
+        ];
+        if ($tipo === 'con_equipamiento') {
+            $carrera[] = ['texto' => 'En la medida de que exista disponibilidad, facilitar el uso de equipamiento específico para que el/la estudiante pueda realizar actividades que lo requieran.'];
+        }
+        $carrera[] = ['texto' => 'La evaluación conjunta del desempeño de los alumnos practicantes.'];
+        $carrera[] = ['texto' => 'Asegurar a nuestros alumnos, quienes se acogen a la Ley N° 16.744, que cubre cualquier accidente que pueda ocurrir durante el periodo de práctica.'];
+
+        $horasPractica = ['texto' => 'Evidenciar el cumplimiento de las horas de práctica'];
+        if ($horas !== []) {
+            $horasPractica['detalle'] = $horas;
+        }
+
+        return [
+            'titulo' => ['Acuerdo de colaboración de prácticas profesionales', 'Carrera de Diseño Multimedia – '.$centro->nombre],
+            'lugar_fecha' => 'Arica, ________________ de '.now()->year,
+            'parrafos' => [
+                'El presente documento tiene por objeto establecer los compromisos que asumen la Carrera de Diseño Multimedia de la '
+                    .'Universidad de Tarapacá y el Centro de Prácticas, para el adecuado desarrollo de las prácticas curriculares de los '
+                    .'y las estudiantes, favoreciendo un proceso formativo que permita la aplicación de las competencias adquiridas '
+                    .'durante su formación académica, resguardando el cumplimiento de los objetivos de aprendizaje y las condiciones '
+                    .'necesarias para su correcta ejecución.',
+                'A través de este acuerdo, las partes establecen los siguientes compromisos:',
+            ],
+            'compromisos' => [
+                ['titulo' => 'La Carrera se compromete a:', 'items' => $carrera],
+                ['titulo' => 'El Centro de Práctica se compromete a:', 'items' => [
+                    ['texto' => 'Asignar labores profesionales respetando el nivel de competencias del estudiante.'],
+                    ['texto' => 'La generación/habilitación de espacios físicos adecuados para el correcto trabajo de práctica.'],
+                    ['texto' => 'Dar buen trato a los/las estudiantes.'],
+                    ['texto' => 'Evaluar el desempeño de los estudiantes practicantes.'],
+                    ['texto' => 'Designar a un/a Supervisor/a de Práctica que guíe las labores del estudiante.'],
+                    $horasPractica,
+                    ['texto' => 'Informar, a través de el/la Supervisor/a de Práctica, cualquier irregularidad o incumplimiento por parte del estudiante practicante.'],
+                ]],
+            ],
+            'vigencia' => 'El presente acuerdo tendrá vigencia desde el '.$this->fecha($inicio).' hasta el '.$this->fecha($termino).'.',
+            'firmas' => [
+                [$centro->nombre, $representante, 'Representante, cargo y firma'],
+                [$jefe?->name ?? 'Jefe(a) de Carrera', 'Jefe de Carrera - Diseño Multimedia', 'Universidad de Tarapacá'],
+            ],
+            'pie' => self::PIE,
         ];
     }
 

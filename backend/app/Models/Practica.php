@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
 
 class Practica extends Model
 {
@@ -80,6 +81,19 @@ class Practica extends Model
     public function documentos(): HasMany
     {
         return $this->hasMany(Documento::class);
+    }
+
+    // El proceso de cierre futuro debe consultar este requisito antes de registrar «finalizada».
+    public function cumpleRequisitoPercepcionParaFinalizar(): bool
+    {
+        return DB::table('respuestas_instrumento as respuesta')
+            ->join('plantillas_instrumento as plantilla', 'plantilla.id', '=', 'respuesta.plantilla_id')
+            ->where('respuesta.practica_id', $this->id)
+            ->where('plantilla.instrumento', 'encuesta')
+            ->whereExists(fn ($q) => $q->selectRaw('1')->from('items')
+                ->whereColumn('items.plantilla_id', 'plantilla.id')->where('items.clave', 'clima_laboral'))
+            ->whereNotNull('respuesta.fecha_envio')
+            ->exists();
     }
 
     public function horarios(): HasMany

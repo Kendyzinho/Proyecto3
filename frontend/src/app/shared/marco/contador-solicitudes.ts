@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 
-// Solicitudes por revisar que muestra el menú de la Coordinadora
+// Solicitudes por revisar que muestra el menú de la Coordinadora y del Jefe de Carrera
 @Injectable({ providedIn: 'root' })
 export class ContadorSolicitudes {
   private readonly http = inject(HttpClient);
