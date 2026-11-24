@@ -77,12 +77,44 @@
   font-size: 12px;
 }
 
-.vacio,
-.bloqueo {
+.vacio {
   margin: 0;
   padding: 32px 24px;
   color: #5b6b80;
   font-size: 14px;
+}
+
+// Acuerdo del centro: requisito previo de la carta y el seguro
+.franja-acuerdo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  padding: 10px 24px;
+  border-bottom: 1px solid #e2e8f0;
+  color: #4e6077;
+  font-size: 14px;
+
+  p {
+    margin: 0;
+  }
+}
+
+.franja-acuerdo--bloqueo {
+  margin: 20px 24px 24px;
+  padding: 16px 20px;
+  border: 0;
+  border-radius: 8px;
+  background: #e1edf8;
+  color: #212d4a;
+  line-height: 1.5;
+}
+
+.franja-acuerdo__acciones {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
 }
 
 .hoja-contenedor {
@@ -90,65 +122,78 @@
   background: #f7f9fc;
 }
 
-// Vista previa de la hoja, como en el PDF
+// Vista previa de la hoja, como en el PDF: formato oficial de la Carrera
 .hoja {
-  padding: 32px 40px;
+  display: flex;
+  flex-direction: column;
+  padding: 28px 48px 20px;
   border: 1px solid #e2e8f0;
   background: #fff;
+  color: #000;
+  font-family: Calibri, Carlito, 'Segoe UI', sans-serif;
   font-size: 14px;
-  line-height: 22px;
+  line-height: 20px;
 
   p {
     margin: 0 0 12px;
+    text-align: justify;
   }
 
   h4 {
-    margin: 16px 0 4px;
+    margin: 16px 0 6px;
     font-size: 14px;
   }
 
-  ol {
-    margin: 0;
-    padding-left: 20px;
+  ul {
+    margin: 0 0 8px;
+    padding-left: 28px;
+  }
+
+  li {
+    margin-bottom: 4px;
+    text-align: justify;
   }
 }
 
 .membrete {
-  margin-bottom: 20px;
-
-  p {
-    margin: 6px 0 0;
-    color: #5b6b80;
-    font-size: 12px;
-  }
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 -24px 28px;
 }
 
 .hoja__fecha {
-  color: #5b6b80;
-  text-align: right;
-}
-
-.hoja__bloque {
-  margin: 20px 0;
-
-  p {
-    margin: 0;
-  }
+  text-align: right !important;
 }
 
 .hoja__titulo {
-  margin: 0 0 12px;
-  font-size: 18px;
+  margin: 12px 0 20px;
+  font-size: 14px;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.hoja__bloque {
+  margin: 0 0 20px;
+
+  p {
+    margin: 0;
+    text-align: left;
+  }
+}
+
+.hoja__sangria {
+  text-indent: 48px;
 }
 
 .hoja__datos {
   display: grid;
-  grid-template-columns: 200px 1fr;
-  gap: 4px 12px;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 16px;
   margin: 0 0 8px;
 
   dt {
-    color: #5b6b80;
+    font-weight: 700;
   }
 
   dd {
@@ -157,19 +202,27 @@
 }
 
 .hoja__firma {
-  margin-top: 40px;
+  align-self: center;
+  width: 300px;
+  margin-top: 56px;
+  padding-top: 4px;
+  border-top: 1px solid #000;
 
   p {
     margin: 0;
+    text-align: center;
   }
 }
 
 .hoja__firma-nombre {
-  font-weight: 600;
+  text-transform: uppercase;
 }
 
-.hoja__firma-cargo {
-  color: #5b6b80;
+.hoja__pie {
+  margin: 40px 0 0 !important;
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center !important;
 }
 
 .pie {

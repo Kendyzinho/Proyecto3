@@ -24,7 +24,7 @@ class CentroPracticaController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $esCoordinadora = $request->user()?->rol === 'coordinadora';
+        $esCoordinadora = (bool) $request->user()?->gestionaPracticas();
         $query = $this->catalogQuery($esCoordinadora);
 
         if (!$esCoordinadora) {
@@ -58,7 +58,7 @@ class CentroPracticaController extends Controller
 
     public function show(Request $request, CentroPractica $centroPractica): JsonResponse
     {
-        $esCoordinadora = $request->user()?->rol === 'coordinadora';
+        $esCoordinadora = (bool) $request->user()?->gestionaPracticas();
         $query = $this->catalogQuery($esCoordinadora)->whereKey($centroPractica->id);
         if (!$esCoordinadora) {
             $this->restringirACentrosSeleccionables($query);
@@ -519,7 +519,7 @@ class CentroPracticaController extends Controller
 
     private function requireCoordinator(Request $request): void
     {
-        abort_unless($request->user()?->rol === 'coordinadora', 403, 'Esta acción es exclusiva de la Coordinadora.');
+        abort_unless($request->user()?->gestionaPracticas(), 403, 'Esta acción es exclusiva de la Coordinadora o el Jefe de Carrera.');
     }
 
     // Con puntos si es válido; si no, tal como venía para que la validación lo informe

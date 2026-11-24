@@ -4,10 +4,12 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AbstractControl, NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 
+import { PROVEEDORES_FECHA, fechaIso } from '../../../core/i18n/fechas';
 import { fechasCoherentes } from '../nueva-practica';
 import { CalendarioPractica, DIAS_SEMANA } from './asignacion-practicas.model';
 import { AsignacionPracticasService } from './asignacion-practicas.service';
@@ -20,7 +22,8 @@ function horasCoherentes(control: AbstractControl) {
 // Art. 17: la Coordinadora y el Supervisor(a) acuerdan fechas y horario; aquí se registran.
 @Component({
   selector: 'app-fechas-horario',
-  imports: [ReactiveFormsModule, MatButtonModule, MatCheckboxModule, MatDialogModule, MatFormFieldModule, MatInputModule],
+  imports: [ReactiveFormsModule, MatButtonModule, MatCheckboxModule, MatDatepickerModule, MatDialogModule, MatFormFieldModule, MatInputModule],
+  providers: PROVEEDORES_FECHA,
   templateUrl: './fechas-horario.html',
   styleUrl: './fechas-horario.scss',
 })
@@ -33,8 +36,8 @@ export class FechasHorario {
   protected readonly enviando = signal(false);
   protected readonly errorGeneral = signal<string | null>(null);
   protected readonly form = inject(NonNullableFormBuilder).group({
-    fecha_inicio: [this.practica.fecha_inicio ?? '', Validators.required],
-    fecha_fin: [this.practica.fecha_fin ?? '', Validators.required],
+    fecha_inicio: [(this.practica.fecha_inicio ?? '') as string | Date, Validators.required],
+    fecha_fin: [(this.practica.fecha_fin ?? '') as string | Date, Validators.required],
     dias: [this.practica.horario?.dias ?? ([] as number[]), Validators.required],
     hora_desde: [this.practica.horario?.hora_desde ?? '', Validators.required],
     hora_hasta: [this.practica.horario?.hora_hasta ?? '', Validators.required],
@@ -64,7 +67,8 @@ export class FechasHorario {
     this.enviando.set(true);
     this.referencia.disableClose = true;
     this.errorGeneral.set(null);
-    this.service.guardarCalendario(this.practica.id, this.form.getRawValue()).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    const datos = this.form.getRawValue();
+    this.service.guardarCalendario(this.practica.id, { ...datos, fecha_inicio: fechaIso(datos.fecha_inicio), fecha_fin: fechaIso(datos.fecha_fin) }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => this.referencia.close(true),
       error: (error: HttpErrorResponse) => {
         this.enviando.set(false);

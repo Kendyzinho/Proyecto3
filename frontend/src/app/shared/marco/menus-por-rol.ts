@@ -15,13 +15,22 @@ export const MENUS_POR_ROL: Record<'coordinadora' | 'secretaria' | 'jefe' | 'est
     { texto: 'Nómina de estudiantes', icono: 'table_view', ruta: '/secretaria/nomina' },
     { texto: 'Documentos', icono: 'description', ruta: '/secretaria/documentos' },
   ],
+  // El Jefe de Carrera ve y hace todo lo de la Coordinadora y la Secretaría (reunión 4), dentro de su propio marco
   jefe: [
     { texto: 'Inicio', icono: 'home', ruta: '/jefatura' },
+    { texto: 'Prácticas', icono: 'work', ruta: '/jefatura/asignaciones' },
+    { texto: 'Solicitudes', icono: 'inbox', ruta: '/jefatura/solicitudes' },
+    { texto: 'Centros de práctica', icono: 'domain', ruta: '/jefatura/centros' },
+    { texto: 'Usuarios', icono: 'group', ruta: '/jefatura/usuarios' },
+    { texto: 'Nómina de estudiantes', icono: 'table_view', ruta: '/jefatura/nomina' },
+    { texto: 'Documentos', icono: 'description', ruta: '/jefatura/documentos' },
     { texto: 'Mallas y prácticas', icono: 'account_tree', ruta: '/jefatura/mallas' },
   ],
   estudiante: [
     { texto: 'Inicio', icono: 'home', ruta: '/estudiante' },
+    { texto: 'Portafolio digital', icono: 'link', ruta: '/estudiante/portafolio' },
     { texto: 'Solicitud de práctica', icono: 'send', ruta: '/estudiante/solicitud' },
+    { texto: 'Percepción del centro', icono: 'rate_review', ruta: '/estudiante/percepcion-centro' },
   ],
 };
 

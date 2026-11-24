@@ -17,8 +17,8 @@ const DIEGO: PracticaPorFormalizar = {
 const DETALLE: DetallePractica = {
   ...DIEGO,
   textos: {
-    carta: { unidad: 'Escuela', lugar_fecha: 'Arica, 17 de octubre de 2026', destinatario: [], parrafos: ['Presento a Diego'], firma: ['Jefe', 'Jefe(a) de Carrera'] },
-    seguro: { unidad: 'Escuela', titulo: 'Guía del seguro escolar', datos: {}, secciones: [] },
+    carta: { titulo: 'Carta de presentación', lugar_fecha: 'Arica, 17 de octubre de 2026', destinatario: [], parrafos: ['Presento a Diego'], firma: ['Jefe', 'Jefe de Carrera - Diseño Multimedia', 'Universidad de Tarapacá'], pie: 'Avda. 18 de septiembre 2222' },
+    seguro: { titulo: 'Guía del seguro escolar', lugar_fecha: 'Arica, 17 de octubre de 2026', datos: {}, secciones: [], pie: 'Avda. 18 de septiembre 2222' },
   },
   centro_id: 4, centro_interno: false,
   acuerdo: { id: 4, tipo: 'tradicional', representante_legal: 'María', fecha_inicio: null, fecha_termino: null, estado: 'en_tramite', tiene_archivo: false },
@@ -53,11 +53,30 @@ describe('Documentos', () => {
     expect(texto).toContain('En espera');
   });
 
-  it('sin acuerdo vigente abre la pestaña del acuerdo y no ofrece enviar', () => {
+  it('sin acuerdo vigente muestra la franja para completarlo y oculta la carta, el seguro y el envío', () => {
     const el = fixture.nativeElement as HTMLElement;
-    expect(el.textContent).toContain('Sin acuerdo firmado');
-    const enviar = [...el.querySelectorAll('button')].find((b) => b.textContent?.includes('Enviar'));
-    expect(enviar).toBeUndefined();
+    const botones = [...el.querySelectorAll('button')].map((b) => b.textContent?.trim() ?? '');
+    expect(el.querySelector('.franja-acuerdo--bloqueo')?.textContent).toContain('El acuerdo con Corfo Arica y Parinacota está en trámite');
+    expect(botones).toContain('Completar acuerdo');
+    expect(el.querySelector('mat-tab-group')).toBeNull();
+    expect(botones.some((texto) => texto.includes('Enviar'))).toBe(false);
+  });
+
+  it('con acuerdo vigente muestra su término arriba y solo las pestañas de carta y seguro', async () => {
+    const el = fixture.nativeElement as HTMLElement;
+    [...el.querySelectorAll<HTMLButtonElement>('.lista__fila')].find((b) => b.textContent?.includes('Josefa'))!.click();
+    http.expectOne('/api/practicas/3/documentos').flush({
+      ...DETALLE, ...JOSEFA,
+      acuerdo: { ...DETALLE.acuerdo!, fecha_inicio: '2026-03-01', fecha_termino: '2027-12-31', estado: 'vigente', tiene_archivo: true },
+    });
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(el.querySelector('.franja-acuerdo')?.textContent).toContain('Acuerdo con Fundación UTA vigente hasta el 31-12-2027');
+    expect(el.querySelector('.franja-acuerdo--bloqueo')).toBeNull();
+    const pestanas = [...el.querySelectorAll('[role="tab"]')].map((t) => t.textContent?.trim());
+    expect(pestanas).toEqual(['Carta de presentación', 'Seguro escolar']);
+    expect([...el.querySelectorAll('button')].some((b) => b.textContent?.includes('Enviar al estudiante y al centro'))).toBe(true);
   });
 
   it('usa el género de cada documento en los estados', () => {

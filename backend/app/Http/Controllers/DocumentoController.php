@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\AcuerdoRequest;
+use App\Http\Requests\BorradorAcuerdoRequest;
 use App\Models\AcuerdoColaboracion;
 use App\Models\CentroPractica;
 use App\Models\Documento;
@@ -10,7 +11,9 @@ use App\Models\Periodo;
 use App\Models\Practica;
 use App\Services\DocumentoService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -84,6 +87,21 @@ class DocumentoController extends Controller
         });
 
         return response()->json(['id' => $acuerdo->id, 'estado' => $acuerdo->estado()]);
+    }
+
+    // Acuerdo lleno con el formato oficial, para que el centro y el Jefe de Carrera lo firmen
+    public function borradorAcuerdo(BorradorAcuerdoRequest $request, CentroPractica $centro): Response
+    {
+        abort_if($centro->es_interno, 422, 'Un centro interno no necesita acuerdo de colaboración.');
+        $datos = $request->validated();
+        $pdf = $this->documentos->generarAcuerdo(
+            $centro, $datos['tipo'], $datos['representante_legal'], Carbon::parse($datos['fecha_inicio']), Carbon::parse($datos['fecha_termino']),
+        );
+
+        return response($pdf, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="Acuerdo de colaboración.pdf"',
+        ]);
     }
 
     public function archivoAcuerdo(AcuerdoColaboracion $acuerdo): StreamedResponse

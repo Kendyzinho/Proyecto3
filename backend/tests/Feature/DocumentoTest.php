@@ -67,6 +67,10 @@ class DocumentoTest extends TestCase
             $carta['parrafos'][0],
         );
         $this->assertSame('Jefe de Carrera de prueba', $carta['firma'][0]);
+        // Formato oficial de la Carrera: firma como en los acuerdos y pie institucional
+        $this->assertSame('Carta de presentación', $carta['titulo']);
+        $this->assertSame(['Jefe de Carrera de prueba', 'Jefe de Carrera - Diseño Multimedia', 'Universidad de Tarapacá'], $carta['firma']);
+        $this->assertSame('Avda. 18 de septiembre 2222 - Teléfono 58-2205624 - dimul@gestion.uta.cl', $carta['pie']);
     }
 
     public function test_descarga_la_carta_en_pdf_y_la_registra_una_sola_vez(): void
@@ -150,12 +154,66 @@ class DocumentoTest extends TestCase
             ->assertJson(['id' => $this->periodo->id, 'nombre' => '2º semestre 2026']);
     }
 
-    public function test_pueden_entrar_la_secretaria_y_la_coordinadora(): void
+    public function test_pueden_entrar_la_secretaria_la_coordinadora_y_el_jefe(): void
     {
         $url = '/api/documentos?periodo_id='.$this->periodo->id;
 
         $this->actingAs(User::where('rol', 'coordinadora')->first())->getJson($url)->assertOk();
-        $this->actingAs(User::where('rol', 'jefe')->first())->getJson($url)->assertForbidden();
+        $this->actingAs(User::where('rol', 'jefe')->first())->getJson($url)->assertOk();
         $this->actingAs(User::whereNull('rol')->first())->getJson($url)->assertForbidden();
+    }
+
+    public function test_genera_el_acuerdo_para_firmar_sin_guardarlo(): void
+    {
+        $centro = CentroPractica::where('nombre', 'Corfo Arica y Parinacota')->firstOrFail();
+        $acuerdosAntes = $centro->acuerdos()->count();
+
+        $this->actingAs($this->secretaria)
+            ->post("/api/centros/{$centro->id}/acuerdo/borrador", ['tipo' => 'con_equipamiento', 'representante_legal' => 'Ana Pérez', 'fecha_inicio' => '2026-12-01', 'fecha_termino' => '2028-11-30'])
+            ->assertOk()
+            ->assertHeader('Content-Type', 'application/pdf');
+
+        $this->assertSame($acuerdosAntes, $centro->acuerdos()->count());
+    }
+
+    public function test_el_acuerdo_con_equipamiento_agrega_esa_clausula_y_corrige_la_ley(): void
+    {
+        $centro = CentroPractica::where('nombre', 'Corfo Arica y Parinacota')->firstOrFail();
+        $servicio = app(\App\Services\DocumentoService::class);
+        $inicio = \Illuminate\Support\Carbon::parse('2026-12-01');
+        $termino = \Illuminate\Support\Carbon::parse('2028-11-30');
+        $textos = fn (string $tipo) => collect($servicio->contenidoAcuerdo($centro, $tipo, 'Ana Pérez', $inicio, $termino)['compromisos'][0]['items'])->pluck('texto')->implode(' ');
+
+        $this->assertStringContainsString('facilitar el uso de equipamiento', $textos('con_equipamiento'));
+        $this->assertStringNotContainsString('facilitar el uso de equipamiento', $textos('tradicional'));
+        $this->assertStringContainsString('Ley N° 16.744', $textos('tradicional'));
+
+        $contenido = $servicio->contenidoAcuerdo($centro, 'tradicional', 'Ana Pérez', $inicio, $termino);
+        $this->assertSame('El presente acuerdo tendrá vigencia desde el 1 de diciembre de 2026 hasta el 30 de noviembre de 2028.', $contenido['vigencia']);
+        $this->assertSame('Carrera de Diseño Multimedia – Corfo Arica y Parinacota', $contenido['titulo'][1]);
+        $this->assertSame(['Corfo Arica y Parinacota', 'Ana Pérez', 'Representante, cargo y firma'], $contenido['firmas'][0]);
+        $this->assertSame(['Práctica Profesional (320 horas)'], $contenido['compromisos'][1]['items'][5]['detalle']);
+    }
+
+    public function test_el_acuerdo_pide_tipo_y_representante_y_no_aplica_a_centros_internos(): void
+    {
+        $centro = CentroPractica::where('nombre', 'Corfo Arica y Parinacota')->firstOrFail();
+        $interno = CentroPractica::create([
+            'rut' => '70.770.800-K', 'razon_social' => 'Unidad interna', 'nombre' => 'Unidad interna',
+            'es_interno' => true, 'fecha_alta' => now()->toDateString(),
+        ]);
+
+        $this->actingAs($this->secretaria)
+            ->postJson("/api/centros/{$centro->id}/acuerdo/borrador", [])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['tipo', 'representante_legal', 'fecha_inicio', 'fecha_termino']);
+        $this->postJson("/api/centros/{$centro->id}/acuerdo/borrador", [
+            'tipo' => 'tradicional', 'representante_legal' => 'Ana Pérez', 'fecha_inicio' => '2026-12-01', 'fecha_termino' => '2026-01-01',
+        ])->assertStatus(422)->assertJsonValidationErrors('fecha_termino');
+        $this->postJson("/api/centros/{$interno->id}/acuerdo/borrador", ['tipo' => 'tradicional', 'representante_legal' => 'Ana Pérez', 'fecha_inicio' => '2026-12-01', 'fecha_termino' => '2028-11-30'])
+            ->assertStatus(422);
+        $this->actingAs(User::whereNull('rol')->first())
+            ->postJson("/api/centros/{$centro->id}/acuerdo/borrador", ['tipo' => 'tradicional', 'representante_legal' => 'Ana Pérez', 'fecha_inicio' => '2026-12-01', 'fecha_termino' => '2028-11-30'])
+            ->assertForbidden();
     }
 }

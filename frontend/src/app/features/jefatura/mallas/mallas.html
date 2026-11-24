@@ -85,7 +85,9 @@
       <div class="publicar">
         <mat-form-field subscriptSizing="dynamic">
           <mat-label>Vigente desde</mat-label>
-          <input matInput type="date" [formControl]="vigenteDesde" [min]="hoy" />
+          <input matInput [matDatepicker]="calendarioVigencia" [formControl]="vigenteDesde" [min]="hoy" />
+          <mat-datepicker-toggle matIconSuffix [for]="calendarioVigencia" />
+          <mat-datepicker #calendarioVigencia />
           @if (vigenteDesde.hasError('required')) {
             <mat-error>Indica desde cuándo rige.</mat-error>
           }

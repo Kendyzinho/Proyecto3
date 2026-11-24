@@ -222,6 +222,6 @@ class AsignacionPracticaController extends Controller
 
     private function requireCoordinator(Request $request): void
     {
-        abort_unless($request->user()?->rol === 'coordinadora', 403, 'Solo la Coordinadora puede gestionar asignaciones.');
+        abort_unless($request->user()?->gestionaPracticas(), 403, 'Solo la Coordinadora o el Jefe de Carrera pueden gestionar asignaciones.');
     }
 }

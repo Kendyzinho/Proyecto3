@@ -8,7 +8,7 @@ class RegistrarPracticaExcepcionalRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->rol === 'coordinadora' && $this->user()->fecha_baja === null;
+        return $this->user()?->gestionaPracticas() && $this->user()->fecha_baja === null;
     }
 
     public function rules(): array

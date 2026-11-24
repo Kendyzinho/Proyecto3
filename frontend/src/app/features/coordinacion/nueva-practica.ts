@@ -3,21 +3,25 @@ import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AbstractControl, NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatSelectModule } from '@angular/material/select';
+import { PROVEEDORES_FECHA, fechaIso } from '../../core/i18n/fechas';
 import { CatalogoExcepcional, PeriodoPractica, PracticasApi } from './practicas-api';
 
 export function fechasCoherentes(control: AbstractControl) {
-  const { fecha_inicio, fecha_fin } = control.value;
-  return fecha_inicio && fecha_fin && fecha_fin < fecha_inicio ? { fechas: true } : null;
+  const inicio = fechaIso(control.value.fecha_inicio);
+  const fin = fechaIso(control.value.fecha_fin);
+  return inicio && fin && fin < inicio ? { fechas: true } : null;
 }
 
 @Component({
   selector: 'app-nueva-practica',
-  imports: [ReactiveFormsModule, MatButtonModule, MatDialogModule, MatFormFieldModule, MatInputModule, MatRadioModule, MatSelectModule],
+  imports: [ReactiveFormsModule, MatButtonModule, MatDatepickerModule, MatDialogModule, MatFormFieldModule, MatInputModule, MatRadioModule, MatSelectModule],
+  providers: PROVEEDORES_FECHA,
   templateUrl: './nueva-practica.html',
   styleUrl: './nueva-practica.scss',
 })
@@ -36,8 +40,8 @@ export class NuevaPractica {
     habilitacion_id: [0, Validators.min(1)],
     supervisor_id: [0, Validators.min(1)],
     modalidad: ['presencial', [Validators.required, Validators.pattern(/^(presencial|a_distancia|mixta)$/)]],
-    fecha_inicio: ['', Validators.required],
-    fecha_fin: ['', Validators.required],
+    fecha_inicio: ['' as string | Date, Validators.required],
+    fecha_fin: ['' as string | Date, Validators.required],
     justificacion_excepcional: ['', [Validators.required, Validators.pattern(/\S/), Validators.maxLength(5000)]],
   }, { validators: fechasCoherentes });
 
@@ -85,7 +89,7 @@ export class NuevaPractica {
     this.form.disable();
     this.referencia.disableClose = true;
     this.errorGeneral.set(null);
-    this.api.registrar({ ...datos, periodo_id: this.periodo.id, ...(excederCupo ? { exceder_cupo: true } : {}) }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    this.api.registrar({ ...datos, fecha_inicio: fechaIso(datos.fecha_inicio), fecha_fin: fechaIso(datos.fecha_fin), periodo_id: this.periodo.id, ...(excederCupo ? { exceder_cupo: true } : {}) }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => this.referencia.close(true),
       error: (e: HttpErrorResponse) => {
         this.enviando.set(false);

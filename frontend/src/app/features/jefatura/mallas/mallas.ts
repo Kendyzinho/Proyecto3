@@ -2,6 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
@@ -10,6 +11,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
+import { PROVEEDORES_FECHA, fechaIso } from '../../../core/i18n/fechas';
 import { mensajeDeError } from '../../secretaria/usuarios/usuarios-api';
 import { FormularioPractica, ResultadoPractica } from './formulario-practica';
 import { CATEGORIAS, Categoria, Malla, MallasApi, PracticaMalla } from './mallas-api';
@@ -27,12 +29,14 @@ const MENSAJES: Record<ResultadoPractica, string> = {
   imports: [
     ReactiveFormsModule,
     MatButtonModule,
+    MatDatepickerModule,
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
     MatTableModule,
     MatTooltipModule,
   ],
+  providers: PROVEEDORES_FECHA,
   templateUrl: './mallas.html',
   styleUrl: './mallas.scss',
 })
@@ -47,7 +51,7 @@ export class Mallas {
   protected readonly hayEnPreparacion = computed(() => this.mallas().some((m) => m.estado === 'en_preparacion'));
 
   // Solo hay una malla en preparación a la vez, así que basta un campo de fecha
-  protected readonly vigenteDesde = new FormControl('', { nonNullable: true, validators: Validators.required });
+  protected readonly vigenteDesde = new FormControl<string | Date>('', { nonNullable: true, validators: Validators.required });
   protected readonly hoy = hoyIso();
   protected readonly publicando = signal(false);
 
@@ -87,7 +91,7 @@ export class Mallas {
       return;
     }
     this.publicando.set(true);
-    this.api.publicar(malla.id, this.vigenteDesde.value).subscribe({
+    this.api.publicar(malla.id, fechaIso(this.vigenteDesde.value)).subscribe({
       next: (publicada) => {
         this.publicando.set(false);
         this.vigenteDesde.reset();

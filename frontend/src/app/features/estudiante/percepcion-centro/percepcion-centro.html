@@ -1,0 +1,44 @@
+<header class="encabezado-pagina">
+  <div><p class="eyebrow">ESTUDIANTE</p><h1>Percepción del centro de práctica</h1>
+    <p>Cuéntanos cómo fue tu experiencia. Esta encuesta es necesaria para finalizar tu práctica.</p></div>
+</header>
+
+<section class="tarjeta" aria-label="Encuesta de percepción">
+  <mat-form-field appearance="outline">
+    <mat-label>Práctica</mat-label>
+    <mat-select (selectionChange)="seleccionar($event.value)">
+      @for (practica of practicas(); track practica.id) {
+        <mat-option [value]="practica.id" [disabled]="!['confirmada', 'en_curso', 'finalizada'].includes(practica.estado)">{{ practica.tipo }} · {{ practica.centro || 'Centro pendiente' }} ({{ practica.estado || 'pendiente' }})</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  @if (cargando()) { <p role="status">Cargando tus prácticas…</p> }
+  @else if (!errorCarga() && !practicas().length) { <p>No tienes prácticas asociadas para responder.</p> }
+  @if (seleccionada()) {
+    <form (ngSubmit)="guardar()">
+      <p>Evalúa cada aspecto de 1 (muy deficiente) a 5 (excelente).</p>
+      <div class="campos">
+        <mat-form-field appearance="outline"><mat-label>Clima laboral</mat-label>
+          <mat-select name="clima" [(ngModel)]="respuesta.clima_laboral" required>
+            @for (valor of escala; track valor) { <mat-option [value]="valor">{{ valor }}</mat-option> }
+          </mat-select><mat-error>Selecciona una valoración.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline"><mat-label>Pago o viático</mat-label>
+          <mat-select name="pago" [(ngModel)]="respuesta.pago_viatico" required>
+            @for (valor of escala; track valor) { <mat-option [value]="valor">{{ valor }}</mat-option> }
+          </mat-select><mat-error>Selecciona una valoración.</mat-error>
+        </mat-form-field>
+        <mat-form-field appearance="outline"><mat-label>Pertinencia de las tareas</mat-label>
+          <mat-select name="tareas" [(ngModel)]="respuesta.pertinencia_tareas" required>
+            @for (valor of escala; track valor) { <mat-option [value]="valor">{{ valor }}</mat-option> }
+          </mat-select><mat-error>Selecciona una valoración.</mat-error>
+        </mat-form-field>
+      </div>
+      <mat-form-field appearance="outline" class="observaciones"><mat-label>Observaciones (opcional)</mat-label>
+        <textarea matInput name="observaciones" [(ngModel)]="respuesta.observaciones" maxlength="3000" rows="4"></textarea>
+      </mat-form-field>
+      <button mat-flat-button type="submit" [disabled]="!respuesta.clima_laboral || !respuesta.pago_viatico || !respuesta.pertinencia_tareas || guardando()">Guardar percepción</button>
+    </form>
+  }
+  @if (aviso()) { <p role="status">{{ aviso() }}</p> }
+</section>

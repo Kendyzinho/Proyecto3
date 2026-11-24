@@ -42,43 +42,83 @@
         <h2>{{ actual.estudiante }}</h2>
       </div>
 
-      <mat-tab-group [selectedIndex]="pestana()" (selectedIndexChange)="pestana.set($event)" animationDuration="0ms">
-        <mat-tab label="Carta de presentación">
-          <div class="hoja-contenedor">
+      @if (!actual.centro_interno) {
+        <div class="franja-acuerdo" [class.franja-acuerdo--bloqueo]="!actual.con_acuerdo">
+          @switch (actual.acuerdo?.estado) {
+            @case ('vigente') {
+              <p>
+                Acuerdo con {{ actual.centro }} vigente@if (actual.acuerdo?.fecha_termino; as termino) { hasta el {{ fechaCorta(termino) }}}
+              </p>
+            }
+            @case ('vencido') {
+              <p>
+                El acuerdo con {{ actual.centro }} venció el {{ fechaCorta(actual.acuerdo?.fecha_termino ?? '') }}.
+                Sin un acuerdo vigente no se generan la carta ni el seguro.
+              </p>
+            }
+            @case ('en_tramite') {
+              <p>El acuerdo con {{ actual.centro }} está en trámite. Sin un acuerdo vigente no se generan la carta ni el seguro.</p>
+            }
+            @default {
+              <p>{{ actual.centro }} no tiene un acuerdo de colaboración. Sin él no se generan la carta ni el seguro.</p>
+            }
+          }
+          <div class="franja-acuerdo__acciones">
+            @if (actual.acuerdo?.tiene_archivo) {
+              <button matButton type="button" (click)="verAcuerdo()">Ver PDF</button>
+            }
             @if (actual.con_acuerdo) {
+              <button matButton type="button" (click)="abrirAcuerdo()">Editar</button>
+            } @else {
+              <button matButton="filled" type="button" (click)="abrirAcuerdo()">
+                @switch (actual.acuerdo?.estado) {
+                  @case ('vencido') { Renovar acuerdo }
+                  @case ('en_tramite') { Completar acuerdo }
+                  @default { Registrar acuerdo }
+                }
+              </button>
+            }
+          </div>
+        </div>
+      }
+
+      @if (actual.con_acuerdo) {
+        <mat-tab-group [selectedIndex]="pestana()" (selectedIndexChange)="pestana.set($event)" animationDuration="0ms">
+          <mat-tab label="Carta de presentación">
+            <div class="hoja-contenedor">
               <article class="hoja">
                 <div class="membrete">
-                  <img src="logos/uta-horizontal.png" alt="Universidad de Tarapacá" width="145" height="40" />
-                  <p>{{ actual.textos.carta.unidad }}</p>
+                  <img src="logos/membrete-uta.png" alt="Universidad de Tarapacá" width="174" height="38" />
+                  <img src="logos/membrete-dm.png" alt="Diseño Multimedia" width="97" height="37" />
                 </div>
                 <p class="hoja__fecha">{{ actual.textos.carta.lugar_fecha }}</p>
+                <h3 class="hoja__titulo">{{ actual.textos.carta.titulo }}</h3>
                 <div class="hoja__bloque">
                   @for (linea of actual.textos.carta.destinatario; track $index) {
                     <p>{{ linea }}</p>
                   }
                 </div>
                 @for (parrafo of actual.textos.carta.parrafos; track $index) {
-                  <p>{{ parrafo }}</p>
+                  <p class="hoja__sangria">{{ parrafo }}</p>
                 }
                 <div class="hoja__firma">
-                  <p class="hoja__firma-nombre">{{ actual.textos.carta.firma[0] }}</p>
-                  <p class="hoja__firma-cargo">{{ actual.textos.carta.firma[1] }}</p>
+                  @for (linea of actual.textos.carta.firma; track $index) {
+                    <p [class.hoja__firma-nombre]="$first">{{ linea }}</p>
+                  }
                 </div>
+                <p class="hoja__pie">{{ actual.textos.carta.pie }}</p>
               </article>
-            } @else {
-              <p class="bloqueo">El centro no tiene un acuerdo de colaboración vigente (Art. 15).</p>
-            }
-          </div>
-        </mat-tab>
+            </div>
+          </mat-tab>
 
-        <mat-tab label="Seguro escolar">
-          <div class="hoja-contenedor">
-            @if (actual.con_acuerdo) {
+          <mat-tab label="Seguro escolar">
+            <div class="hoja-contenedor">
               <article class="hoja">
                 <div class="membrete">
-                  <img src="logos/uta-horizontal.png" alt="Universidad de Tarapacá" width="145" height="40" />
-                  <p>{{ actual.textos.seguro.unidad }}</p>
+                  <img src="logos/membrete-uta.png" alt="Universidad de Tarapacá" width="174" height="38" />
+                  <img src="logos/membrete-dm.png" alt="Diseño Multimedia" width="97" height="37" />
                 </div>
+                <p class="hoja__fecha">{{ actual.textos.seguro.lugar_fecha }}</p>
                 <h3 class="hoja__titulo">{{ actual.textos.seguro.titulo }}</h3>
                 <dl class="hoja__datos">
                   @for (dato of actual.textos.seguro.datos | keyvalue: sinOrden; track dato.key) {
@@ -89,41 +129,28 @@
                 @for (seccion of actual.textos.seguro.secciones; track seccion.titulo) {
                   <h4>{{ seccion.titulo }}</h4>
                   @if (seccion.texto) {
-                    <p>{{ seccion.texto }}</p>
+                    <p class="hoja__sangria">{{ seccion.texto }}</p>
                   }
                   @if (seccion.pasos) {
-                    <ol>
+                    <ul>
                       @for (paso of seccion.pasos; track $index) {
                         <li>{{ paso }}</li>
                       }
-                    </ol>
+                    </ul>
                   }
                 }
+                <p class="hoja__pie">{{ actual.textos.seguro.pie }}</p>
               </article>
-            } @else {
-              <p class="bloqueo">El centro no tiene un acuerdo de colaboración vigente (Art. 15).</p>
-            }
-          </div>
-        </mat-tab>
+            </div>
+          </mat-tab>
+        </mat-tab-group>
 
-        <mat-tab label="Acuerdo">
-          <div class="tarjeta__cuerpo">
-            @if (actual.centro_interno) {
-              <p class="bloqueo">No aplica: {{ actual.centro }} es un centro interno.</p>
-            } @else {
-              <app-acuerdo-centro [centroId]="actual.centro_id" [acuerdo]="actual.acuerdo" (guardado)="acuerdoGuardado()" />
-            }
-          </div>
-        </mat-tab>
-      </mat-tab-group>
-
-      @if (tipoActual()) {
         <div class="pie">
-          <button matButton="outlined" type="button" [disabled]="ocupado() || !actual.con_acuerdo" (click)="descargarPdf()">
+          <button matButton="outlined" type="button" [disabled]="ocupado()" (click)="descargarPdf()">
             <mat-icon>picture_as_pdf</mat-icon>
             Descargar PDF
           </button>
-          <button matButton="filled" type="button" [disabled]="ocupado() || !actual.con_acuerdo" (click)="enviar()">
+          <button matButton="filled" type="button" [disabled]="ocupado()" (click)="enviar()">
             <mat-icon>send</mat-icon>
             {{ ocupado() ? 'Enviando…' : 'Enviar al estudiante y al centro' }}
           </button>
@@ -132,3 +159,12 @@
     </section>
   }
 </div>
+
+<ng-template #plantillaAcuerdo>
+  @if (detalle(); as actual) {
+    <h2 mat-dialog-title>Acuerdo con {{ actual.centro }}</h2>
+    <mat-dialog-content>
+      <app-acuerdo-centro [centroId]="actual.centro_id" [acuerdo]="actual.acuerdo" (guardado)="acuerdoGuardado()" />
+    </mat-dialog-content>
+  }
+</ng-template>

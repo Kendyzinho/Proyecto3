@@ -43,7 +43,7 @@ class UsuarioService
         });
     }
 
-    public function editar(User $usuario, array $datos, User $secretaria): User
+    public function editar(User $usuario, array $datos, User $responsable): User
     {
         $esEstudiante = $usuario->rol === null;
 
@@ -51,8 +51,8 @@ class UsuarioService
         if ($esEstudiante !== ($datos['rol'] === 'estudiante')) {
             throw ValidationException::withMessages(['rol' => 'Un estudiante no puede pasar a ser personal ni al revés.']);
         }
-        if ($usuario->is($secretaria) && $datos['rol'] !== 'secretaria') {
-            throw ValidationException::withMessages(['rol' => 'No puedes quitarte el rol de secretaria.']);
+        if ($usuario->is($responsable) && $datos['rol'] !== $responsable->rol) {
+            throw ValidationException::withMessages(['rol' => 'No puedes cambiar tu propio rol.']);
         }
 
         DB::transaction(function () use ($usuario, $datos, $esEstudiante) {
@@ -72,9 +72,9 @@ class UsuarioService
     }
 
     // Para egresados, retirados o personal que ya no está en la carrera
-    public function desactivar(User $usuario, string $motivo, User $secretaria): User
+    public function desactivar(User $usuario, string $motivo, User $responsable): User
     {
-        if ($usuario->is($secretaria)) {
+        if ($usuario->is($responsable)) {
             throw ValidationException::withMessages(['motivo' => 'No puedes desactivar tu propia cuenta.']);
         }
 
