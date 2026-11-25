@@ -53,9 +53,11 @@ export class Marco {
     return this.perfil() && rol ? GRUPOS_POR_ROL[rol] ?? '' : this.grupo();
   });
   protected readonly menuVisible = computed<OpcionMenu[]>(() => {
-    if (!this.perfil()) return this.menu() ?? [];
     const rol = this.auth.usuario()?.rol;
-    return rol ? MENUS_POR_ROL[rol] ?? [] : [];
+    if (this.perfil()) return rol ? MENUS_POR_ROL[rol] ?? [] : [];
+
+    // Usa el menú de la ruta si está definido; el menú por rol sirve como respaldo.
+    return this.menu() ?? (rol ? MENUS_POR_ROL[rol] ?? [] : []);
   });
 
   constructor() {
