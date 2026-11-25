@@ -5,6 +5,7 @@ export const MENUS_POR_ROL: Record<'coordinadora' | 'secretaria' | 'jefe' | 'est
     { texto: 'Inicio', icono: 'home', ruta: '/coordinacion' },
     { texto: 'Prácticas', icono: 'work', ruta: '/coordinacion/asignaciones' },
     { texto: 'Solicitudes', icono: 'inbox', ruta: '/coordinacion/solicitudes' },
+    { texto: 'Alertas', icono: 'notifications_active', ruta: '/coordinacion/alertas' },
     { texto: 'Centros de práctica', icono: 'domain', ruta: '/coordinacion/centros' },
     { texto: 'Documentos', icono: 'description', ruta: '/coordinacion/documentos' },
   ],

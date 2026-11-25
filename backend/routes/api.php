@@ -16,6 +16,8 @@ use App\Models\Periodo;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\MallaController;
 use App\Http\Controllers\ConfirmacionSemanalController;
+use App\Http\Controllers\AlertaController;
+
 
 
 
@@ -59,6 +61,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Fechas y horario de las prácticas confirmadas (Art. 17)
         Route::get('/calendarios', [CalendarioPracticaController::class, 'index']);
+                // HU-14: alertas tempranas (luces rojas y amarillas)
+        Route::get('/alertas', [AlertaController::class, 'index']);
+        Route::post('/alertas/{alerta}/atender', [AlertaController::class, 'atender']);
         Route::put('/calendarios/{practica}', [CalendarioPracticaController::class, 'update']);
     });
     Route::post('/logout', [AuthController::class, 'logout']);

@@ -1,0 +1,86 @@
+.filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.vacio {
+  margin: 0;
+  padding: 24px;
+  color: #5b6b80;
+}
+
+.alertas {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.alerta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 24px;
+  border-top: 1px solid #e2e8f0;
+}
+
+// La luz del semáforo
+.luz {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+}
+
+.luz--roja {
+  background: #d93025;
+  box-shadow: 0 0 0 4px #fdecea;
+}
+
+.luz--naranja {
+  background: #e8710a;
+  box-shadow: 0 0 0 4px #fdf0e4;
+}
+
+.luz--amarilla {
+  background: #edb01c;
+  box-shadow: 0 0 0 4px #fdf6e3;
+}
+
+.alerta__texto {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  color: #1e293b;
+  font-size: 14px;
+}
+
+.alerta__practica {
+  color: #5b6b80;
+  font-size: 13px;
+}
+
+.alerta__accion {
+  flex: none;
+}
+
+.nota {
+  margin: 16px 4px 0;
+  color: #5b6b80;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+@media (max-width: 700px) {
+  .alerta {
+    flex-wrap: wrap;
+    padding: 16px;
+  }
+
+  .alerta__accion {
+    width: 100%;
+    padding-left: 30px;
+  }
+}
