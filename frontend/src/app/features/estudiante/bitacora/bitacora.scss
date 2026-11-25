@@ -11,9 +11,10 @@
 .tarjeta__cuerpo { padding: 20px 24px; }
 .modos, .acciones { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
 .modo--activo { border-color: #355085; color: #355085; background: #e8f1fb; }
-.campos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.campos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; align-items: start; }
 .campos mat-form-field, .campo-completo { width: 100%; }
 .campo-completo { display: block; }
+.ayuda-campo { margin: -8px 0 18px; color: #5b6b80; font-size: 13px; line-height: 1.45; overflow-wrap: anywhere; }
 .acciones { margin: 8px 0 0; }
 .tabla-contenedor { overflow-x: auto; }
 .tabla-bitacora { width: 100%; border-collapse: collapse; }
@@ -28,7 +29,8 @@
 .aviso--exito { background: #f0fdf4; color: #15803d; }
 .aviso--info { background: #eff6ff; color: #355085; }
 @media (max-width: 760px) {
-  .campos { grid-template-columns: 1fr; gap: 0; }
+  .campos { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .ayuda-campo { margin: -4px 0 18px; }
   .tarjeta__cuerpo, .progreso { padding: 16px; }
   .tabla-bitacora th, .tabla-bitacora td { padding: 12px; }
 }

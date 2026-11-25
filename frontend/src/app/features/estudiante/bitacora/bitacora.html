@@ -47,26 +47,32 @@
           <div class="campos">
             <mat-form-field>
               <mat-label>Fecha de la jornada</mat-label>
-              <input matInput type="date" name="fecha" [(ngModel)]="fecha" [min]="actual.fecha_inicio" [max]="fechaMaxima()" [disabled]="registroEditado() !== null || guardando()" required />
+              <input #fechaJornada matInput type="date" name="fecha" [(ngModel)]="fecha" [min]="actual.fecha_inicio" [max]="fechaMaxima()" [disabled]="registroEditado() !== null || guardando()" required />
+              <button mat-icon-button matSuffix type="button" aria-label="Abrir calendario de la jornada" title="Abrir calendario" [disabled]="registroEditado() !== null || guardando()" (click)="abrirSelector(fechaJornada)"><mat-icon>calendar_month</mat-icon></button>
             </mat-form-field>
 
             @if (modo() === 'jornada') {
               <mat-form-field>
                 <mat-label>Hora de entrada</mat-label>
-                <input matInput type="time" name="horaEntrada" [(ngModel)]="horaEntrada" required />
+                <input #entrada matInput type="time" name="horaEntrada" [(ngModel)]="horaEntrada" required />
+                <button mat-icon-button matSuffix type="button" aria-label="Abrir selector de hora de entrada" title="Abrir reloj" (click)="abrirSelector(entrada)"><mat-icon>schedule</mat-icon></button>
               </mat-form-field>
               <mat-form-field>
                 <mat-label>Hora de salida</mat-label>
-                <input matInput type="time" name="horaSalida" [(ngModel)]="horaSalida" required />
+                <input #salida matInput type="time" name="horaSalida" [(ngModel)]="horaSalida" required />
+                <button mat-icon-button matSuffix type="button" aria-label="Abrir selector de hora de salida" title="Abrir reloj" (click)="abrirSelector(salida)"><mat-icon>schedule</mat-icon></button>
               </mat-form-field>
             } @else {
               <mat-form-field>
                 <mat-label>Recuperación programada</mat-label>
-                <input matInput type="date" name="recuperacion" [(ngModel)]="recuperacionProgramada" [min]="fechaMinRecuperacion()" [max]="actual.fecha_fin" required />
-                <mat-hint>Acuerda la fecha con el centro y Coordinación.</mat-hint>
+                <input #fechaRecuperacion matInput type="date" name="recuperacion" [(ngModel)]="recuperacionProgramada" [min]="fechaMinRecuperacion()" [max]="actual.fecha_fin" aria-describedby="ayuda-recuperacion" required />
+                <button mat-icon-button matSuffix type="button" aria-label="Abrir calendario de recuperación" title="Abrir calendario" (click)="abrirSelector(fechaRecuperacion)"><mat-icon>calendar_month</mat-icon></button>
               </mat-form-field>
             }
           </div>
+          @if (modo() === 'inasistencia') {
+            <p id="ayuda-recuperacion" class="ayuda-campo">Acuerda la fecha con el centro y Coordinación.</p>
+          }
 
           @if (modo() === 'jornada') {
             <mat-form-field class="campo-completo">
@@ -77,9 +83,9 @@
           } @else {
             <mat-form-field class="campo-completo">
               <mat-label>Justificación</mat-label>
-              <textarea matInput name="justificacion" rows="3" maxlength="3000" [(ngModel)]="justificacion" required></textarea>
-              <mat-hint>Informa la inasistencia dentro de las 24 horas. Los respaldos, cuando correspondan, se entregan por el canal institucional definido.</mat-hint>
+              <textarea matInput name="justificacion" rows="3" maxlength="3000" [(ngModel)]="justificacion" aria-describedby="ayuda-justificacion" required></textarea>
             </mat-form-field>
+            <p id="ayuda-justificacion" class="ayuda-campo">Informa la inasistencia dentro de las 24 horas. Los respaldos, cuando correspondan, se entregan por el canal institucional definido.</p>
           }
 
           <div class="acciones">
@@ -112,7 +118,7 @@
                   @if (registro.recuperacion_programada) { <small>Recuperación: {{ fechaLegible(registro.recuperacion_programada) }}</small> }
                 </td>
                 <td><span class="estado" [class]="claseValidacion(registro.validacion)">{{ etiquetaValidacion(registro.validacion) }}</span></td>
-                <td>@if (registro.editable && (actual.puede_registrar || registro.validacion === 'rechazado')) { <button mat-button type="button" (click)="editar(registro)">Editar</button> } @else { <span>—</span> }</td>
+                <td>@if (registro.editable && (actual.puede_registrar || registro.validacion === 'rechazado')) { <button mat-icon-button type="button" aria-label="Corregir registro" title="Corregir registro" (click)="editar(registro)"><mat-icon>edit</mat-icon></button> } @else { <span>—</span> }</td>
               </tr>
             }
           </tbody>
