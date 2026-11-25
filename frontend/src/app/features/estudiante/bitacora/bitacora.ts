@@ -120,7 +120,7 @@ export class Bitacora {
   }
 
   etiquetaValidacion(validacion: string): string {
-    return validacion === 'confirmado' ? 'Confirmado' : validacion === 'rechazado' ? 'Rechazado · puedes corregir' : 'Pendiente de confirmación semanal';
+    return validacion === 'confirmado' ? 'Confirmado' : validacion === 'rechazado' ? 'Rechazado' : 'Pendiente de confirmación semanal';
   }
 
   claseValidacion(validacion: string): string {
@@ -129,6 +129,16 @@ export class Bitacora {
 
   fechaMaxima(): string {
     return fechaLocal();
+  }
+
+  abrirSelector(input: HTMLInputElement): void {
+    if (typeof input.showPicker === 'function') {
+      input.showPicker();
+      return;
+    }
+
+    input.focus();
+    input.click();
   }
 
   fechaLegible(fecha: string): string {
