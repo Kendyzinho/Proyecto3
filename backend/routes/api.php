@@ -16,7 +16,6 @@ use App\Http\Controllers\SolicitudPracticaController;
 use App\Http\Controllers\UsuarioController;
 use App\Models\Periodo;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\MallaController;
 use App\Http\Controllers\ConfirmacionSemanalController;
 use App\Http\Controllers\AlertaController;
 
