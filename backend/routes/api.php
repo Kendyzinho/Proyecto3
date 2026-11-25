@@ -1,12 +1,14 @@
 <?php
 
-use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BitacoraController;
 use App\Http\Controllers\PortafolioController;
 use App\Http\Controllers\AsignacionPracticaController;
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CalendarioPracticaController;
 use App\Http\Controllers\CentroPracticaController;
 use App\Http\Controllers\DocumentoController;
+use App\Http\Controllers\ListadoPracticasController;
+use App\Http\Controllers\MallaController;
 use App\Http\Controllers\NominaController;
 use App\Http\Controllers\PracticaExcepcionalController;
 use App\Http\Controllers\PercepcionCentroController;
@@ -65,6 +67,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/alertas', [AlertaController::class, 'index']);
         Route::post('/alertas/{alerta}/atender', [AlertaController::class, 'atender']);
         Route::put('/calendarios/{practica}', [CalendarioPracticaController::class, 'update']);
+
+        Route::get('/practicas', [ListadoPracticasController::class, 'index']);
+        Route::get('/practicas/exportar', [ListadoPracticasController::class, 'exportar']);
     });
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
@@ -91,7 +96,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/{usuario}/reactivar', [UsuarioController::class, 'reactivar']);
     });
     // HU-06: mallas y prácticas (Jefe de Carrera)
-Route::middleware('rol:jefe')->group(function () {
+    Route::middleware('rol:jefe')->group(function () {
         Route::get('/mallas', [MallaController::class, 'index']);
         Route::post('/mallas', [MallaController::class, 'store']);
         Route::post('/mallas/{malla}/publicar', [MallaController::class, 'publicar']);
