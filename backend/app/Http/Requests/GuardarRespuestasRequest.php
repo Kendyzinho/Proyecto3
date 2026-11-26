@@ -4,12 +4,12 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-// HU-16: respuestas de la pauta de una práctica; con `enviar` en falso se guarda como borrador
-class GuardarPautaRequest extends FormRequest
+// HU-16 y HU-19: respuestas de un instrumento (pauta o informe); con `enviar` en falso se guarda como borrador
+class GuardarRespuestasRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true; // la ruta ya exige el rol de Coordinadora o Jefe de Carrera
+        return true; // la ruta ya exige el rol; el servicio revisa a quién pertenece la práctica
     }
 
     // La forma se valida aquí para que un dato mal formado dé 422 y no un error del servidor;

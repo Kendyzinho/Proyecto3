@@ -16,7 +16,7 @@ export const routes: Routes = [
   { path: 'estudiante', canMatch: [authGuard], data: { rol: 'estudiante' }, loadChildren: () => import('./features/estudiante/estudiante.routes') },
   { path: 'secretaria', canMatch: [authGuard], data: { rol: 'secretaria' }, loadChildren: () => import('./features/secretaria/secretaria.routes') },
   { path: 'jefatura', canMatch: [authGuard], data: { rol: 'jefe' }, loadChildren: () => import('./features/jefatura/jefatura.routes') },
-  // El supervisor no tiene cuenta: entra con el enlace que le llega por correo (HU-19, HU-26)
+  // Supervisor(a): HU-19 con su cuenta (las rutas protegen cada pantalla); HU-26 sigue con su enlace firmado
   { path: 'supervisor', loadChildren: () => import('./features/supervisor/supervisor.routes') },
   { path: '**', redirectTo: '' },
 ];

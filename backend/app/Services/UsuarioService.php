@@ -16,7 +16,9 @@ class UsuarioService
     // Primero las cuentas activas y después las desactivadas, cada grupo por nombre
     public function listar(): Collection
     {
+        // HU-19: las cuentas de supervisor(a) no se administran aquí; las maneja el registro del centro
         return User::with('estudiante')
+            ->where(fn ($q) => $q->whereNull('rol')->orWhere('rol', '!=', 'supervisor'))
             ->orderBy('name')
             ->get()
             ->sortBy(fn (User $u) => $u->fecha_baja !== null)
@@ -45,6 +47,7 @@ class UsuarioService
 
     public function editar(User $usuario, array $datos, User $responsable): User
     {
+        $this->noEsSupervisor($usuario);
         $esEstudiante = $usuario->rol === null;
 
         // El estudiante tiene datos propios (nómina, prácticas); no se convierte en personal ni al revés
@@ -74,6 +77,7 @@ class UsuarioService
     // Para egresados, retirados o personal que ya no está en la carrera
     public function desactivar(User $usuario, string $motivo, User $responsable): User
     {
+        $this->noEsSupervisor($usuario);
         if ($usuario->is($responsable)) {
             throw ValidationException::withMessages(['motivo' => 'No puedes desactivar tu propia cuenta.']);
         }
@@ -87,9 +91,19 @@ class UsuarioService
 
     public function reactivar(User $usuario): User
     {
+        $this->noEsSupervisor($usuario);
         $usuario->update(['fecha_baja' => null, 'motivo_baja' => null]);
 
         return $usuario->load('estudiante');
+    }
+
+    private function noEsSupervisor(User $usuario): void
+    {
+        if ($usuario->esSupervisor()) {
+            throw ValidationException::withMessages([
+                'usuario' => 'La cuenta de un supervisor(a) se activa o se da de baja desde la ficha de su centro de práctica.',
+            ]);
+        }
     }
 
     // En la base el estudiante no tiene rol (columna vacía)

@@ -7,6 +7,7 @@ use App\Models\CentroPractica;
 use App\Models\Periodo;
 use App\Models\RequerimientoCentro;
 use App\Models\Supervisor;
+use App\Services\CuentaSupervisorService;
 use App\Support\Rut;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -184,7 +185,7 @@ class CentroPracticaController extends Controller
         return response()->json(['data' => $this->serializeCentro($this->catalogQuery()->findOrFail($centroPractica->id), true)], 201);
     }
 
-    public function activarSupervisor(Request $request, CentroPractica $centroPractica, Supervisor $supervisor): JsonResponse
+    public function activarSupervisor(Request $request, CentroPractica $centroPractica, Supervisor $supervisor, CuentaSupervisorService $cuentas): JsonResponse
     {
         $this->requireCoordinator($request);
         abort_unless((int) $supervisor->centro_id === (int) $centroPractica->id, 404);
@@ -196,19 +197,33 @@ class CentroPracticaController extends Controller
             throw ValidationException::withMessages(['supervisor' => 'Un supervisor dado de baja no se puede reactivar desde esta acción.']);
         }
 
-        $supervisor->update(['fecha_alta' => today()->toDateString(), 'fecha_baja' => null]);
+        // HU-19: al activarlo se crea o vincula su cuenta; si el correo es de una cuenta interna no se activa nada
+        $invitar = DB::transaction(function () use ($supervisor, $cuentas) {
+            $supervisor->update(['fecha_alta' => today()->toDateString(), 'fecha_baja' => null]);
 
-        return response()->json(['data' => $this->serializeCentro($this->catalogQuery()->findOrFail($centroPractica->id), true)]);
+            return $cuentas->asegurar($supervisor);
+        });
+        $mensaje = 'Supervisor(a) activado.';
+        if ($invitar) {
+            $mensaje = $cuentas->invitar($invitar)
+                ? 'Supervisor(a) activado. Le enviamos un correo para crear su contraseña.'
+                : 'Supervisor(a) activado. No se pudo enviar el correo: puede crear su contraseña con "¿Olvidaste tu contraseña?".';
+        }
+
+        return response()->json(['data' => $this->serializeCentro($this->catalogQuery()->findOrFail($centroPractica->id), true), 'message' => $mensaje]);
     }
 
-    public function darDeBajaSupervisor(Request $request, CentroPractica $centroPractica, Supervisor $supervisor): JsonResponse
+    public function darDeBajaSupervisor(Request $request, CentroPractica $centroPractica, Supervisor $supervisor, CuentaSupervisorService $cuentas): JsonResponse
     {
         $this->requireCoordinator($request);
         abort_unless((int) $supervisor->centro_id === (int) $centroPractica->id, 404);
         abort_if($supervisor->fecha_baja && $supervisor->fecha_baja->lessThanOrEqualTo(today()), 422, 'El supervisor ya está dado de baja.');
 
         // Conserva las prácticas existentes; la elegibilidad futura exige que el supervisor esté activo.
-        $supervisor->update(['fecha_baja' => today()->toDateString()]);
+        DB::transaction(function () use ($supervisor, $cuentas) {
+            $supervisor->update(['fecha_baja' => today()->toDateString()]);
+            $cuentas->alDarDeBaja($supervisor); // HU-19: su cuenta se cierra si ya no supervisa nada
+        });
 
         return response()->json(['data' => $this->serializeCentro($this->catalogQuery()->findOrFail($centroPractica->id), true)]);
     }

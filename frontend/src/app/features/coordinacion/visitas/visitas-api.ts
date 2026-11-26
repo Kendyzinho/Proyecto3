@@ -2,6 +2,10 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
 
+import { FormularioInstrumento, RespuestaGuardada, RespuestaItem } from '../../../core/models/instrumento';
+
+export type { FormularioInstrumento, ItemInstrumento, OpcionInstrumento, RespuestaGuardada, RespuestaItem } from '../../../core/models/instrumento';
+
 export type ModalidadVisita = 'terreno' | 'virtual';
 export type EstadoVisita = 'agendada' | 'realizada' | 'cancelada';
 
@@ -24,40 +28,6 @@ export interface Visita {
   centro: CentroVisita | null;
   practicas: PracticaVisita[];
   pautas: { enviadas: number; total: number }; // HU-16
-}
-
-// HU-16: formulario de un instrumento (plantilla → criterios → opciones)
-export interface OpcionInstrumento {
-  id: number;
-  etiqueta: string;
-  valor: number | null;
-}
-
-export interface ItemInstrumento {
-  id: number;
-  clave: string;
-  enunciado: string;
-  tipo: string; // 'escala' se responde con una opción; 'texto', escribiendo
-  obligatorio: boolean;
-  seccion: string | null;
-  opciones: OpcionInstrumento[];
-}
-
-export interface FormularioInstrumento {
-  plantilla_id: number;
-  items: ItemInstrumento[];
-}
-
-export interface RespuestaItem {
-  item_id: number;
-  opcion_id?: number | null;
-  texto?: string | null;
-}
-
-export interface RespuestaGuardada extends FormularioInstrumento {
-  respuesta_id: number;
-  enviada_en: string | null; // sin fecha es un borrador
-  respuestas: RespuestaItem[];
 }
 
 export interface PracticaPauta extends PracticaVisita {

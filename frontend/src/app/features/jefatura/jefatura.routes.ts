@@ -38,6 +38,12 @@ export default [
         title: 'Pauta de la visita',
         loadComponent: () => import('../coordinacion/visitas/pauta-visita').then((m) => m.PautaVisita),
       },
+      { path: 'informes', title: 'Informes confidenciales', loadComponent: () => import('../coordinacion/informes/informes').then((m) => m.Informes) },
+      {
+        path: 'informes/:practica',
+        title: 'Informe confidencial',
+        loadComponent: () => import('../coordinacion/informes/informe-confidencial').then((m) => m.InformeConfidencial),
+      },
       { path: 'usuarios', title: 'Usuarios', loadComponent: () => import('../secretaria/usuarios/usuarios').then((m) => m.Usuarios) },
       { path: 'nomina', title: 'Nómina de estudiantes', loadComponent: () => import('../secretaria/nomina/nomina').then((m) => m.Nomina) },
       { path: 'documentos', title: 'Documentos', loadComponent: () => import('../secretaria/documentos/documentos').then((m) => m.Documentos) },
