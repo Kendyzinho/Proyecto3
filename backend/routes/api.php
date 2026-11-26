@@ -7,6 +7,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CalendarioPracticaController;
 use App\Http\Controllers\CentroPracticaController;
 use App\Http\Controllers\DocumentoController;
+use App\Http\Controllers\FichaEstudianteController;
 use App\Http\Controllers\ListadoPracticasController;
 use App\Http\Controllers\MallaController;
 use App\Http\Controllers\NominaController;
@@ -50,6 +51,10 @@ Route::middleware('auth:sanctum')->group(function () {
     });
     // El Jefe de Carrera puede hacer todo lo que hacen la Coordinadora y la Secretaría (reunión 4)
     Route::middleware('rol:coordinadora,jefe')->prefix('coordinacion')->group(function () {
+        // HU-17: expediente consolidado de una práctica para Coordinación y Jefatura.
+        Route::get('/practicas/{practica}/ficha', [FichaEstudianteController::class, 'show']);
+        // Solo lectura: permite a Jefatura abrir los PDF desde el expediente HU-17.
+        Route::get('/practicas/{practica}/documentos/{tipo}', [DocumentoController::class, 'descargar']);
         Route::get('/metricas', [PracticaExcepcionalController::class, 'metricas']);
         Route::get('/practicas-excepcionales/catalogo', [PracticaExcepcionalController::class, 'catalogo']);
         Route::post('/practicas-excepcionales', [PracticaExcepcionalController::class, 'store']);
