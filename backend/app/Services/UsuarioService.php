@@ -16,7 +16,9 @@ class UsuarioService
     // Primero las cuentas activas y después las desactivadas, cada grupo por nombre
     public function listar(): Collection
     {
+        // HU-19: las cuentas de supervisor(a) no se administran aquí; las maneja el registro del centro
         return User::with('estudiante')
+            ->where(fn ($q) => $q->whereNull('rol')->orWhere('rol', '!=', 'supervisor'))
             ->orderBy('name')
             ->get()
             ->sortBy(fn (User $u) => $u->fecha_baja !== null)
@@ -43,16 +45,17 @@ class UsuarioService
         });
     }
 
-    public function editar(User $usuario, array $datos, User $secretaria): User
+    public function editar(User $usuario, array $datos, User $responsable): User
     {
+        $this->noEsSupervisor($usuario);
         $esEstudiante = $usuario->rol === null;
 
         // El estudiante tiene datos propios (nómina, prácticas); no se convierte en personal ni al revés
         if ($esEstudiante !== ($datos['rol'] === 'estudiante')) {
             throw ValidationException::withMessages(['rol' => 'Un estudiante no puede pasar a ser personal ni al revés.']);
         }
-        if ($usuario->is($secretaria) && $datos['rol'] !== 'secretaria') {
-            throw ValidationException::withMessages(['rol' => 'No puedes quitarte el rol de secretaria.']);
+        if ($usuario->is($responsable) && $datos['rol'] !== $responsable->rol) {
+            throw ValidationException::withMessages(['rol' => 'No puedes cambiar tu propio rol.']);
         }
 
         DB::transaction(function () use ($usuario, $datos, $esEstudiante) {
@@ -72,9 +75,10 @@ class UsuarioService
     }
 
     // Para egresados, retirados o personal que ya no está en la carrera
-    public function desactivar(User $usuario, string $motivo, User $secretaria): User
+    public function desactivar(User $usuario, string $motivo, User $responsable): User
     {
-        if ($usuario->is($secretaria)) {
+        $this->noEsSupervisor($usuario);
+        if ($usuario->is($responsable)) {
             throw ValidationException::withMessages(['motivo' => 'No puedes desactivar tu propia cuenta.']);
         }
 
@@ -87,9 +91,19 @@ class UsuarioService
 
     public function reactivar(User $usuario): User
     {
+        $this->noEsSupervisor($usuario);
         $usuario->update(['fecha_baja' => null, 'motivo_baja' => null]);
 
         return $usuario->load('estudiante');
+    }
+
+    private function noEsSupervisor(User $usuario): void
+    {
+        if ($usuario->esSupervisor()) {
+            throw ValidationException::withMessages([
+                'usuario' => 'La cuenta de un supervisor(a) se activa o se da de baja desde la ficha de su centro de práctica.',
+            ]);
+        }
     }
 
     // En la base el estudiante no tiene rol (columna vacía)

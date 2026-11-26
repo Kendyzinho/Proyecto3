@@ -21,6 +21,7 @@ export const INICIO_POR_ROL: Record<Rol, string> = {
   coordinadora: '/coordinacion',
   jefe: '/jefatura',
   estudiante: '/estudiante',
+  supervisor: '/supervisor',
 };
 
 @Injectable({

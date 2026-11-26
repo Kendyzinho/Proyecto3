@@ -25,19 +25,22 @@ export interface PracticaPorFormalizar {
   seguro: { estado: EstadoDocumento; documento_id: number | null };
 }
 
+// Textos de la carta y la guía con el formato oficial de la Carrera (logos UTA y DM, firma centrada, pie institucional)
 export interface ContenidoCarta {
-  unidad: string;
+  titulo: string;
   lugar_fecha: string;
   destinatario: string[];
   parrafos: string[];
-  firma: [string, string];
+  firma: string[];
+  pie: string;
 }
 
 export interface ContenidoSeguro {
-  unidad: string;
   titulo: string;
+  lugar_fecha: string;
   datos: Record<string, string>;
   secciones: { titulo: string; texto?: string; pasos?: string[] }[];
+  pie: string;
 }
 
 export interface Acuerdo {
@@ -87,6 +90,11 @@ export class DocumentosApi {
     return this.http.get(`/api/practicas/${practicaId}/documentos/${tipo}`, { responseType: 'blob' });
   }
 
+  // Descarga de solo lectura desde HU-17 para Coordinación y Jefatura.
+  pdfFicha(practicaId: number, tipo: TipoDocumento): Observable<Blob> {
+    return this.http.get(`/api/coordinacion/practicas/${practicaId}/documentos/${tipo}`, { responseType: 'blob' });
+  }
+
   enviar(practicaId: number): Observable<{ destinatarios: string[] }> {
     return this.http.post<{ destinatarios: string[] }>(`/api/practicas/${practicaId}/documentos/enviar`, {});
   }
@@ -101,6 +109,11 @@ export class DocumentosApi {
       formulario.append('archivo', datos.archivo);
     }
     return this.http.post<{ id: number; estado: EstadoAcuerdo }>(`/api/centros/${centroId}/acuerdo`, formulario);
+  }
+
+  // Acuerdo lleno con el formato oficial, para mandarlo a firmar. No queda guardado
+  borradorAcuerdo(centroId: number, datos: Omit<DatosAcuerdo, 'archivo'>): Observable<Blob> {
+    return this.http.post(`/api/centros/${centroId}/acuerdo/borrador`, datos, { responseType: 'blob' });
   }
 
   archivoAcuerdo(acuerdoId: number): Observable<Blob> {
@@ -129,6 +142,31 @@ export function claseEstado(estado: EstadoDocumento): string {
     en_espera: 'estado--neutro',
   };
   return clases[estado];
+}
+
+// Abre un PDF en una pestaña nueva. La pestaña se abre antes de pedirlo para que el navegador no la bloquee
+export function abrirPdf(peticion: Observable<Blob>, alFallar: (mensaje: string) => void): void {
+  const ventana = window.open('', '_blank');
+  if (!ventana) {
+    alFallar('Permite las ventanas emergentes para ver el PDF del acuerdo.');
+    return;
+  }
+  peticion.subscribe({
+    next: (pdf) => {
+      const url = URL.createObjectURL(pdf);
+      ventana.location.href = url;
+      window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    },
+    error: () => {
+      ventana.close();
+      alFallar('No se pudo abrir el PDF del acuerdo. Inténtalo otra vez.');
+    },
+  });
+}
+
+// "2027-12-31" → "31-12-2027"
+export function fechaCorta(fecha: string): string {
+  return fecha.split('-').reverse().join('-');
 }
 
 export const TEXTO_ACUERDO: Record<EstadoAcuerdo, string> = {

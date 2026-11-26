@@ -1,0 +1,127 @@
+<p class="migas">
+  <span>Prácticas</span><span aria-hidden="true">/</span><span>Lista general</span>
+</p>
+
+<div class="encabezado-pagina">
+  <h1>Lista general de prácticas</h1>
+  <button
+    class="exportar"
+    matButton="filled"
+    type="button"
+    [disabled]="!periodo() || cargando() || filasVisibles().length === 0 || exportando()"
+    (click)="exportar()"
+  >
+    <mat-icon>download</mat-icon>
+    {{ exportando() ? 'Exportando…' : 'Exportar a Excel' }}
+  </button>
+</div>
+
+@if (error(); as mensaje) {
+  <div class="aviso aviso--error" role="alert">
+    <span>{{ mensaje }}</span>
+    <button matButton type="button" (click)="recargar()">Reintentar</button>
+  </div>
+}
+
+<section class="tarjeta" aria-labelledby="listado-titulo">
+  <div class="tarjeta__cabecera">
+    <h2 id="listado-titulo">Prácticas {{ periodo()?.nombre }}</h2>
+    <span class="conteo">{{ filasVisibles().length }} de {{ total() }}</span>
+  </div>
+
+  <div class="tarjeta__cuerpo filtros">
+    <mat-form-field class="filtros__buscar" subscriptSizing="dynamic">
+      <mat-label>Buscar</mat-label>
+      <mat-icon matPrefix>search</mat-icon>
+      <input
+        matInput
+        type="search"
+        [value]="busqueda()"
+        (input)="cambiarBusqueda($event)"
+        placeholder="Estudiante, centro, supervisor…"
+      />
+    </mat-form-field>
+
+    <mat-form-field subscriptSizing="dynamic">
+      <mat-label>Tipo de práctica</mat-label>
+      <mat-select [value]="tipoId()" (selectionChange)="tipoId.set($event.value)">
+        <mat-option [value]="null">Todas</mat-option>
+        @for (tipo of tipos(); track tipo.id) {
+          <mat-option [value]="tipo.id">{{ tipo.nombre }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field subscriptSizing="dynamic">
+      <mat-label>Estado</mat-label>
+      <mat-select [value]="estado()" (selectionChange)="estado.set($event.value)">
+        <mat-option [value]="null">Todos</mat-option>
+        @for (estado of estados(); track estado.valor) {
+          <mat-option [value]="estado.valor">{{ estado.texto }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <button matButton type="button" [disabled]="sinFiltros()" (click)="limpiarFiltros()">
+      <mat-icon>filter_alt_off</mat-icon>
+      Limpiar
+    </button>
+  </div>
+
+  @if (cargando()) {
+    <p class="vacio">Cargando prácticas…</p>
+  } @else if (filasVisibles().length === 0) {
+    <p class="vacio">No hay prácticas que coincidan con los filtros.</p>
+  } @else {
+    <div class="tabla-contenedor">
+      <table mat-table class="tabla" [dataSource]="filas" aria-labelledby="listado-titulo">
+        <ng-container matColumnDef="estudiante">
+          <th mat-header-cell *matHeaderCellDef>Estudiante</th>
+          <td mat-cell *matCellDef="let fila">
+            <div class="persona">
+              <div>
+                <div class="persona__nombre">{{ fila.estudiante }}</div>
+                <div class="persona__correo">{{ fila.rut }} · {{ fila.correo }}</div>
+              </div>
+            </div>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="practica">
+          <th mat-header-cell *matHeaderCellDef>Práctica</th>
+          <td mat-cell *matCellDef="let fila">{{ fila.practica }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="centro">
+          <th mat-header-cell *matHeaderCellDef>Centro</th>
+          <td mat-cell *matCellDef="let fila">{{ fila.centro || '—' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="supervisor">
+          <th mat-header-cell *matHeaderCellDef>Supervisor(a)</th>
+          <td mat-cell *matCellDef="let fila">{{ fila.supervisor || '—' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="estado">
+          <th mat-header-cell *matHeaderCellDef>Estado</th>
+          <td mat-cell *matCellDef="let fila">
+            <span class="estado" [class]="claseEstado(fila.estado)">{{ fila.estado_texto }}</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="fechas">
+          <th mat-header-cell *matHeaderCellDef>Fechas</th>
+          <td mat-cell *matCellDef="let fila">{{ textoFechas(fila) }}</td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+        <tr mat-row *matRowDef="let fila; columns: columnas"></tr>
+      </table>
+    </div>
+
+    <div class="pie">
+      <mat-paginator [pageSize]="10" [hidePageSize]="true" />
+      <span class="pie__texto">El archivo exportado respeta los filtros aplicados.</span>
+    </div>
+  }
+</section>

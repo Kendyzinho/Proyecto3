@@ -1,5 +1,6 @@
 // Rol que devuelve la API. Los estudiantes no tienen rol en la tabla users: la API los marca como 'estudiante'.
-export type Rol = 'secretaria' | 'coordinadora' | 'jefe' | 'estudiante';
+// HU-19: el supervisor(a) del centro es un usuario externo con cuenta propia
+export type Rol = 'secretaria' | 'coordinadora' | 'jefe' | 'estudiante' | 'supervisor';
 
 export interface Usuario {
   id: number;
@@ -15,4 +16,5 @@ export const NOMBRE_ROL: Record<Rol, string> = {
   coordinadora: 'Coordinadora de Prácticas',
   jefe: 'Jefe de Carrera',
   estudiante: 'Estudiante Practicante',
+  supervisor: 'Supervisor(a) de Práctica',
 };

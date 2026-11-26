@@ -48,6 +48,12 @@ class DemoSeeder extends Seeder
         $carolina = $this->supervisor($fundacion, 'Carolina Mamani Ticona', 'cmamani@fundacionuta.cl', 'Jefa de Comunicaciones', 'Comunicaciones');
         $rodrigo = $this->supervisor($corfo, 'Rodrigo Álvarez Soto', 'ralvarez@corfo.cl', 'Ejecutivo de Fomento', 'Dirección Regional');
 
+        // HU-19: cuenta de prueba de un supervisor (clave "password", sin correo de invitación)
+        $cuentaSergio = User::updateOrCreate(['email' => strtolower($sergio->correo)], [
+            'name' => $sergio->nombre, 'rol' => 'supervisor', 'password' => 'password', 'fecha_baja' => null,
+        ]);
+        $sergio->update(['user_id' => $cuentaSergio->id]);
+
         // Prácticas confirmadas: aparecen en Documentos y en la ficha de su centro
         $this->practica('21.334.120-0', 'Camila Rojas Pizarro', 'camila.rojas', 2025, 'Laboral I', $paula, '2026-08-17', '2026-09-04', ['Diseño gráfico y diagramación', 'Fotografía'], 'confirmada');
         $this->practica('21.502.611-6', 'Antonia Vega Muñoz', 'antonia.vega', 2024, 'Laboral II', $sergio, '2026-09-14', '2026-10-02', ['Animación digital'], 'confirmada');

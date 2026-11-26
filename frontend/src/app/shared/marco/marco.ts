@@ -10,9 +10,11 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { PaginadorEnEspanol } from '../../core/i18n/paginador';
 import { NOMBRE_ROL } from '../../core/models/usuario';
 import { Auth } from '../../core/services/auth';
+import { TIPOS_ALERTA, fechaLegible } from '../../features/coordinacion/alertas/alertas-api';
 import { MenuUsuario } from '../menu-usuario/menu-usuario';
 import { ContadorSolicitudes } from './contador-solicitudes';
 import { GRUPOS_POR_ROL, MENUS_POR_ROL } from './menus-por-rol';
+import { NotificacionesAlertas } from './notificaciones-alertas';
 
 export interface OpcionMenu {
   texto: string;
@@ -44,6 +46,12 @@ export class Marco {
 
   protected readonly auth = inject(Auth);
   protected readonly contador = inject(ContadorSolicitudes);
+  // HU-14: la campana muestra las alertas abiertas a la Coordinadora
+  protected readonly notificaciones = inject(NotificacionesAlertas);
+  protected readonly tiposAlerta = TIPOS_ALERTA;
+  protected readonly fechaLegible = fechaLegible;
+  protected readonly esCoordinadora = computed(() => this.auth.usuario()?.rol === 'coordinadora');
+
   protected readonly nombreRol = computed(() => {
     const usuario = this.auth.usuario();
     return usuario ? NOMBRE_ROL[usuario.rol] : '';
@@ -53,14 +61,18 @@ export class Marco {
     return this.perfil() && rol ? GRUPOS_POR_ROL[rol] ?? '' : this.grupo();
   });
   protected readonly menuVisible = computed<OpcionMenu[]>(() => {
-    if (!this.perfil()) return this.menu() ?? [];
     const rol = this.auth.usuario()?.rol;
-    return rol ? MENUS_POR_ROL[rol] ?? [] : [];
+    if (this.perfil()) return rol ? MENUS_POR_ROL[rol] ?? [] : [];
+
+    // Usa el menú de la ruta si está definido; el menú por rol sirve como respaldo.
+    return this.menu() ?? (rol ? MENUS_POR_ROL[rol] ?? [] : []);
   });
 
   constructor() {
     effect(() => {
-      if (this.auth.usuario()?.rol === 'coordinadora') this.contador.actualizar();
+      const rol = this.auth.usuario()?.rol;
+      if (rol === 'coordinadora' || rol === 'jefe') this.contador.actualizar();
+      if (rol === 'coordinadora') this.notificaciones.actualizar();
     });
   }
 
@@ -71,6 +83,12 @@ export class Marco {
     }
 
     this.menuColapsado.update((colapsado) => !colapsado);
+  }
+
+  // Abre o cierra el panel; al abrirlo vuelve a pedir las alertas por si salieron nuevas
+  protected alternarNotificaciones(): void {
+    this.notificacionesAbiertas.update((abiertas) => !abiertas);
+    if (this.notificacionesAbiertas() && this.esCoordinadora()) this.notificaciones.actualizar();
   }
 }
 

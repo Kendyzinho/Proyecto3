@@ -13,7 +13,7 @@
     <mat-form-field class="ancho">
       <mat-label>Tipo</mat-label>
       <mat-select formControlName="tipo">
-        <mat-option value="tradicional">Tradicional</mat-option>
+        <mat-option value="tradicional">Sin equipamiento</mat-option>
         <mat-option value="con_equipamiento">Con equipamiento</mat-option>
       </mat-select>
     </mat-form-field>
@@ -26,15 +26,33 @@
     </mat-form-field>
   </div>
 
+
   <div class="fila">
     <mat-form-field class="ancho">
       <mat-label>Inicio de la vigencia</mat-label>
-      <input matInput type="date" formControlName="fecha_inicio" />
+      <input matInput [matDatepicker]="calendarioInicio" formControlName="fecha_inicio" />
+      <mat-datepicker-toggle matIconSuffix [for]="calendarioInicio" />
+      <mat-datepicker #calendarioInicio />
+      @if (form.controls.fecha_inicio.hasError('required')) {
+        <mat-error>Ingresa el inicio de la vigencia.</mat-error>
+      }
     </mat-form-field>
     <mat-form-field class="ancho">
       <mat-label>Término de la vigencia</mat-label>
-      <input matInput type="date" formControlName="fecha_termino" />
+      <input matInput [matDatepicker]="calendarioTermino" formControlName="fecha_termino" />
+      <mat-datepicker-toggle matIconSuffix [for]="calendarioTermino" />
+      <mat-datepicker #calendarioTermino />
+      @if (form.controls.fecha_termino.hasError('required')) {
+        <mat-error>Ingresa el término de la vigencia.</mat-error>
+      }
     </mat-form-field>
+  </div>
+
+  <div class="borrador">
+    <button matButton="outlined" type="button" [disabled]="generando()" (click)="descargarParaFirmar()">
+      <mat-icon>download</mat-icon>
+      {{ generando() ? 'Generando…' : 'Descargar para firmar' }}
+    </button>
   </div>
 
   <input #selector class="oculto" type="file" accept=".pdf" (change)="elegirArchivo($event)" />

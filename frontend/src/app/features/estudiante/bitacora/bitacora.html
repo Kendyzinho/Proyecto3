@@ -1,0 +1,133 @@
+<header class="encabezado-pagina">
+  <div>
+    <p class="eyebrow">ESTUDIANTE</p>
+    <h1>Bitácora de práctica</h1>
+    <p>Registra tus jornadas y revisa las horas confirmadas por tu supervisor.</p>
+  </div>
+</header>
+
+@if (cargando()) { <p role="status">Cargando tu bitácora…</p> }
+@if (error()) { <p class="aviso aviso--error" role="alert">{{ error() }}</p> }
+@if (mensaje()) { <p class="aviso aviso--exito" role="status">{{ mensaje() }}</p> }
+
+@if (!cargando() && practicas().length) {
+  <mat-form-field class="selector-practica">
+    <mat-label>Práctica</mat-label>
+    <mat-select [value]="practicaId" (selectionChange)="seleccionarPractica($event.value)">
+      @for (item of practicas(); track item.id) {
+        <mat-option [value]="item.id">{{ item.tipo_practica }} · {{ item.centro || 'Centro pendiente' }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+}
+
+@if (practica(); as actual) {
+  <section class="tarjeta progreso" aria-label="Avance de horas de práctica">
+    <div class="progreso__resumen">
+      <div>
+        <h2>Horas de práctica</h2>
+        <p><strong>{{ actual.horas_confirmadas }}</strong> de {{ actual.horas_requeridas }} horas confirmadas</p>
+      </div>
+      <span class="progreso__porcentaje">{{ actual.porcentaje_avance }}%</span>
+    </div>
+    <mat-progress-bar mode="determinate" [value]="actual.porcentaje_avance" aria-label="Porcentaje de horas confirmadas"></mat-progress-bar>
+    <p class="nota">Las jornadas pendientes o rechazadas no se suman al avance. El supervisor confirma los registros en su revisión semanal.</p>
+  </section>
+
+  @if (actual.puede_registrar || registroEditado() !== null) {
+    <section id="formulario-bitacora" class="tarjeta">
+      <div class="tarjeta__cabecera"><h2>{{ registroEditado() ? 'Corregir registro' : 'Agregar a la bitácora' }}</h2></div>
+      <div class="tarjeta__cuerpo">
+        <div class="modos" role="group" aria-label="Tipo de registro">
+          <button mat-stroked-button type="button" [disabled]="registroEditado() !== null || guardando()" [class.modo--activo]="modo() === 'jornada'" (click)="cambiarModo('jornada')">Registrar jornada</button>
+          <button mat-stroked-button type="button" [disabled]="registroEditado() !== null || guardando()" [class.modo--activo]="modo() === 'inasistencia'" (click)="cambiarModo('inasistencia')">Informar inasistencia</button>
+        </div>
+
+        <form (ngSubmit)="guardar()">
+          <div class="campos">
+            <mat-form-field>
+              <mat-label>Fecha de la jornada</mat-label>
+              <input #fechaJornada matInput type="date" name="fecha" [(ngModel)]="fecha" [min]="actual.fecha_inicio" [max]="fechaMaxima()" [disabled]="registroEditado() !== null || guardando()" required />
+              <button mat-icon-button matSuffix type="button" aria-label="Abrir calendario de la jornada" title="Abrir calendario" [disabled]="registroEditado() !== null || guardando()" (click)="abrirSelector(fechaJornada)"><mat-icon>calendar_month</mat-icon></button>
+            </mat-form-field>
+
+            @if (modo() === 'jornada') {
+              <mat-form-field>
+                <mat-label>Hora de entrada</mat-label>
+                <input #entrada matInput type="time" name="horaEntrada" [(ngModel)]="horaEntrada" required />
+                <button mat-icon-button matSuffix type="button" aria-label="Abrir selector de hora de entrada" title="Abrir reloj" (click)="abrirSelector(entrada)"><mat-icon>schedule</mat-icon></button>
+              </mat-form-field>
+              <mat-form-field>
+                <mat-label>Hora de salida</mat-label>
+                <input #salida matInput type="time" name="horaSalida" [(ngModel)]="horaSalida" required />
+                <button mat-icon-button matSuffix type="button" aria-label="Abrir selector de hora de salida" title="Abrir reloj" (click)="abrirSelector(salida)"><mat-icon>schedule</mat-icon></button>
+              </mat-form-field>
+            } @else {
+              <mat-form-field>
+                <mat-label>Recuperación programada</mat-label>
+                <input #fechaRecuperacion matInput type="date" name="recuperacion" [(ngModel)]="recuperacionProgramada" [min]="fechaMinRecuperacion()" [max]="actual.fecha_fin" aria-describedby="ayuda-recuperacion" required />
+                <button mat-icon-button matSuffix type="button" aria-label="Abrir calendario de recuperación" title="Abrir calendario" (click)="abrirSelector(fechaRecuperacion)"><mat-icon>calendar_month</mat-icon></button>
+              </mat-form-field>
+            }
+          </div>
+          @if (modo() === 'inasistencia') {
+            <p id="ayuda-recuperacion" class="ayuda-campo">Acuerda la fecha con el centro y Coordinación.</p>
+          }
+
+          @if (modo() === 'jornada') {
+            <mat-form-field class="campo-completo">
+              <mat-label>Actividades realizadas</mat-label>
+              <textarea matInput name="actividades" rows="4" maxlength="5000" [(ngModel)]="actividades" required></textarea>
+              <mat-hint align="end">{{ actividades.length }}/5000</mat-hint>
+            </mat-form-field>
+          } @else {
+            <mat-form-field class="campo-completo">
+              <mat-label>Justificación</mat-label>
+              <textarea matInput name="justificacion" rows="3" maxlength="3000" [(ngModel)]="justificacion" aria-describedby="ayuda-justificacion" required></textarea>
+            </mat-form-field>
+            <p id="ayuda-justificacion" class="ayuda-campo">Informa la inasistencia dentro de las 24 horas. Los respaldos, cuando correspondan, se entregan por el canal institucional definido.</p>
+          }
+
+          <div class="acciones">
+            <button mat-flat-button type="submit" [disabled]="guardando() || (!actual.puede_registrar && !registroEditado())">
+              {{ guardando() ? 'Guardando…' : registroEditado() ? 'Guardar corrección' : modo() === 'jornada' ? 'Guardar jornada' : 'Enviar aviso' }}
+            </button>
+            @if (registroEditado()) { <button mat-button type="button" [disabled]="guardando()" (click)="cancelarEdicion()">Cancelar</button> }
+          </div>
+        </form>
+      </div>
+    </section>
+  } @else {
+    <p class="aviso aviso--info">Esta práctica no admite nuevos registros. Puedes consultar el historial y el avance confirmado.</p>
+  }
+
+  <section class="tarjeta historial">
+    <div class="tarjeta__cabecera"><h2>Jornadas registradas</h2></div>
+    @if (actual.registros.length) {
+      <div class="tabla-contenedor">
+        <table class="tabla-bitacora">
+          <thead><tr><th>Fecha</th><th>Entrada y salida</th><th>Horas</th><th>Actividades o justificación</th><th>Validación</th><th>Acción</th></tr></thead>
+          <tbody>
+            @for (registro of actual.registros; track registro.id) {
+              <tr>
+                <td>{{ fechaLegible(registro.fecha) }}@if (registro.es_recuperacion) { <small>Recuperación</small> }</td>
+                <td>{{ registro.es_inasistencia ? 'Inasistencia' : (registro.hora_entrada || '—') + ' – ' + (registro.hora_salida || '—') }}</td>
+                <td>{{ registro.horas || '—' }}{{ registro.horas ? ' h' : '' }}</td>
+                <td class="relato">
+                  {{ registro.es_inasistencia ? registro.justificacion : registro.actividades }}
+                  @if (registro.recuperacion_programada) { <small>Recuperación: {{ fechaLegible(registro.recuperacion_programada) }}</small> }
+                </td>
+                <td><span class="estado" [class]="claseValidacion(registro.validacion)">{{ etiquetaValidacion(registro.validacion) }}</span></td>
+                <td>@if (registro.editable && (actual.puede_registrar || registro.validacion === 'rechazado')) { <button mat-icon-button type="button" aria-label="Corregir registro" title="Corregir registro" (click)="editar(registro)"><mat-icon>edit</mat-icon></button> } @else { <span>—</span> }</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <p class="vacio">Todavía no tienes jornadas registradas para esta práctica.</p>
+    }
+  </section>
+} @else if (!cargando() && !error()) {
+  <p class="aviso aviso--info">No tienes prácticas confirmadas con fechas registradas para consultar la bitácora.</p>
+}

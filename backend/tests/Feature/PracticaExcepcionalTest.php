@@ -58,7 +58,7 @@ class PracticaExcepcionalTest extends TestCase
 
     public function test_rechaza_otros_roles(): void
     {
-        foreach (['secretaria', 'jefe', null] as $rol) {
+        foreach (['secretaria', null] as $rol) {
             $this->actingAs(User::factory()->create(['rol' => $rol]));
             $this->getJson($this->url.'/catalogo?periodo_id='.$this->habilitacion->periodo_id)->assertForbidden();
             $this->getJson('/api/coordinacion/metricas')->assertForbidden();
@@ -93,6 +93,14 @@ class PracticaExcepcionalTest extends TestCase
         $this->getJson('/api/documentos?periodo_id='.$this->habilitacion->periodo_id)->assertOk()->assertJsonPath('data.0.id', $id);
         $this->actingAs(User::factory()->create(['rol' => 'secretaria']))->getJson('/api/nomina?periodo_id='.$this->habilitacion->periodo_id)
             ->assertOk()->assertJsonCount(1, 'data');
+    }
+
+    public function test_el_jefe_de_carrera_tambien_puede_registrarla(): void
+    {
+        $jefe = User::factory()->create(['rol' => 'jefe']);
+        $id = $this->actingAs($jefe)->postJson($this->url, $this->datos)->assertCreated()->json('data.id');
+
+        $this->assertDatabaseHas('practicas', ['id' => $id, 'registrada_por' => $jefe->id]);
     }
 
     public function test_acepta_modalidades_presencial_y_mixta(): void

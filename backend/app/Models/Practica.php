@@ -6,7 +6,9 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
 
 class Practica extends Model
 {
@@ -82,9 +84,38 @@ class Practica extends Model
         return $this->hasMany(Documento::class);
     }
 
+    // El proceso de cierre futuro debe consultar este requisito antes de registrar «finalizada».
+    public function cumpleRequisitoPercepcionParaFinalizar(): bool
+    {
+        return DB::table('respuestas_instrumento as respuesta')
+            ->join('plantillas_instrumento as plantilla', 'plantilla.id', '=', 'respuesta.plantilla_id')
+            ->where('respuesta.practica_id', $this->id)
+            ->where('plantilla.instrumento', 'encuesta')
+            ->whereExists(fn ($q) => $q->selectRaw('1')->from('items')
+                ->whereColumn('items.plantilla_id', 'plantilla.id')->where('items.clave', 'clima_laboral'))
+            ->whereNotNull('respuesta.fecha_envio')
+            ->exists();
+    }
+
+    public function alertas(): HasMany
+    {
+        return $this->hasMany(Alerta::class);
+    }
+
+    // HU-15: visitas técnicas que revisan esta práctica
+    public function visitas(): BelongsToMany
+    {
+        return $this->belongsToMany(VisitaTecnica::class, 'visita_practica', 'practica_id', 'visita_id')->withTimestamps();
+    }
+
     public function horarios(): HasMany
     {
         return $this->hasMany(Horario::class, 'practica_id');
+    }
+
+    public function registrosDiarios(): HasMany
+    {
+        return $this->hasMany(RegistroDiario::class, 'practica_id')->orderByDesc('fecha')->orderByDesc('id');
     }
 
     // Cada cambio registra el horario completo: el vigente es la versión más reciente

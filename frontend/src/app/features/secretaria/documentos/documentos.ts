@@ -1,7 +1,8 @@
 import { KeyValuePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, TemplateRef, computed, inject, signal, viewChild } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTabsModule } from '@angular/material/tabs';
@@ -9,23 +10,29 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { iniciales } from '../../../shared/marco/marco';
 import { descargar } from '../nomina/nomina-api';
 import { AcuerdoCentro } from './acuerdo-centro';
-import { DetallePractica, DocumentosApi, PeriodoActual, PracticaPorFormalizar, TipoDocumento, claseEstado, textoEstado } from './documentos-api';
+import {
+  DetallePractica, DocumentosApi, PeriodoActual, PracticaPorFormalizar, TipoDocumento, abrirPdf, claseEstado, fechaCorta, textoEstado,
+} from './documentos-api';
 
 const NOMBRES_PDF: Record<TipoDocumento, string> = {
   carta: 'Carta de presentación.pdf',
   seguro: 'Guía del seguro escolar.pdf',
 };
 
-// HU-10: carta de presentación, guía del seguro escolar y acuerdo de colaboración (pantalla 08)
+// HU-10: carta de presentación y guía del seguro escolar (pantalla 08). El acuerdo del centro va en una franja
+// sobre las pestañas porque es un requisito previo: sin acuerdo vigente no se muestran la carta ni el seguro
 @Component({
   selector: 'app-documentos',
-  imports: [KeyValuePipe, MatButtonModule, MatIconModule, MatTabsModule, AcuerdoCentro],
+  imports: [KeyValuePipe, MatButtonModule, MatDialogModule, MatIconModule, MatTabsModule, AcuerdoCentro],
   templateUrl: './documentos.html',
   styleUrl: './documentos.scss',
 })
 export class Documentos {
   private readonly api = inject(DocumentosApi);
   private readonly aviso = inject(MatSnackBar);
+  private readonly dialogo = inject(MatDialog);
+  private readonly plantillaAcuerdo = viewChild.required<TemplateRef<unknown>>('plantillaAcuerdo');
+  private dialogoAcuerdo?: MatDialogRef<unknown>;
 
   protected readonly periodo = signal<PeriodoActual | null>(null);
   protected readonly practicas = signal<PracticaPorFormalizar[]>([]);
@@ -34,13 +41,14 @@ export class Documentos {
   protected readonly pestana = signal(0);
   protected readonly ocupado = signal(false);
 
-  // Pestaña 0 = carta, 1 = seguro; la 2 (acuerdo) no tiene PDF propio
-  protected readonly tipoActual = computed<TipoDocumento | null>(() => (['carta', 'seguro'] as const)[this.pestana()] ?? null);
+  // Pestaña 0 = carta, 1 = seguro
+  protected readonly tipoActual = computed<TipoDocumento>(() => (this.pestana() === 1 ? 'seguro' : 'carta'));
 
   protected readonly iniciales = iniciales;
   protected readonly sinOrden = () => 0; // keyvalue sin reordenar: los datos van en el orden del backend
   protected readonly textoEstado = textoEstado;
   protected readonly claseEstado = claseEstado;
+  protected readonly fechaCorta = fechaCorta;
   protected readonly practicasVisibles = computed(() => this.soloSinAcuerdo()
     ? this.practicas().filter((practica) => !practica.con_acuerdo)
     : this.practicas());
@@ -53,7 +61,6 @@ export class Documentos {
   }
 
   protected elegir(practica: PracticaPorFormalizar): void {
-    if (!practica.con_acuerdo) this.pestana.set(2);
     this.api.detalle(practica.id).subscribe((detalle) => this.detalle.set(detalle));
   }
 
@@ -64,7 +71,7 @@ export class Documentos {
   protected descargarPdf(): void {
     const detalle = this.detalle();
     const tipo = this.tipoActual();
-    if (!detalle || !tipo) {
+    if (!detalle) {
       return;
     }
     this.ocupado.set(true);
@@ -94,7 +101,19 @@ export class Documentos {
     });
   }
 
+  protected abrirAcuerdo(): void {
+    this.dialogoAcuerdo = this.dialogo.open(this.plantillaAcuerdo(), { width: '640px', maxWidth: 'calc(100vw - 24px)', maxHeight: '94dvh' });
+  }
+
+  protected verAcuerdo(): void {
+    const acuerdo = this.detalle()?.acuerdo;
+    if (acuerdo?.tiene_archivo) {
+      abrirPdf(this.api.archivoAcuerdo(acuerdo.id), (texto) => this.aviso.open(texto, 'Cerrar', { duration: 6000 }));
+    }
+  }
+
   protected acuerdoGuardado(): void {
+    this.dialogoAcuerdo?.close();
     this.aviso.open('Acuerdo de colaboración guardado.', 'Cerrar', { duration: 5000 });
     this.cargar(this.detalle()?.id);
   }

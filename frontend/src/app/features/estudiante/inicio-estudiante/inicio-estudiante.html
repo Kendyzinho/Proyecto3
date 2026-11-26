@@ -1,0 +1,16 @@
+<header class="encabezado-pagina">
+  <div>
+    <p class="eyebrow">ESTUDIANTE</p>
+    <h1>Inicio</h1>
+    <p>Accede a tus herramientas y al seguimiento de tu práctica.</p>
+  </div>
+</header>
+
+<nav class="accesos" aria-label="Opciones del estudiante">
+  @for (opcion of accesos; track opcion.ruta) {
+    <a class="tarjeta acceso" [routerLink]="opcion.ruta">
+      <mat-icon>{{ opcion.icono }}</mat-icon>
+      <span>{{ opcion.texto }}</span>
+    </a>
+  }
+</nav>

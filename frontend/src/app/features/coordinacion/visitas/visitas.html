@@ -1,0 +1,101 @@
+<header class="encabezado-pagina">
+  <h1>Visitas técnicas</h1>
+  <button matButton="filled" type="button" (click)="agendar()">
+    <mat-icon>add</mat-icon>
+    Agendar visita
+  </button>
+</header>
+
+@if (cargando()) {
+  <section class="tarjeta"><p class="vacio">Cargando visitas…</p></section>
+} @else if (error()) {
+  <section class="tarjeta">
+    <div class="vacio" role="alert">
+      <p>No se pudieron cargar las visitas.</p>
+      <button matButton type="button" (click)="cargar()">Reintentar</button>
+    </div>
+  </section>
+} @else {
+  @if (sinVisita().length > 0) {
+    <section class="tarjeta" aria-labelledby="sin-visita-titulo">
+      <div class="tarjeta__cabecera">
+        <h2 id="sin-visita-titulo">Sin visita registrada este semestre</h2>
+      </div>
+      <ul class="sin-visita">
+        @for (centro of sinVisita(); track centro.id) {
+          <li class="sin-visita__fila">
+            <div class="sin-visita__texto">
+              <strong>{{ centro.nombre }}</strong>
+              <span>{{ estudiantes(centro.practicas) }}</span>
+            </div>
+            <button matButton="outlined" type="button" (click)="agendar(centro)">Agendar visita</button>
+          </li>
+        }
+      </ul>
+    </section>
+  }
+
+  <section class="tarjeta" aria-labelledby="agenda-titulo">
+    <div class="tarjeta__cabecera">
+      <h2 id="agenda-titulo">Agenda del semestre</h2>
+    </div>
+    @if (visitas().length === 0) {
+      <p class="vacio">Todavía no hay visitas agendadas.</p>
+    } @else {
+      <div class="tabla-contenedor">
+        <table mat-table [dataSource]="visitas()" class="tabla">
+          <ng-container matColumnDef="fecha">
+            <th mat-header-cell *matHeaderCellDef>Fecha</th>
+            <td mat-cell *matCellDef="let visita">{{ fecha(visita) }}</td>
+          </ng-container>
+          <ng-container matColumnDef="hora">
+            <th mat-header-cell *matHeaderCellDef>Hora</th>
+            <td mat-cell *matCellDef="let visita">{{ hora(visita) }}</td>
+          </ng-container>
+          <ng-container matColumnDef="modalidad">
+            <th mat-header-cell *matHeaderCellDef>Modalidad</th>
+            <td mat-cell *matCellDef="let visita">{{ modalidad(visita) }}</td>
+          </ng-container>
+          <ng-container matColumnDef="centro">
+            <th mat-header-cell *matHeaderCellDef>Centro</th>
+            <td mat-cell *matCellDef="let visita">{{ visita.centro?.nombre }}</td>
+          </ng-container>
+          <ng-container matColumnDef="estudiantes">
+            <th mat-header-cell *matHeaderCellDef>Estudiantes</th>
+            <td mat-cell *matCellDef="let visita">{{ estudiantes(visita.practicas) }}</td>
+          </ng-container>
+          <ng-container matColumnDef="estado">
+            <th mat-header-cell *matHeaderCellDef>Estado</th>
+            <td mat-cell *matCellDef="let visita">
+              <span [class]="'estado ' + estado(visita).clase">{{ estado(visita).texto }}</span>
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="pauta">
+            <th mat-header-cell *matHeaderCellDef>Pauta</th>
+            <td mat-cell *matCellDef="let visita">{{ avancePauta(visita) }}</td>
+          </ng-container>
+          <ng-container matColumnDef="acciones">
+            <th mat-header-cell *matHeaderCellDef><span class="cdk-visually-hidden">Acciones</span></th>
+            <td mat-cell *matCellDef="let visita" class="acciones">
+              @if (visita.estado === 'realizada') {
+                <button matButton type="button" (click)="abrirPauta(visita)">
+                  {{ pautaCompleta(visita) ? 'Ver pautas' : 'Registrar pauta' }}
+                </button>
+              }
+              @if (visita.estado !== 'cancelada') {
+                <button matButton type="button" (click)="editar(visita)">Editar</button>
+                @if (visita.pautas.registradas === 0) {
+                  <button matButton type="button" [disabled]="cancelando() !== null" (click)="cancelar(visita)">
+                    {{ cancelando() === visita.id ? 'Cancelando…' : 'Cancelar' }}
+                  </button>
+                }
+              }
+            </td>
+          </ng-container>
+          <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+          <tr mat-row *matRowDef="let fila; columns: columnas" [class.fila--cancelada]="fila.estado === 'cancelada'"></tr>
+        </table>
+      </div>
+    }
+  </section>
+}

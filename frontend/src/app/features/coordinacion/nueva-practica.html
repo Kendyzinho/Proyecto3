@@ -43,8 +43,8 @@
         </mat-radio-group>
       </div>
       <div class="dialogo-fila">
-        <mat-form-field subscriptSizing="dynamic"><mat-label>Fecha de inicio</mat-label><input matInput type="date" formControlName="fecha_inicio" required /><mat-error>{{ mensaje('fecha_inicio') }}</mat-error></mat-form-field>
-        <mat-form-field subscriptSizing="dynamic"><mat-label>Fecha de término</mat-label><input matInput type="date" formControlName="fecha_fin" required /><mat-error>{{ mensaje('fecha_fin') }}</mat-error></mat-form-field>
+        <mat-form-field subscriptSizing="dynamic"><mat-label>Fecha de inicio</mat-label><input matInput [matDatepicker]="calendarioInicio" formControlName="fecha_inicio" required /><mat-datepicker-toggle matIconSuffix [for]="calendarioInicio" /><mat-datepicker #calendarioInicio /><mat-error>{{ mensaje('fecha_inicio') }}</mat-error></mat-form-field>
+        <mat-form-field subscriptSizing="dynamic"><mat-label>Fecha de término</mat-label><input matInput [matDatepicker]="calendarioFin" formControlName="fecha_fin" required /><mat-datepicker-toggle matIconSuffix [for]="calendarioFin" /><mat-datepicker #calendarioFin /><mat-error>{{ mensaje('fecha_fin') }}</mat-error></mat-form-field>
       </div>
       @if (form.hasError('fechas')) { <p class="error-campo" role="alert">La fecha de término debe ser igual o posterior al inicio.</p> }
       <mat-form-field subscriptSizing="dynamic">

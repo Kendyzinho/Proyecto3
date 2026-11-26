@@ -1,0 +1,64 @@
+<header class="encabezado-pagina">
+  <h1>Informes confidenciales</h1>
+</header>
+
+<section class="tarjeta" aria-labelledby="informes-titulo">
+  <div class="tarjeta__cabecera">
+    <h2 id="informes-titulo">Prácticas del semestre</h2>
+  </div>
+  @if (cargando()) {
+    <p class="vacio">Cargando informes…</p>
+  } @else if (error()) {
+    <div class="vacio" role="alert">
+      <p>No se pudieron cargar los informes.</p>
+      <button matButton type="button" (click)="cargar()">Reintentar</button>
+    </div>
+  } @else if (filas().length === 0) {
+    <p class="vacio">No hay prácticas confirmadas este semestre.</p>
+  } @else {
+    <div class="tabla-contenedor">
+      <table mat-table [dataSource]="filas()" class="tabla">
+        <ng-container matColumnDef="estudiante">
+          <th mat-header-cell *matHeaderCellDef>Estudiante</th>
+          <td mat-cell *matCellDef="let fila">{{ fila.estudiante }}</td>
+        </ng-container>
+        <ng-container matColumnDef="tipo">
+          <th mat-header-cell *matHeaderCellDef>Práctica</th>
+          <td mat-cell *matCellDef="let fila">{{ fila.tipo_practica }}</td>
+        </ng-container>
+        <ng-container matColumnDef="centro">
+          <th mat-header-cell *matHeaderCellDef>Centro</th>
+          <td mat-cell *matCellDef="let fila">{{ fila.centro }}</td>
+        </ng-container>
+        <ng-container matColumnDef="supervisor">
+          <th mat-header-cell *matHeaderCellDef>Supervisor(a)</th>
+          <td mat-cell *matCellDef="let fila">{{ fila.supervisor }}</td>
+        </ng-container>
+        <ng-container matColumnDef="estado">
+          <th mat-header-cell *matHeaderCellDef>Estado</th>
+          <td mat-cell *matCellDef="let fila">
+            <span [class]="'estado ' + estado(fila).clase">{{ estado(fila).texto }}</span>
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="acciones">
+          <th mat-header-cell *matHeaderCellDef><span class="cdk-visually-hidden">Acciones</span></th>
+          <td mat-cell *matCellDef="let fila" class="acciones">
+            @if (fila.estado === 'enviado') {
+              <button matButton type="button" (click)="ver(fila)">Ver informe</button>
+            } @else {
+              <button matButton type="button" [disabled]="solicitando() !== null" (click)="solicitar(fila)">
+                @if (solicitando() === fila.id) {
+                  Enviando…
+                } @else {
+                  {{ fila.estado === 'sin_solicitar' ? 'Solicitar informe' : 'Reenviar aviso' }}
+                }
+              </button>
+            }
+          </td>
+        </ng-container>
+        <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+        <tr mat-row *matRowDef="let fila; columns: columnas"></tr>
+      </table>
+    </div>
+  }
+</section>

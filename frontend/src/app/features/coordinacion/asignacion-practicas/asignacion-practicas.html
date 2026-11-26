@@ -114,6 +114,10 @@
             <button matButton type="button" (click)="abrirFechasHorario(fila)">{{ fila.horario ? 'Editar' : 'Definir' }}</button>
           </td>
         </ng-container>
+        <ng-container matColumnDef="ficha">
+          <th mat-header-cell *matHeaderCellDef>Ficha</th>
+          <td mat-cell *matCellDef="let fila"><button matButton type="button" (click)="verFicha(fila.id)">Ver ficha</button></td>
+        </ng-container>
         <tr mat-header-row *matHeaderRowDef="columnasCalendario"></tr>
         <tr mat-row *matRowDef="let fila; columns: columnasCalendario"></tr>
       </table>

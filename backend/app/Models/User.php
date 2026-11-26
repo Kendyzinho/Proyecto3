@@ -5,6 +5,7 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -57,5 +58,22 @@ class User extends Authenticatable
     public function estudiante(): HasOne
     {
         return $this->hasOne(Estudiante::class);
+    }
+
+    // HU-19: registros de supervisor(a) de esta cuenta (uno por centro)
+    public function supervisores(): HasMany
+    {
+        return $this->hasMany(Supervisor::class);
+    }
+
+    public function esSupervisor(): bool
+    {
+        return $this->rol === 'supervisor';
+    }
+
+    // El Jefe de Carrera puede hacer todo lo que hace la Coordinadora (reunión 4 con el cliente)
+    public function gestionaPracticas(): bool
+    {
+        return in_array($this->rol, ['coordinadora', 'jefe'], true);
     }
 }

@@ -142,10 +142,11 @@ export class CentrosPracticaService {
       .pipe(map(({ data }) => this.mapearCentro(data)));
   }
 
-  activarSupervisor(centroId: number, supervisorId: number): Observable<CentroPractica> {
+  // HU-19: al activarlo se crea su cuenta; el mensaje dice si salió el correo para crear la contraseña
+  activarSupervisor(centroId: number, supervisorId: number): Observable<{ centro: CentroPractica; mensaje: string | null }> {
     return this.http
-      .post<Respuesta<CentroApi>>(`/api/centros-practica/${centroId}/supervisores/${supervisorId}/activar`, {})
-      .pipe(map(({ data }) => this.mapearCentro(data)));
+      .post<Respuesta<CentroApi> & { message?: string }>(`/api/centros-practica/${centroId}/supervisores/${supervisorId}/activar`, {})
+      .pipe(map(({ data, message }) => ({ centro: this.mapearCentro(data), mensaje: message ?? null })));
   }
 
   darDeBajaSupervisor(centroId: number, supervisorId: number): Observable<CentroPractica> {

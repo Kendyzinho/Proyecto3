@@ -1,6 +1,7 @@
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestbedHarnessEnvironment } from '@angular/cdk/testing/testbed';
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { MatMenuHarness } from '@angular/material/menu/testing';
 import { Router, provideRouter, withComponentInputBinding } from '@angular/router';
@@ -10,12 +11,17 @@ import { routes } from '../../app.routes';
 import { authInterceptor } from '../../core/interceptors/auth-interceptor';
 import { Auth } from '../../core/services/auth';
 import { GRUPOS_POR_ROL, MENUS_POR_ROL } from '../../shared/marco/menus-por-rol';
+import { NotificacionesAlertas } from '../../shared/marco/notificaciones-alertas';
 
 describe('Navegación del perfil', () => {
   beforeEach(() => {
     localStorage.clear();
     TestBed.configureTestingModule({
-      providers: [provideRouter(routes, withComponentInputBinding()), provideHttpClient(withInterceptors([authInterceptor])), provideHttpClientTesting()],
+      providers: [
+        provideRouter(routes, withComponentInputBinding()), provideHttpClient(withInterceptors([authInterceptor])), provideHttpClientTesting(),
+        // La campana de alertas (HU-14) no es parte de estas pruebas: no pide nada al backend
+        { provide: NotificacionesAlertas, useValue: { actualizar: () => {}, mostrar: () => {}, recientes: signal([]), abiertas: signal(0) } },
+      ],
     });
   });
 

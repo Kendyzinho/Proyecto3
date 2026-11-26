@@ -2,12 +2,14 @@ import { CommonModule } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatSelectModule } from '@angular/material/select';
 
+import { PROVEEDORES_FECHA, fechaIso } from '../../../core/i18n/fechas';
 import { CentroPractica, SupervisorCentro } from '../../coordinacion/centros-practica/centro-practica.model';
 import { SolicitudFormulario, SolicitudPractica } from '../../solicitudes-practica/solicitud-practica.model';
 import { SolicitudesPracticaService } from '../../solicitudes-practica/solicitudes-practica.service';
@@ -16,7 +18,8 @@ const DIAS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 
 @Component({
   selector: 'app-solicitud-estudiante',
-  imports: [CommonModule, FormsModule, MatButtonModule, MatFormFieldModule, MatIconModule, MatInputModule, MatRadioModule, MatSelectModule],
+  imports: [CommonModule, FormsModule, MatButtonModule, MatDatepickerModule, MatFormFieldModule, MatIconModule, MatInputModule, MatRadioModule, MatSelectModule],
+  providers: PROVEEDORES_FECHA,
   templateUrl: './solicitud-estudiante.html',
   styleUrl: './solicitud-estudiante.scss',
 })
@@ -25,6 +28,8 @@ export class SolicitudEstudiante {
   protected readonly centros = this.service.centros;
   protected readonly dias = DIAS;
   protected readonly hoy = new Date().toISOString().slice(0, 10);
+  // El calendario entrega un Date; el formulario guarda las fechas como texto "2026-12-01"
+  protected readonly fechaIso = fechaIso;
   protected readonly intentoEnviar = signal(false);
   protected readonly aviso = signal('');
   protected readonly avisoExitoso = signal(false);

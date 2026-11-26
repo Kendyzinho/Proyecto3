@@ -19,6 +19,11 @@ export default [
         loadComponent: () => import('./asignacion-practicas/asignacion-practicas').then((m) => m.AsignacionPracticas),
       },
       {
+        path: 'practicas',
+        title: 'Lista general de prácticas',
+        loadComponent: () => import('./listado-practicas/listado-practicas').then((m) => m.ListadoPracticas),
+      },
+      {
         path: 'centros',
         title: 'Centros de práctica',
         loadComponent: () => import('./centros-practica/centros-practica').then((m) => m.CentrosPractica),
@@ -28,6 +33,16 @@ export default [
         title: 'Solicitudes de práctica',
         loadComponent: () => import('./solicitudes-practica/revision-solicitudes').then((m) => m.RevisionSolicitudes),
       },
+      { path: 'alertas', title: 'Alertas', loadComponent: () => import('./alertas/alertas').then((m) => m.Alertas) },
+      { path: 'visitas', title: 'Visitas técnicas', loadComponent: () => import('./visitas/visitas').then((m) => m.Visitas) },
+      { path: 'informes', title: 'Informes confidenciales', loadComponent: () => import('./informes/informes').then((m) => m.Informes) },
+      {
+        path: 'informes/:practica',
+        title: 'Informe confidencial',
+        loadComponent: () => import('./informes/informe-confidencial').then((m) => m.InformeConfidencial),
+      },
+      { path: 'visitas/:id/pauta', title: 'Pauta de la visita', loadComponent: () => import('./visitas/pauta-visita').then((m) => m.PautaVisita) },
+
       {
         path: 'documentos',
         title: 'Documentos',
