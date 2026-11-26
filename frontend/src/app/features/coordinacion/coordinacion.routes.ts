@@ -29,6 +29,7 @@ export default [
         loadComponent: () => import('./solicitudes-practica/revision-solicitudes').then((m) => m.RevisionSolicitudes),
       },
       { path: 'alertas', title: 'Alertas', loadComponent: () => import('./alertas/alertas').then((m) => m.Alertas) },
+      { path: 'visitas', title: 'Visitas técnicas', loadComponent: () => import('./visitas/visitas').then((m) => m.Visitas) },
 
       {
         path: 'documentos',

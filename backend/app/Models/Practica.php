@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\DB;
 
@@ -94,6 +95,12 @@ class Practica extends Model
                 ->whereColumn('items.plantilla_id', 'plantilla.id')->where('items.clave', 'clima_laboral'))
             ->whereNotNull('respuesta.fecha_envio')
             ->exists();
+    }
+
+    // HU-15: visitas técnicas que revisan esta práctica
+    public function visitas(): BelongsToMany
+    {
+        return $this->belongsToMany(VisitaTecnica::class, 'visita_practica', 'practica_id', 'visita_id')->withTimestamps();
     }
 
     public function horarios(): HasMany
