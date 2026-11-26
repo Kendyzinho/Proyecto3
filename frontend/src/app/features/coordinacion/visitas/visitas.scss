@@ -1,0 +1,60 @@
+.encabezado-pagina button mat-icon {
+  margin-right: 4px;
+}
+
+.vacio {
+  margin: 0;
+  padding: 24px;
+  color: #5b6b80;
+}
+
+.sin-visita {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sin-visita__fila {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 24px;
+
+  & + & {
+    border-top: 1px solid #e2e8f0;
+  }
+}
+
+.sin-visita__texto {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  color: #1e293b;
+  font-size: 14px;
+
+  span {
+    color: #5b6b80;
+  }
+}
+
+.tabla-contenedor {
+  overflow-x: auto;
+}
+
+.acciones {
+  white-space: nowrap;
+  text-align: right;
+}
+
+.fila--cancelada td {
+  color: #5b6b80;
+}
+
+@media (max-width: 600px) {
+  .sin-visita__fila {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

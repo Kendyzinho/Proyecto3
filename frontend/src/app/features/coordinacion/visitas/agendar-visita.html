@@ -1,0 +1,65 @@
+<h2 mat-dialog-title>{{ visita ? 'Editar visita' : 'Agendar visita' }}</h2>
+<form [formGroup]="form" (ngSubmit)="guardar()">
+  <mat-dialog-content class="dialogo-campos" [attr.aria-busy]="enviando() || cargando()">
+    <mat-form-field subscriptSizing="dynamic">
+      <mat-label>Centro de práctica</mat-label>
+      <mat-select formControlName="centro" required>
+        @for (centro of centros(); track centro.id) {
+          <mat-option [value]="centro.id">{{ centro.nombre }}</mat-option>
+        }
+      </mat-select>
+      <mat-error>{{ mensaje('centro') }}</mat-error>
+    </mat-form-field>
+
+    <div role="group" aria-labelledby="practicas-etiqueta">
+      <span id="practicas-etiqueta" class="etiqueta-campo">Prácticas que se revisan</span>
+      @if (cargando()) {
+        <p class="sin-practicas">Cargando prácticas…</p>
+      } @else if (form.controls.centro.value === null) {
+        <p class="sin-practicas">Elige primero el centro.</p>
+      } @else if (practicasDelCentro().length === 0) {
+        <p class="sin-practicas">Este centro no tiene prácticas confirmadas o en curso.</p>
+      } @else {
+        <div class="practicas">
+          @for (practica of practicasDelCentro(); track practica.id) {
+            <mat-checkbox [checked]="elegida(practica.id)" (change)="alternar(practica.id, $event.checked)">
+              {{ practica.estudiante }}, {{ practica.tipo_practica }}
+            </mat-checkbox>
+          }
+        </div>
+      }
+      @if (form.controls.practicas.touched && form.controls.practicas.invalid) {
+        <p class="error-campo" role="alert">Elige al menos una práctica.</p>
+      }
+    </div>
+
+    <div class="dialogo-fila">
+      <mat-form-field subscriptSizing="dynamic">
+        <mat-label>Fecha</mat-label>
+        <input matInput [matDatepicker]="calendario" formControlName="fecha" required />
+        <mat-datepicker-toggle matIconSuffix [for]="calendario" />
+        <mat-datepicker #calendario />
+        <mat-error>{{ mensaje('fecha') }}</mat-error>
+      </mat-form-field>
+      <mat-form-field subscriptSizing="dynamic">
+        <mat-label>Hora</mat-label>
+        <input matInput type="time" formControlName="hora" required />
+        <mat-error>{{ mensaje('hora') }}</mat-error>
+      </mat-form-field>
+    </div>
+
+    <div role="radiogroup" aria-labelledby="modalidad-etiqueta">
+      <span id="modalidad-etiqueta" class="etiqueta-campo">Modalidad</span>
+      <mat-radio-group formControlName="modalidad" class="modalidades">
+        <mat-radio-button value="terreno">Terreno</mat-radio-button>
+        <mat-radio-button value="virtual">Virtual</mat-radio-button>
+      </mat-radio-group>
+    </div>
+
+    @if (errorGeneral()) { <p class="error-campo" role="alert">{{ errorGeneral() }}</p> }
+  </mat-dialog-content>
+  <mat-dialog-actions align="end">
+    <button matButton type="button" (click)="cancelar()" [disabled]="enviando()">Cancelar</button>
+    <button matButton="filled" type="submit" [disabled]="enviando() || cargando()">{{ enviando() ? 'Guardando…' : 'Guardar' }}</button>
+  </mat-dialog-actions>
+</form>

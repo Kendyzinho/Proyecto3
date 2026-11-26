@@ -26,6 +26,8 @@ export default [
         title: 'Centros de práctica',
         loadComponent: () => import('../coordinacion/centros-practica/centros-practica').then((m) => m.CentrosPractica),
       },
+      { path: 'alertas', title: 'Alertas', loadComponent: () => import('../coordinacion/alertas/alertas').then((m) => m.Alertas) },
+      { path: 'visitas', title: 'Visitas técnicas', loadComponent: () => import('../coordinacion/visitas/visitas').then((m) => m.Visitas) },
       { path: 'usuarios', title: 'Usuarios', loadComponent: () => import('../secretaria/usuarios/usuarios').then((m) => m.Usuarios) },
       { path: 'nomina', title: 'Nómina de estudiantes', loadComponent: () => import('../secretaria/nomina/nomina').then((m) => m.Nomina) },
       { path: 'documentos', title: 'Documentos', loadComponent: () => import('../secretaria/documentos/documentos').then((m) => m.Documentos) },

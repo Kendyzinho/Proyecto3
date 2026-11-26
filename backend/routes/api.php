@@ -15,6 +15,7 @@ use App\Http\Controllers\PracticaExcepcionalController;
 use App\Http\Controllers\PercepcionCentroController;
 use App\Http\Controllers\SolicitudPracticaController;
 use App\Http\Controllers\UsuarioController;
+use App\Http\Controllers\VisitaTecnicaController;
 use App\Models\Periodo;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ConfirmacionSemanalController;
@@ -74,6 +75,14 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('/practicas', [ListadoPracticasController::class, 'index']);
         Route::get('/practicas/exportar', [ListadoPracticasController::class, 'exportar']);
+
+        // HU-15: agenda de visitas técnicas
+        Route::get('/visitas', [VisitaTecnicaController::class, 'index']);
+        Route::get('/visitas/centros-sin-visita', [VisitaTecnicaController::class, 'sinVisita']);
+        Route::get('/visitas/practicas-disponibles', [VisitaTecnicaController::class, 'disponibles']);
+        Route::post('/visitas', [VisitaTecnicaController::class, 'store']);
+        Route::put('/visitas/{visita}', [VisitaTecnicaController::class, 'update'])->whereNumber('visita');
+        Route::post('/visitas/{visita}/cancelar', [VisitaTecnicaController::class, 'cancelar'])->whereNumber('visita');
     });
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);

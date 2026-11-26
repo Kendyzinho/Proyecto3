@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\DB;
 
@@ -99,6 +100,12 @@ class Practica extends Model
     public function alertas(): HasMany
     {
         return $this->hasMany(Alerta::class);
+    }
+
+    // HU-15: visitas técnicas que revisan esta práctica
+    public function visitas(): BelongsToMany
+    {
+        return $this->belongsToMany(VisitaTecnica::class, 'visita_practica', 'practica_id', 'visita_id')->withTimestamps();
     }
 
     public function horarios(): HasMany

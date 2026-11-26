@@ -1,0 +1,38 @@
+form {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+mat-dialog-content p {
+  margin: 0;
+}
+
+.etiqueta-campo {
+  color: #5b6b80;
+  font-size: 12px;
+}
+
+.practicas {
+  display: flex;
+  flex-direction: column;
+  margin: 4px 0 0 -8px;
+}
+
+.sin-practicas {
+  margin-top: 4px !important;
+  color: #5b6b80;
+  font-size: 14px;
+}
+
+.modalidades {
+  display: flex;
+  gap: 8px;
+  margin: 4px 0 0 -8px;
+}
+
+@media (max-width: 520px) {
+  .dialogo-fila {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
