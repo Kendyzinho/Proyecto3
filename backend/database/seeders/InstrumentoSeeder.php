@@ -85,7 +85,7 @@ class InstrumentoSeeder extends Seeder
         foreach (self::PAUTA as $clave => $enunciado) {
             $this->item($plantilla, $clave, $enunciado, 'escala', true, 'pauta', ++$orden, conNoAplica: false);
         }
-        $this->item($plantilla, 'comentarios', 'Comentarios de la Coordinadora', 'texto', true, 'pauta', ++$orden);
+        $this->item($plantilla, 'comentarios', 'Comentarios de la visita', 'texto', true, 'pauta', ++$orden);
     }
 
     private function informe(TipoPractica $tipo): void

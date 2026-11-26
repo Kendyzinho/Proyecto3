@@ -33,6 +33,11 @@ export default [
       },
       { path: 'alertas', title: 'Alertas', loadComponent: () => import('../coordinacion/alertas/alertas').then((m) => m.Alertas) },
       { path: 'visitas', title: 'Visitas técnicas', loadComponent: () => import('../coordinacion/visitas/visitas').then((m) => m.Visitas) },
+      {
+        path: 'visitas/:id/pauta',
+        title: 'Pauta de la visita',
+        loadComponent: () => import('../coordinacion/visitas/pauta-visita').then((m) => m.PautaVisita),
+      },
       { path: 'usuarios', title: 'Usuarios', loadComponent: () => import('../secretaria/usuarios/usuarios').then((m) => m.Usuarios) },
       { path: 'nomina', title: 'Nómina de estudiantes', loadComponent: () => import('../secretaria/nomina/nomina').then((m) => m.Nomina) },
       { path: 'documentos', title: 'Documentos', loadComponent: () => import('../secretaria/documentos/documentos').then((m) => m.Documentos) },

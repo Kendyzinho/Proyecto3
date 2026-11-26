@@ -35,6 +35,7 @@ export default [
       },
       { path: 'alertas', title: 'Alertas', loadComponent: () => import('./alertas/alertas').then((m) => m.Alertas) },
       { path: 'visitas', title: 'Visitas técnicas', loadComponent: () => import('./visitas/visitas').then((m) => m.Visitas) },
+      { path: 'visitas/:id/pauta', title: 'Pauta de la visita', loadComponent: () => import('./visitas/pauta-visita').then((m) => m.PautaVisita) },
 
       {
         path: 'documentos',

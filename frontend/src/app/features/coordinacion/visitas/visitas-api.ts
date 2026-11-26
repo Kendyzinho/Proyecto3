@@ -23,6 +23,56 @@ export interface Visita {
   estado: EstadoVisita;
   centro: CentroVisita | null;
   practicas: PracticaVisita[];
+  pautas: { enviadas: number; total: number }; // HU-16
+}
+
+// HU-16: formulario de un instrumento (plantilla → criterios → opciones)
+export interface OpcionInstrumento {
+  id: number;
+  etiqueta: string;
+  valor: number | null;
+}
+
+export interface ItemInstrumento {
+  id: number;
+  clave: string;
+  enunciado: string;
+  tipo: string; // 'escala' se responde con una opción; 'texto', escribiendo
+  obligatorio: boolean;
+  seccion: string | null;
+  opciones: OpcionInstrumento[];
+}
+
+export interface FormularioInstrumento {
+  plantilla_id: number;
+  items: ItemInstrumento[];
+}
+
+export interface RespuestaItem {
+  item_id: number;
+  opcion_id?: number | null;
+  texto?: string | null;
+}
+
+export interface RespuestaGuardada extends FormularioInstrumento {
+  respuesta_id: number;
+  enviada_en: string | null; // sin fecha es un borrador
+  respuestas: RespuestaItem[];
+}
+
+export interface PracticaPauta extends PracticaVisita {
+  respuesta: RespuestaGuardada | null;
+}
+
+export interface PautasVisita {
+  visita: Visita;
+  formulario: FormularioInstrumento | null;
+  practicas: PracticaPauta[];
+}
+
+export interface DatosPauta {
+  respuestas: RespuestaItem[];
+  enviar: boolean;
 }
 
 export interface CentroSinVisita extends CentroVisita {
@@ -68,5 +118,14 @@ export class VisitasApi {
 
   cancelar(id: number): Observable<Visita> {
     return this.http.post<{ data: Visita }>(`${BASE}/${id}/cancelar`, {}).pipe(map((r) => r.data));
+  }
+
+  // HU-16
+  pautas(visita: number): Observable<PautasVisita> {
+    return this.http.get<{ data: PautasVisita }>(`${BASE}/${visita}/pautas`).pipe(map((r) => r.data));
+  }
+
+  guardarPauta(visita: number, practica: number, datos: DatosPauta): Observable<RespuestaGuardada> {
+    return this.http.put<{ data: RespuestaGuardada }>(`${BASE}/${visita}/pautas/${practica}`, datos).pipe(map((r) => r.data));
   }
 }

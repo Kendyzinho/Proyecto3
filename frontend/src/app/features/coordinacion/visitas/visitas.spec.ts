@@ -2,6 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
+import { Router, provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 
 import { AgendarVisita } from './agendar-visita';
@@ -12,11 +13,11 @@ import { CentroSinVisita, Visita } from './visitas-api';
 const VISITAS: Visita[] = [
   {
     id: 1, fecha_hora: '2026-11-20 09:00', modalidad: 'terreno', estado: 'realizada', centro: { id: 4, nombre: 'Corfo Arica y Parinacota' },
-    practicas: [{ id: 15, estudiante: 'Diego Choque', tipo_practica: 'Profesional' }],
+    practicas: [{ id: 15, estudiante: 'Diego Choque', tipo_practica: 'Profesional' }], pautas: { enviadas: 0, total: 1 },
   },
   {
     id: 2, fecha_hora: '2026-12-02 10:30', modalidad: 'virtual', estado: 'cancelada', centro: { id: 2, nombre: 'Productora Norte Visual' },
-    practicas: [{ id: 12, estudiante: 'Pedro Lagos', tipo_practica: 'Profesional' }],
+    practicas: [{ id: 12, estudiante: 'Pedro Lagos', tipo_practica: 'Profesional' }], pautas: { enviadas: 0, total: 1 },
   },
 ];
 const SIN_VISITA: CentroSinVisita[] = [
@@ -29,7 +30,7 @@ describe('Visitas', () => {
   const texto = () => fixture.nativeElement.textContent as string;
 
   function crear(visitas = VISITAS, sinVisita = SIN_VISITA) {
-    TestBed.configureTestingModule({ imports: [Visitas], providers: [provideHttpClient(), provideHttpClientTesting()] });
+    TestBed.configureTestingModule({ imports: [Visitas], providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])] });
     http = TestBed.inject(HttpTestingController);
     fixture = TestBed.createComponent(Visitas);
     responder(visitas, sinVisita);
@@ -94,5 +95,26 @@ describe('Visitas', () => {
     boton.click();
 
     expect(abrir).toHaveBeenCalledWith(AgendarVisita, expect.objectContaining({ data: { centroId: 2, practicas: [11, 12] } }));
+  });
+
+  // HU-16
+  it('solo las visitas realizadas tienen Registrar pauta, con su avance', () => {
+    crear([VISITAS[0], { ...VISITAS[0], id: 3, estado: 'agendada' }], []);
+
+    const filas = [...fixture.nativeElement.querySelectorAll('tr.mat-mdc-row')] as HTMLElement[];
+    expect(filas[0].textContent).toContain('Pauta 0 de 1');
+    expect(filas[0].textContent).toContain('Registrar pauta');
+    expect(filas[1].textContent).not.toContain('Pauta');
+  });
+
+  it('con todas las pautas enviadas dice Pauta completa y abre la pauta de la visita', () => {
+    crear([{ ...VISITAS[0], pautas: { enviadas: 1, total: 1 } }], []);
+    const navegar = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+
+    expect(texto()).toContain('Pauta completa');
+    const ver = [...fixture.nativeElement.querySelectorAll('tr.mat-mdc-row button')].find((b) => (b as HTMLElement).textContent?.includes('Ver pautas')) as HTMLButtonElement;
+    ver.click();
+
+    expect(navegar).toHaveBeenCalledWith([1, 'pauta'], expect.anything());
   });
 });

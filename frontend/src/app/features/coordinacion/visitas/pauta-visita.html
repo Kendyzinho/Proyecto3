@@ -1,0 +1,99 @@
+<p class="migas">
+  <button type="button" (click)="volver()">Visitas técnicas</button>
+  <span aria-hidden="true">/</span><span>Pauta de la visita</span>
+</p>
+<header class="encabezado-pagina">
+  <h1>Pauta de la visita</h1>
+</header>
+
+@if (cargando()) {
+  <section class="tarjeta"><p class="vacio">Cargando pauta…</p></section>
+} @else if (error()) {
+  <section class="tarjeta">
+    <div class="vacio" role="alert">
+      <p>{{ error() }}</p>
+      <button matButton type="button" (click)="cargar()">Reintentar</button>
+    </div>
+  </section>
+} @else {
+  @if (visita(); as v) {
+    <section class="tarjeta">
+      <dl class="datos">
+        <div><dt>Centro</dt><dd>{{ v.centro?.nombre }}</dd></div>
+        <div><dt>Fecha</dt><dd>{{ fecha(v.fecha_hora) }}</dd></div>
+        <div><dt>Hora</dt><dd>{{ hora(v) }}</dd></div>
+        <div><dt>Modalidad</dt><dd>{{ modalidad(v) }}</dd></div>
+      </dl>
+    </section>
+  }
+
+  @for (pauta of pautas(); track pauta.practica.id) {
+    <section class="tarjeta pauta" [attr.aria-labelledby]="'estudiante-' + pauta.practica.id">
+      <div class="tarjeta__cabecera pauta__cabecera">
+        <h2 [id]="'estudiante-' + pauta.practica.id">{{ pauta.practica.estudiante }}</h2>
+        <span class="etiqueta">{{ pauta.practica.tipo_practica }}</span>
+        @if (pauta.enviadaEn) {
+          <span class="estado estado--exito">Enviada el {{ fecha(pauta.enviadaEn) }}</span>
+        } @else if (pauta.practica.respuesta) {
+          <span class="estado estado--advertencia">Borrador</span>
+        }
+      </div>
+
+      <ol class="criterios">
+        @for (item of pauta.formulario.items; track item.id) {
+          <li class="criterio" [class.criterio--falta]="falta(pauta, item)">
+            @if (opciones(item)) {
+              <span class="criterio__enunciado" [id]="'criterio-' + pauta.practica.id + '-' + item.id">{{ item.enunciado }}</span>
+              @if (pauta.enviadaEn) {
+                <span class="criterio__valor">{{ elegida(pauta, item) }}</span>
+              } @else {
+                <mat-button-toggle-group
+                  hideSingleSelectionIndicator
+                  [value]="pauta.opciones[item.id]"
+                  (change)="elegir(pauta.practica.id, item.id, $event.value)"
+                  [attr.aria-labelledby]="'criterio-' + pauta.practica.id + '-' + item.id"
+                >
+                  @for (opcion of item.opciones; track opcion.id) {
+                    <mat-button-toggle [value]="opcion.id">{{ opcion.etiqueta }}</mat-button-toggle>
+                  }
+                </mat-button-toggle-group>
+              }
+            } @else if (pauta.enviadaEn) {
+              <span class="criterio__enunciado">{{ item.enunciado }}</span>
+              <p class="criterio__texto">{{ pauta.textos[item.id] }}</p>
+            } @else {
+              <mat-form-field class="criterio__campo" subscriptSizing="dynamic">
+                <mat-label>{{ item.enunciado }}</mat-label>
+                <textarea
+                  matInput
+                  rows="3"
+                  maxlength="3000"
+                  [required]="item.obligatorio"
+                  [value]="pauta.textos[item.id] ?? ''"
+                  (input)="escribir(pauta.practica.id, item.id, $any($event.target).value)"
+                ></textarea>
+              </mat-form-field>
+            }
+            @if (falta(pauta, item)) {
+              <span class="criterio__falta">Falta responder</span>
+            }
+          </li>
+        }
+      </ol>
+
+      @if (!pauta.enviadaEn) {
+        @if (pauta.error) {
+          <p class="pauta__error" role="alert">{{ pauta.error }}</p>
+        }
+        <div class="pauta__acciones">
+          <button matButton="outlined" type="button" [disabled]="pauta.guardando !== null" (click)="guardar(pauta, false)">
+            {{ pauta.guardando === 'borrador' ? 'Guardando…' : 'Guardar borrador' }}
+          </button>
+          <button matButton="filled" type="button" [disabled]="pauta.guardando !== null" (click)="guardar(pauta, true)">
+            {{ pauta.guardando === 'envio' ? 'Enviando…' : 'Enviar pauta' }}
+          </button>
+        </div>
+      }
+    </section>
+  }
+}

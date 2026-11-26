@@ -121,6 +121,11 @@ class VisitaTecnicaService
             'estado' => $visita->estado(),
             'centro' => $centro ? ['id' => $centro->id, 'nombre' => $centro->nombre] : null,
             'practicas' => $this->practicas($visita->practicas),
+            // HU-16: cuántas prácticas de la visita ya tienen su pauta enviada
+            'pautas' => [
+                'enviadas' => DB::table('respuestas_instrumento')->where('visita_id', $visita->id)->whereNotNull('fecha_envio')->count(),
+                'total' => $visita->practicas->count(),
+            ],
         ];
     }
 

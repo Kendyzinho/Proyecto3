@@ -1,0 +1,108 @@
+.vacio {
+  margin: 0;
+  padding: 24px;
+  color: #5b6b80;
+}
+
+.datos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 40px;
+  margin: 0;
+  padding: 20px 24px;
+
+  dt {
+    color: #5b6b80;
+    font-size: 12px;
+  }
+
+  dd {
+    margin: 2px 0 0;
+    color: #1e293b;
+    font-size: 14px;
+  }
+}
+
+.pauta__cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px 12px;
+
+  .estado {
+    margin-left: auto;
+  }
+}
+
+.criterios {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.criterio {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  padding: 14px 24px;
+
+  & + & {
+    border-top: 1px solid #e2e8f0;
+  }
+}
+
+.criterio__enunciado {
+  flex: 1 1 280px;
+  color: #1e293b;
+  font-size: 14px;
+}
+
+.criterio__valor {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.criterio__texto {
+  flex-basis: 100%;
+  margin: 0;
+  color: #1e293b;
+  font-size: 14px;
+  white-space: pre-line;
+}
+
+.criterio__campo {
+  flex-basis: 100%;
+}
+
+.criterio--falta .criterio__enunciado,
+.criterio__falta {
+  color: #b3261e;
+}
+
+.criterio__falta {
+  flex-basis: 100%;
+  font-size: 12px;
+}
+
+.pauta__error {
+  margin: 0;
+  padding: 0 24px;
+  color: #b3261e;
+  font-size: 14px;
+}
+
+.pauta__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 24px 20px;
+}
+
+@media (max-width: 600px) {
+  .criterio {
+    padding: 14px 16px;
+  }
+}
