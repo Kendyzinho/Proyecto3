@@ -69,10 +69,15 @@ class LectorPlanilla
      */
     public function crearPlanilla(array $filas): string
     {
+        return $this->crearPlanillaConEncabezados(self::ENCABEZADOS, $filas);
+    }
+
+    public function crearPlanillaConEncabezados(array $encabezados, array $filas): string
+    {
         $ruta = tempnam(sys_get_temp_dir(), 'planilla').'.xlsx';
         $escritor = new EscritorXlsx;
         $escritor->openToFile($ruta);
-        $escritor->addRow(Row::fromValues(self::ENCABEZADOS, (new Style)->setFontBold()));
+        $escritor->addRow(Row::fromValues($encabezados, (new Style)->setFontBold()));
         foreach ($filas as $fila) {
             $escritor->addRow(Row::fromValues($fila));
         }

@@ -33,13 +33,41 @@
       </button>
       <div class="barra__acciones">
         <div class="notificaciones">
-          <button mat-icon-button type="button" aria-label="Notificaciones" [attr.aria-expanded]="notificacionesAbiertas()" (click)="notificacionesAbiertas.update((abiertas) => !abiertas)">
-            <mat-icon>notifications_none</mat-icon>
+          <button mat-icon-button type="button"
+                  [attr.aria-label]="esCoordinadora() && notificaciones.abiertas() > 0 ? notificaciones.abiertas() + ' alertas abiertas' : 'Notificaciones'"
+                  [attr.aria-expanded]="notificacionesAbiertas()" (click)="alternarNotificaciones()">
+            <mat-icon>{{ esCoordinadora() && notificaciones.abiertas() > 0 ? 'notifications_active' : 'notifications_none' }}</mat-icon>
+            @if (esCoordinadora() && notificaciones.abiertas() > 0) {
+              <span class="notificaciones__contador">{{ notificaciones.abiertas() > 99 ? '99+' : notificaciones.abiertas() }}</span>
+            }
           </button>
           @if (notificacionesAbiertas()) {
             <section class="notificaciones__panel" role="status">
               <strong>Notificaciones</strong>
-              <p>Las novedades de tus prácticas se envían al correo registrado.</p>
+              @if (esCoordinadora()) {
+                @if (notificaciones.recientes().length === 0) {
+                  <p>No hay alertas abiertas. Todas las prácticas van al día.</p>
+                } @else {
+                  <ul class="notificaciones__lista">
+                    @for (alerta of notificaciones.recientes(); track alerta.id) {
+                      <li>
+                        <a routerLink="/coordinacion/alertas" (click)="notificacionesAbiertas.set(false)">
+                          <span [class]="'luz luz--' + tiposAlerta[alerta.tipo].luz" aria-hidden="true"></span>
+                          <span class="notificaciones__texto">
+                            <strong>{{ tiposAlerta[alerta.tipo].titulo }}</strong>
+                            <span>{{ alerta.practica.estudiante }} · {{ fechaLegible(alerta.fecha_referencia) }}</span>
+                          </span>
+                        </a>
+                      </li>
+                    }
+                  </ul>
+                  <a class="notificaciones__todas" routerLink="/coordinacion/alertas" (click)="notificacionesAbiertas.set(false)">
+                    Ver todas ({{ notificaciones.abiertas() }})
+                  </a>
+                }
+              } @else {
+                <p>Las novedades de tus prácticas se envían al correo registrado.</p>
+              }
             </section>
           }
         </div>

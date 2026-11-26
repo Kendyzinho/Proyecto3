@@ -5,15 +5,9 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
+import { NotificacionesAlertas } from '../../../shared/marco/notificaciones-alertas';
 import { mensajeDeError } from '../../secretaria/usuarios/usuarios-api';
-import { Alerta, AlertasApi, EstadoAlertas, TipoAlerta } from './alertas-api';
-
-// Color de la luz y cómo se explica cada tipo
-const TIPOS: Record<TipoAlerta, { titulo: string; luz: 'roja' | 'naranja' | 'amarilla'; detalle: (fecha: string) => string }> = {
-  abandono: { titulo: 'Posible abandono', luz: 'roja', detalle: (f) => `3 días esperados seguidos sin marca desde el ${f}` },
-  inasistencia: { titulo: 'Inasistencia sin justificar', luz: 'naranja', detalle: (f) => `Faltó el ${f} y no justificó en 24 horas` },
-  sin_confirmar: { titulo: 'Semana sin confirmar', luz: 'amarilla', detalle: (f) => `El supervisor no confirmó la semana del ${f}` },
-};
+import { Alerta, AlertasApi, EstadoAlertas, TIPOS_ALERTA, fechaLegible } from './alertas-api';
 
 // HU-14: panel de alertas tempranas (luces rojas y amarillas)
 @Component({
@@ -24,10 +18,11 @@ const TIPOS: Record<TipoAlerta, { titulo: string; luz: 'roja' | 'naranja' | 'ama
 })
 export class Alertas {
   private readonly api = inject(AlertasApi);
+  private readonly notificaciones = inject(NotificacionesAlertas);
   private readonly aviso = inject(MatSnackBar);
   private readonly destroyRef = inject(DestroyRef);
 
-  protected readonly tipos = TIPOS;
+  protected readonly tipos = TIPOS_ALERTA;
   protected readonly estado = signal<EstadoAlertas>('abiertas');
   protected readonly alertas = signal<Alerta[]>([]);
   protected readonly totales = signal({ abiertas: 0, atendidas: 0 });
@@ -48,7 +43,7 @@ export class Alertas {
   }
 
   protected detalle(alerta: Alerta): string {
-    return TIPOS[alerta.tipo].detalle(fechaLegible(alerta.fecha_referencia));
+    return TIPOS_ALERTA[alerta.tipo].detalle(fechaLegible(alerta.fecha_referencia));
   }
 
   protected atender(alerta: Alerta): void {
@@ -75,6 +70,8 @@ export class Alertas {
         this.alertas.set(data);
         this.totales.set(meta);
         this.cargando.set(false);
+        // La campana de la barra superior se actualiza con la misma respuesta
+        this.notificaciones.mostrar(this.estado() === 'abiertas' ? data : null, meta.abiertas);
       },
       error: () => {
         this.error.set(true);
@@ -82,14 +79,4 @@ export class Alertas {
       },
     });
   }
-}
-
-// 2026-11-16 o 2026-11-18T09:30:00-03:00 → 16-11-2026
-function fechaLegible(fecha: string): string {
-  if (fecha.length === 10) {
-    const [anio, mes, dia] = fecha.split('-');
-    return `${dia}-${mes}-${anio}`;
-  }
-  const d = new Date(fecha);
-  return `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}`;
 }

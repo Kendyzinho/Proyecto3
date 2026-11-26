@@ -96,6 +96,11 @@ class Practica extends Model
             ->exists();
     }
 
+    public function alertas(): HasMany
+    {
+        return $this->hasMany(Alerta::class);
+    }
+
     public function horarios(): HasMany
     {
         return $this->hasMany(Horario::class, 'practica_id');
