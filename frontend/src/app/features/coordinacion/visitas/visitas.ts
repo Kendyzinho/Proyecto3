@@ -6,6 +6,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
+import { ActivatedRoute, Router } from '@angular/router';
 import { forkJoin } from 'rxjs';
 
 import { mensajeDeError } from '../../secretaria/usuarios/usuarios-api';
@@ -33,7 +34,10 @@ export class Visitas {
   private readonly aviso = inject(MatSnackBar);
   private readonly destroyRef = inject(DestroyRef);
 
-  protected readonly columnas = ['fecha', 'hora', 'modalidad', 'centro', 'estudiantes', 'estado', 'acciones'];
+  private readonly router = inject(Router);
+  private readonly ruta = inject(ActivatedRoute);
+
+  protected readonly columnas = ['fecha', 'hora', 'modalidad', 'centro', 'estudiantes', 'estado', 'pauta', 'acciones'];
   protected readonly visitas = signal<Visita[]>([]);
   protected readonly sinVisita = signal<CentroSinVisita[]>([]);
   protected readonly cargando = signal(true);
@@ -84,6 +88,20 @@ export class Visitas {
         this.aviso.open(mensajeDeError(e), 'Cerrar', { duration: 6000 });
       },
     });
+  }
+
+  // HU-16: la pauta se registra después de la visita
+  protected abrirPauta(visita: Visita): void {
+    this.router.navigate([visita.id, 'pauta'], { relativeTo: this.ruta });
+  }
+
+  protected pautaCompleta(visita: Visita): boolean {
+    return visita.pautas.total > 0 && visita.pautas.enviadas === visita.pautas.total;
+  }
+
+  protected avancePauta(visita: Visita): string {
+    if (visita.estado !== 'realizada') return '';
+    return this.pautaCompleta(visita) ? 'Pauta completa' : `Pauta ${visita.pautas.enviadas} de ${visita.pautas.total}`;
   }
 
   protected estado(visita: Visita): { texto: string; clase: string } {

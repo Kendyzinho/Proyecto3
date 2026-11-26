@@ -12,6 +12,7 @@ use App\Http\Controllers\ListadoPracticasController;
 use App\Http\Controllers\MallaController;
 use App\Http\Controllers\NominaController;
 use App\Http\Controllers\PracticaExcepcionalController;
+use App\Http\Controllers\PautaVisitaController;
 use App\Http\Controllers\PercepcionCentroController;
 use App\Http\Controllers\SolicitudPracticaController;
 use App\Http\Controllers\UsuarioController;
@@ -83,6 +84,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/visitas', [VisitaTecnicaController::class, 'store']);
         Route::put('/visitas/{visita}', [VisitaTecnicaController::class, 'update'])->whereNumber('visita');
         Route::post('/visitas/{visita}/cancelar', [VisitaTecnicaController::class, 'cancelar'])->whereNumber('visita');
+
+        // HU-16: pauta de la visita, una por práctica
+        Route::get('/visitas/{visita}/pautas', [PautaVisitaController::class, 'index'])->whereNumber('visita');
+        Route::put('/visitas/{visita}/pautas/{practica}', [PautaVisitaController::class, 'update'])->whereNumber(['visita', 'practica']);
+        Route::get('/practicas/{practica}/pautas', [PautaVisitaController::class, 'dePractica'])->whereNumber('practica');
     });
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
