@@ -7,6 +7,9 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatSelectModule } from '@angular/material/select';
+import { MatSnackBar } from '@angular/material/snack-bar';
+
+import { map } from 'rxjs';
 
 import { AcuerdoCentro } from '../../secretaria/documentos/acuerdo-centro';
 import { FichaEstudiante as DialogoFichaEstudiante } from '../ficha-estudiante/ficha-estudiante';
@@ -47,6 +50,7 @@ const AREAS_BASE = [
 export class CentrosPractica {
   private readonly centrosService = inject(CentrosPracticaService);
   private readonly dialogo = inject(MatDialog);
+  private readonly aviso = inject(MatSnackBar);
   private readonly centros = signal<CentroPractica[]>([]);
   private readonly plantillaCentro = viewChild.required<TemplateRef<unknown>>('plantillaCentro');
   private readonly plantillaBaja = viewChild.required<TemplateRef<unknown>>('plantillaBaja');
@@ -336,10 +340,16 @@ export class CentrosPractica {
     this.errorApi.set('');
     const accion = activar
       ? this.centrosService.activarSupervisor(centro.id, supervisor.id)
-      : this.centrosService.darDeBajaSupervisor(centro.id, supervisor.id);
+      : this.centrosService.darDeBajaSupervisor(centro.id, supervisor.id).pipe(map((actualizado) => ({ centro: actualizado, mensaje: null })));
     accion.subscribe({
-      next: (actualizado) => this.reemplazarCentro(actualizado),
-      error: (error: unknown) => this.errorApi.set(this.centrosService.mensajeError(error)),
+      next: ({ centro: actualizado, mensaje }) => {
+        this.reemplazarCentro(actualizado);
+        if (mensaje) this.aviso.open(mensaje, 'Cerrar', { duration: 8000 });
+      },
+      error: (error: unknown) => {
+        this.guardando.set(false);
+        this.errorApi.set(this.centrosService.mensajeError(error));
+      },
       complete: () => this.guardando.set(false),
     });
   }

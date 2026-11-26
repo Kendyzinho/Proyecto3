@@ -69,7 +69,7 @@ describe('AgendarVisita', () => {
   it('al editar parte con los datos de la visita y la actualiza', () => {
     const visita: Visita = {
       id: 7, fecha_hora: '2026-12-03 15:00', modalidad: 'terreno', estado: 'agendada', centro: PRODUCTORA,
-      practicas: [{ id: 12, estudiante: 'Pedro Lagos', tipo_practica: 'Profesional' }], pautas: { enviadas: 0, total: 1 },
+      practicas: [{ id: 12, estudiante: 'Pedro Lagos', tipo_practica: 'Profesional' }], pautas: { enviadas: 0, registradas: 0, total: 1 },
     };
     crear({ visita });
     expect(componente().form.getRawValue()).toEqual({ centro: 2, practicas: [12], fecha: '2026-12-03', hora: '15:00', modalidad: 'terreno' });

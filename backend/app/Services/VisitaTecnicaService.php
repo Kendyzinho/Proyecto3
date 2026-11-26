@@ -122,8 +122,10 @@ class VisitaTecnicaService
             'centro' => $centro ? ['id' => $centro->id, 'nombre' => $centro->nombre] : null,
             'practicas' => $this->practicas($visita->practicas),
             // HU-16: cuántas prácticas de la visita ya tienen su pauta enviada
+            // `registradas` cuenta también los borradores: con alguna, la visita ya no se puede cancelar
             'pautas' => [
                 'enviadas' => DB::table('respuestas_instrumento')->where('visita_id', $visita->id)->whereNotNull('fecha_envio')->count(),
+                'registradas' => DB::table('respuestas_instrumento')->where('visita_id', $visita->id)->count(),
                 'total' => $visita->practicas->count(),
             ],
         ];

@@ -3,9 +3,11 @@
 namespace App\Services;
 
 use App\Models\Malla;
+use App\Models\PlantillaInstrumento;
 use App\Models\TipoPractica;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -78,8 +80,12 @@ class MallaService
     {
         $this->exigirEnPreparacion($tipo->malla);
 
-        // Nadie se habilita en una malla en preparación, así que la práctica se puede borrar
-        $tipo->delete();
+        // Nadie se habilita en una malla en preparación, así que la práctica se puede borrar.
+        // Su informe confidencial (HU-19) aún no tiene respuestas: se borra con ella (ítems y opciones en cascada)
+        DB::transaction(function () use ($tipo) {
+            PlantillaInstrumento::where('tipo_practica_id', $tipo->id)->delete();
+            $tipo->delete();
+        });
     }
 
     private function exigirEnPreparacion(Malla $malla): void

@@ -111,7 +111,7 @@ class PautaVisitaTest extends TestCase
         $this->assertSame(['1', '2', '3', '4', '5'], array_column($datos['formulario']['items'][0]['opciones'], 'etiqueta'));
         $this->assertSame(['Antonia Vega Muñoz', 'Pedro Lagos Rivas'], array_column($datos['practicas'], 'estudiante'));
         $this->assertNull($datos['practicas'][0]['respuesta']);
-        $this->assertSame(['enviadas' => 0, 'total' => 2], $this->resumen());
+        $this->assertSame(['enviadas' => 0, 'registradas' => 0, 'total' => 2], $this->resumen());
     }
 
     public function test_un_borrador_incompleto_se_guarda_y_se_vuelve_a_leer(): void
@@ -122,7 +122,7 @@ class PautaVisitaTest extends TestCase
             ->firstWhere('estudiante', 'Pedro Lagos Rivas');
         $this->assertCount(2, $pedro['respuesta']['respuestas']);
         $this->assertNull($pedro['respuesta']['enviada_en']);
-        $this->assertSame(['enviadas' => 0, 'total' => 2], $this->resumen());
+        $this->assertSame(['enviadas' => 0, 'registradas' => 1, 'total' => 2], $this->resumen());
     }
 
     public function test_enviar_exige_todo_y_despues_cuenta_como_enviada(): void
@@ -133,7 +133,7 @@ class PautaVisitaTest extends TestCase
             ->assertJsonPath('errors.faltantes.0', (string) $this->items()['comentarios']->id);
 
         $this->guardar($this->pedro, $this->respuestas(), enviar: true)->assertOk()->assertJsonPath('data.enviada_en', fn ($fecha) => $fecha !== null);
-        $this->assertSame(['enviadas' => 1, 'total' => 2], $this->resumen());
+        $this->assertSame(['enviadas' => 1, 'registradas' => 1, 'total' => 2], $this->resumen());
     }
 
     public function test_una_pauta_enviada_no_se_modifica(): void

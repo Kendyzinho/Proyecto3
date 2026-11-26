@@ -97,7 +97,8 @@ export class PautaVisita {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (respuesta) => {
-          this.cambiar(id, () => ({ guardando: null, enviadaEn: respuesta.enviada_en, faltantes: [] }));
+          // La respuesta guardada pasa a ser la de la práctica: así aparece "Borrador" sin recargar
+          this.cambiar(id, (p) => ({ guardando: null, enviadaEn: respuesta.enviada_en, faltantes: [], practica: { ...p.practica, respuesta } }));
           this.aviso.open(enviar ? 'Pauta enviada.' : 'Borrador guardado.', 'Cerrar', { duration: 5000 });
         },
         error: (e: HttpErrorResponse) => {

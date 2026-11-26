@@ -69,6 +69,18 @@ class CuentaSupervisorTest extends TestCase
             && str_contains($correo->enlace, '/auth/restablecer?token='));
     }
 
+    public function test_si_la_invitacion_falla_queda_activado_y_lo_avisa(): void
+    {
+        $supervisor = $this->nuevo('marta@example.test');
+        Mail::shouldReceive('to')->andThrow(new \RuntimeException('Servidor de correo caído'));
+
+        $this->activar($supervisor)->assertOk()
+            ->assertJsonPath('message', 'Supervisor(a) activado. No se pudo enviar el correo: puede crear su contraseña con "¿Olvidaste tu contraseña?".');
+
+        $this->assertNotNull($supervisor->fresh()->fecha_alta);
+        $this->assertNotNull($supervisor->fresh()->user_id);
+    }
+
     public function test_el_catalogo_no_expone_la_cuenta(): void
     {
         $supervisor = $this->nuevo('marta@example.test');

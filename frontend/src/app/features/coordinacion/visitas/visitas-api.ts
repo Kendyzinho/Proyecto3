@@ -27,7 +27,7 @@ export interface Visita {
   estado: EstadoVisita;
   centro: CentroVisita | null;
   practicas: PracticaVisita[];
-  pautas: { enviadas: number; total: number }; // HU-16
+  pautas: { enviadas: number; registradas: number; total: number }; // HU-16 (registradas incluye borradores)
 }
 
 export interface PracticaPauta extends PracticaVisita {

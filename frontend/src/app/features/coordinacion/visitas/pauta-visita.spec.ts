@@ -25,7 +25,7 @@ function datos(antonia: RespuestaGuardada | null = null): PautasVisita {
   return {
     visita: {
       id: 5, fecha_hora: '2026-11-24 15:00', modalidad: 'terreno', estado: 'realizada', centro: { id: 2, nombre: 'Productora Norte Visual' },
-      practicas: [], pautas: { enviadas: 0, total: 2 },
+      practicas: [], pautas: { enviadas: 0, registradas: 0, total: 2 },
     },
     formulario: FORMULARIO,
     practicas: [
@@ -96,6 +96,10 @@ describe('PautaVisita', () => {
     expect(peticion.request.method).toBe('PUT');
     expect(peticion.request.body).toEqual({ respuestas: [{ item_id: 1, opcion_id: 14 }], enviar: false });
     peticion.flush({ data: { ...FORMULARIO, respuesta_id: 3, enviada_en: null, respuestas: [{ item_id: 1, opcion_id: 14, texto: null }] } });
+    fixture.detectChanges();
+
+    // Sin recargar ya se ve como borrador
+    expect(tarjetas()[1].querySelector('.estado')?.textContent).toContain('Borrador');
   });
 
   it('enviar pide confirmación y manda todo con enviar en verdadero', () => {

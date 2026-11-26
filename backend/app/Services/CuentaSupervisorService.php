@@ -27,7 +27,8 @@ class CuentaSupervisorService
     public function asegurar(Supervisor $supervisor): ?User
     {
         $correo = Str::lower(trim($supervisor->correo));
-        $cuenta = User::whereRaw('LOWER(email) = ?', [$correo])->lockForUpdate()->first();
+        // La collation de users.email ya compara sin distinguir mayúsculas; así se usa el índice único
+        $cuenta = User::where('email', $correo)->lockForUpdate()->first();
 
         if ($cuenta && ! $cuenta->esSupervisor()) {
             throw ValidationException::withMessages([
@@ -73,13 +74,20 @@ class CuentaSupervisorService
     // Tras dar de baja un registro: la cuenta sigue si supervisa en otro centro o tiene algo pendiente
     public function alDarDeBaja(Supervisor $supervisor): void
     {
-        $cuenta = $supervisor->usuario;
-        if (! $cuenta || $cuenta->fecha_baja !== null) {
+        if ($supervisor->usuario) {
+            $this->revisar($supervisor->usuario, excluir: $supervisor->id);
+        }
+    }
+
+    // También después de enviar un informe: si ya estaba dado de baja en todos sus centros y no le queda nada, se cierra
+    public function revisar(User $cuenta, ?int $excluir = null): void
+    {
+        if ($cuenta->fecha_baja !== null) {
             return;
         }
 
         $registros = $cuenta->supervisores()->get();
-        $otroActivo = $registros->contains(fn (Supervisor $registro) => $registro->id !== $supervisor->id && $registro->estaActivo());
+        $activo = $registros->contains(fn (Supervisor $registro) => $registro->id !== $excluir && $registro->estaActivo());
         $ids = $registros->pluck('id');
         $practicasVigentes = Practica::conEstado(['confirmada', 'en_curso'])->whereIn('supervisor_id', $ids)->exists();
         $informesPendientes = DB::table('respuestas_instrumento as respuesta')
@@ -90,7 +98,7 @@ class CuentaSupervisorService
             ->whereNull('respuesta.fecha_envio')
             ->exists();
 
-        if ($otroActivo || $practicasVigentes || $informesPendientes) {
+        if ($activo || $practicasVigentes || $informesPendientes) {
             return;
         }
 

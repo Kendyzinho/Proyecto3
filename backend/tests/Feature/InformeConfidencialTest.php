@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Mail\InformeConfidencialMail;
 use App\Mail\InvitacionSupervisorMail;
+use App\Models\HistorialPractica;
 use App\Models\Item;
 use App\Models\Practica;
 use App\Models\RespuestaInstrumento;
@@ -216,6 +217,48 @@ class InformeConfidencialTest extends TestCase
 
         $this->actingAs(User::where('email', 'secretaria@uta.cl')->firstOrFail());
         $this->getJson('/api/coordinacion/informes')->assertForbidden();
+    }
+
+    public function test_un_informe_ya_enviado_no_se_vuelve_a_solicitar(): void
+    {
+        $antonia = $this->practica('Antonia Vega Muñoz');
+        $this->solicitar($antonia)->assertOk();
+        $this->actingAs($this->sergio);
+        $this->guardar($antonia, $this->respuestas($antonia), enviar: true)->assertOk();
+
+        $this->actingAs($this->coordinadora);
+        $this->solicitar($antonia)->assertStatus(422)->assertJsonValidationErrors('practica');
+        Mail::assertSent(InformeConfidencialMail::class, 1);
+    }
+
+    public function test_si_el_correo_falla_el_informe_queda_solicitado_y_lo_avisa(): void
+    {
+        Mail::shouldReceive('to')->andThrow(new \RuntimeException('Servidor de correo caído'));
+        $antonia = $this->practica('Antonia Vega Muñoz');
+
+        $this->solicitar($antonia)->assertOk()
+            ->assertJsonPath('data.estado', 'solicitado')
+            ->assertJsonPath('message', 'El informe quedó solicitado, pero no se pudo enviar el correo. Inténtalo de nuevo con "Reenviar aviso".');
+    }
+
+    public function test_dado_de_baja_con_un_informe_pendiente_puede_responderlo_y_despues_se_cierra_su_cuenta(): void
+    {
+        // Paula (Municipalidad) solo supervisa a Camila: se le pide el informe, la práctica termina y la dan de baja
+        $camila = $this->practica('Camila Rojas Pizarro');
+        $this->solicitar($camila)->assertOk();
+        $paula = $camila->supervisor->fresh();
+        HistorialPractica::create(['practica_id' => $camila->id, 'user_id' => $this->coordinadora->id, 'fecha_hora' => now(), 'estado_nuevo' => 'finalizada']);
+        $this->postJson("/api/centros-practica/{$paula->centro_id}/supervisores/{$paula->id}/dar-de-baja")->assertOk();
+
+        $cuenta = $paula->usuario->fresh();
+        $this->assertNull($cuenta->fecha_baja); // le falta responder el informe
+        $this->solicitar($camila)->assertOk(); // y se le puede reenviar el aviso
+
+        $this->actingAs($cuenta);
+        $this->guardar($camila, $this->respuestas($camila), enviar: true)->assertOk();
+
+        $this->assertNotNull($cuenta->fresh()->fecha_baja);
+        $this->assertSame(0, $cuenta->tokens()->count());
     }
 
     public function test_el_jefe_tambien_solicita_y_lee(): void

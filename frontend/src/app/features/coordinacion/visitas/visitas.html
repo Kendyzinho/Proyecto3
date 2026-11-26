@@ -84,9 +84,11 @@
               }
               @if (visita.estado !== 'cancelada') {
                 <button matButton type="button" (click)="editar(visita)">Editar</button>
-                <button matButton type="button" [disabled]="cancelando() !== null" (click)="cancelar(visita)">
-                  {{ cancelando() === visita.id ? 'Cancelando…' : 'Cancelar' }}
-                </button>
+                @if (visita.pautas.registradas === 0) {
+                  <button matButton type="button" [disabled]="cancelando() !== null" (click)="cancelar(visita)">
+                    {{ cancelando() === visita.id ? 'Cancelando…' : 'Cancelar' }}
+                  </button>
+                }
               }
             </td>
           </ng-container>

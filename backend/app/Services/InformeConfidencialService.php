@@ -49,12 +49,16 @@ class InformeConfidencialService
             abort_unless($practica->estaFormalizada(), 404);
 
             $supervisor = $practica->supervisor;
-            if (! $supervisor || ! $supervisor->estaActivo()) {
-                throw ValidationException::withMessages(['practica' => 'La práctica no tiene un supervisor(a) activo que pueda responder el informe.']);
-            }
             $existente = $this->instrumentos->respuestaDe($practica->id, self::INSTRUMENTO);
             if ($existente?->enviada()) {
                 throw ValidationException::withMessages(['practica' => 'El supervisor(a) ya envió este informe.']);
+            }
+            // Un informe ya pedido se puede reenviar mientras su cuenta siga activa, aunque ya no esté activo en el centro
+            // (la cuenta sigue abierta justamente porque le falta responderlo)
+            $puedeResponder = $supervisor && ($supervisor->estaActivo()
+                || ($existente && $supervisor->usuario && $supervisor->usuario->fecha_baja === null));
+            if (! $puedeResponder) {
+                throw ValidationException::withMessages(['practica' => 'La práctica no tiene un supervisor(a) activo que pueda responder el informe.']);
             }
 
             $plantilla = $existente?->plantilla
@@ -64,7 +68,7 @@ class InformeConfidencialService
             }
 
             // Los supervisores activados antes de las cuentas reciben la suya ahora
-            $invitar = $this->cuentas->asegurar($supervisor);
+            $invitar = $supervisor->estaActivo() ? $this->cuentas->asegurar($supervisor) : null;
 
             return [$existente ?? $this->instrumentos->crearRespuesta($practica->id, $plantilla), $invitar];
         });
@@ -116,8 +120,14 @@ class InformeConfidencialService
     public function guardar(User $supervisor, Practica $practica, array $respuestas, bool $enviar): array
     {
         $respuesta = $this->instrumentos->guardar($this->deSuPractica($supervisor, $practica), $respuestas, $enviar);
+        $detalle = $this->detalle($practica, $respuesta);
 
-        return $this->detalle($practica, $respuesta);
+        // Si lo habían dado de baja y este era su último pendiente, su cuenta se cierra ahora
+        if ($enviar) {
+            $this->cuentas->revisar($supervisor);
+        }
+
+        return $detalle;
     }
 
     // 404 si la práctica no es de este supervisor(a) o no le han pedido el informe

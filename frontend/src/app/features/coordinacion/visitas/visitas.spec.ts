@@ -13,11 +13,11 @@ import { CentroSinVisita, Visita } from './visitas-api';
 const VISITAS: Visita[] = [
   {
     id: 1, fecha_hora: '2026-11-20 09:00', modalidad: 'terreno', estado: 'realizada', centro: { id: 4, nombre: 'Corfo Arica y Parinacota' },
-    practicas: [{ id: 15, estudiante: 'Diego Choque', tipo_practica: 'Profesional' }], pautas: { enviadas: 0, total: 1 },
+    practicas: [{ id: 15, estudiante: 'Diego Choque', tipo_practica: 'Profesional' }], pautas: { enviadas: 0, registradas: 0, total: 1 },
   },
   {
     id: 2, fecha_hora: '2026-12-02 10:30', modalidad: 'virtual', estado: 'cancelada', centro: { id: 2, nombre: 'Productora Norte Visual' },
-    practicas: [{ id: 12, estudiante: 'Pedro Lagos', tipo_practica: 'Profesional' }], pautas: { enviadas: 0, total: 1 },
+    practicas: [{ id: 12, estudiante: 'Pedro Lagos', tipo_practica: 'Profesional' }], pautas: { enviadas: 0, registradas: 0, total: 1 },
   },
 ];
 const SIN_VISITA: CentroSinVisita[] = [
@@ -108,7 +108,7 @@ describe('Visitas', () => {
   });
 
   it('con todas las pautas enviadas dice Pauta completa y abre la pauta de la visita', () => {
-    crear([{ ...VISITAS[0], pautas: { enviadas: 1, total: 1 } }], []);
+    crear([{ ...VISITAS[0], pautas: { enviadas: 1, registradas: 1, total: 1 } }], []);
     const navegar = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
 
     expect(texto()).toContain('Pauta completa');
@@ -116,5 +116,13 @@ describe('Visitas', () => {
     ver.click();
 
     expect(navegar).toHaveBeenCalledWith([1, 'pauta'], expect.anything());
+  });
+
+  it('una visita con pautas registradas no ofrece Cancelar', () => {
+    crear([{ ...VISITAS[0], pautas: { enviadas: 0, registradas: 1, total: 1 } }], []);
+
+    const botones = [...fixture.nativeElement.querySelectorAll('tr.mat-mdc-row button')].map((b) => (b as HTMLElement).textContent?.trim());
+    expect(botones).toContain('Editar');
+    expect(botones).not.toContain('Cancelar');
   });
 });

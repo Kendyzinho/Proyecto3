@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Malla;
 use App\Models\User;
 use Database\Seeders\CatalogoSeeder;
+use Database\Seeders\InstrumentoSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -96,6 +97,19 @@ class MallaTest extends TestCase
         $this->actingAs($this->jefe)->deleteJson("/api/tipos-practica/{$laboral->id}")->assertNoContent();
 
         $this->assertDatabaseMissing('tipos_practica', ['id' => $laboral->id]);
+    }
+
+    // HU-19: el InstrumentoSeeder crea el informe confidencial de cada tipo, también los de la malla en preparación
+    public function test_quita_una_practica_que_ya_tiene_su_informe_confidencial(): void
+    {
+        $this->seed(InstrumentoSeeder::class);
+        $laboral = $this->nueva->tiposPractica()->where('nombre', 'Laboral')->firstOrFail();
+        $this->assertDatabaseHas('plantillas_instrumento', ['tipo_practica_id' => $laboral->id]);
+
+        $this->actingAs($this->jefe)->deleteJson("/api/tipos-practica/{$laboral->id}")->assertNoContent();
+
+        $this->assertDatabaseMissing('tipos_practica', ['id' => $laboral->id]);
+        $this->assertDatabaseMissing('plantillas_instrumento', ['tipo_practica_id' => $laboral->id]);
     }
 
     public function test_no_quita_practicas_de_la_malla_vigente(): void
