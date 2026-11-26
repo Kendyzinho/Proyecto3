@@ -10,11 +10,13 @@ use App\Http\Controllers\DocumentoController;
 use App\Http\Controllers\FichaEstudianteController;
 use App\Http\Controllers\ListadoPracticasController;
 use App\Http\Controllers\MallaController;
+use App\Http\Controllers\InformeConfidencialController;
 use App\Http\Controllers\NominaController;
 use App\Http\Controllers\PracticaExcepcionalController;
 use App\Http\Controllers\PautaVisitaController;
 use App\Http\Controllers\PercepcionCentroController;
 use App\Http\Controllers\SolicitudPracticaController;
+use App\Http\Controllers\SupervisorInformeController;
 use App\Http\Controllers\UsuarioController;
 use App\Http\Controllers\VisitaTecnicaController;
 use App\Models\Periodo;
@@ -89,16 +91,30 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/visitas/{visita}/pautas', [PautaVisitaController::class, 'index'])->whereNumber('visita');
         Route::put('/visitas/{visita}/pautas/{practica}', [PautaVisitaController::class, 'update'])->whereNumber(['visita', 'practica']);
         Route::get('/practicas/{practica}/pautas', [PautaVisitaController::class, 'dePractica'])->whereNumber('practica');
+
+        // HU-19: informe confidencial del supervisor(a)
+        Route::get('/informes', [InformeConfidencialController::class, 'index']);
+        Route::post('/informes/{practica}/solicitar', [InformeConfidencialController::class, 'solicitar'])->whereNumber('practica');
+        Route::get('/informes/{practica}', [InformeConfidencialController::class, 'show'])->whereNumber('practica');
+    });
+    // HU-19: el supervisor(a) externo entra con su cuenta y solo ve los informes de sus prácticas
+    Route::middleware('rol:supervisor')->prefix('supervisor')->group(function () {
+        Route::get('/informes', [SupervisorInformeController::class, 'index']);
+        Route::get('/informes/{practica}', [SupervisorInformeController::class, 'show'])->whereNumber('practica');
+        Route::put('/informes/{practica}', [SupervisorInformeController::class, 'update'])->whereNumber('practica');
     });
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
     Route::put('/me/password', [AuthController::class, 'cambiarContrasena'])->middleware('throttle:6,1');
 
-    // HU-09: solicitud profesional del estudiante y revisión por Coordinación.
-    Route::get('/practicas/solicitud-profesional', [SolicitudPracticaController::class, 'estudiante']);
-    Route::post('/practicas/solicitud-profesional', [SolicitudPracticaController::class, 'guardar']);
-    Route::get('/solicitudes-practica', [SolicitudPracticaController::class, 'bandeja']);
-    Route::post('/practicas/{practica}/decision', [SolicitudPracticaController::class, 'decidir']);
+    // HU-19: el supervisor(a) externo no entra a estas rutas (cada controlador revisa además el rol exacto)
+    Route::middleware('rol:estudiante,secretaria,coordinadora,jefe')->group(function () {
+        // HU-09: solicitud profesional del estudiante y revisión por Coordinación.
+        Route::get('/practicas/solicitud-profesional', [SolicitudPracticaController::class, 'estudiante']);
+        Route::post('/practicas/solicitud-profesional', [SolicitudPracticaController::class, 'guardar']);
+        Route::get('/solicitudes-practica', [SolicitudPracticaController::class, 'bandeja']);
+        Route::post('/practicas/{practica}/decision', [SolicitudPracticaController::class, 'decidir']);
+    });
 
     Route::get('/periodos/actual', function () {
         $periodo = Periodo::actual();
@@ -146,17 +162,20 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/acuerdos/{acuerdo}/archivo', [DocumentoController::class, 'archivoAcuerdo']);
     });
 
-    // HU-12: catálogo de centros; las mutaciones y bajas verifican rol coordinadora o jefe.
-    Route::get('/areas', [CentroPracticaController::class, 'areas']);
-    Route::post('/areas', [CentroPracticaController::class, 'storeArea']);
-    Route::get('/periodos', [CentroPracticaController::class, 'periodos']);
-    Route::get('/centros-practica', [CentroPracticaController::class, 'index']);
-    Route::get('/centros-practica/{centroPractica}', [CentroPracticaController::class, 'show']);
-    Route::post('/centros-practica', [CentroPracticaController::class, 'store']);
-    Route::put('/centros-practica/{centroPractica}', [CentroPracticaController::class, 'update']);
-    Route::post('/centros-practica/{centroPractica}/dar-de-baja', [CentroPracticaController::class, 'darDeBaja']);
-    Route::post('/centros-practica/{centroPractica}/reactivar', [CentroPracticaController::class, 'reactivar']);
-    Route::post('/centros-practica/{centroPractica}/supervisores', [CentroPracticaController::class, 'storeSupervisor']);
-    Route::post('/centros-practica/{centroPractica}/supervisores/{supervisor}/activar', [CentroPracticaController::class, 'activarSupervisor']);
-    Route::post('/centros-practica/{centroPractica}/supervisores/{supervisor}/dar-de-baja', [CentroPracticaController::class, 'darDeBajaSupervisor']);
+    // HU-19: el catálogo de centros es interno; un supervisor(a) externo no ve otros centros (Art. 28)
+    Route::middleware('rol:estudiante,secretaria,coordinadora,jefe')->group(function () {
+        // HU-12: catálogo de centros; las mutaciones y bajas verifican rol coordinadora o jefe.
+        Route::get('/areas', [CentroPracticaController::class, 'areas']);
+        Route::post('/areas', [CentroPracticaController::class, 'storeArea']);
+        Route::get('/periodos', [CentroPracticaController::class, 'periodos']);
+        Route::get('/centros-practica', [CentroPracticaController::class, 'index']);
+        Route::get('/centros-practica/{centroPractica}', [CentroPracticaController::class, 'show']);
+        Route::post('/centros-practica', [CentroPracticaController::class, 'store']);
+        Route::put('/centros-practica/{centroPractica}', [CentroPracticaController::class, 'update']);
+        Route::post('/centros-practica/{centroPractica}/dar-de-baja', [CentroPracticaController::class, 'darDeBaja']);
+        Route::post('/centros-practica/{centroPractica}/reactivar', [CentroPracticaController::class, 'reactivar']);
+        Route::post('/centros-practica/{centroPractica}/supervisores', [CentroPracticaController::class, 'storeSupervisor']);
+        Route::post('/centros-practica/{centroPractica}/supervisores/{supervisor}/activar', [CentroPracticaController::class, 'activarSupervisor']);
+        Route::post('/centros-practica/{centroPractica}/supervisores/{supervisor}/dar-de-baja', [CentroPracticaController::class, 'darDeBajaSupervisor']);
+    });
 });

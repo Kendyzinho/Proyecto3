@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\GuardarPautaRequest;
+use App\Http\Requests\GuardarRespuestasRequest;
 use App\Models\Practica;
 use App\Models\VisitaTecnica;
 use App\Services\PautaVisitaService;
@@ -18,7 +18,7 @@ class PautaVisitaController extends Controller
         return response()->json(['data' => $this->service->pautas($visita)]);
     }
 
-    public function update(GuardarPautaRequest $request, VisitaTecnica $visita, Practica $practica): JsonResponse
+    public function update(GuardarRespuestasRequest $request, VisitaTecnica $visita, Practica $practica): JsonResponse
     {
         $enviar = $request->boolean('enviar');
         $pauta = $this->service->guardar($visita, $practica, $request->validated('respuestas'), $enviar);

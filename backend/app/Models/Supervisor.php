@@ -10,7 +10,10 @@ class Supervisor extends Model
 {
     protected $table = 'supervisores';
 
-    protected $fillable = ['centro_id', 'nombre', 'correo', 'telefono', 'cargo', 'unidad', 'fecha_alta', 'fecha_baja'];
+    protected $fillable = ['centro_id', 'user_id', 'nombre', 'correo', 'telefono', 'cargo', 'unidad', 'fecha_alta', 'fecha_baja'];
+
+    // El catálogo de centros devuelve los supervisores completos: la cuenta no se expone
+    protected $hidden = ['user_id'];
 
     protected function casts(): array
     {
@@ -20,6 +23,18 @@ class Supervisor extends Model
     public function centro(): BelongsTo
     {
         return $this->belongsTo(CentroPractica::class, 'centro_id');
+    }
+
+    // HU-19: cuenta con la que entra al sistema (se crea al activarlo)
+    public function usuario(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function estaActivo(): bool
+    {
+        return $this->fecha_alta !== null && ! $this->fecha_alta->isFuture()
+            && ($this->fecha_baja === null || $this->fecha_baja->isFuture());
     }
 
     public function practicas(): HasMany

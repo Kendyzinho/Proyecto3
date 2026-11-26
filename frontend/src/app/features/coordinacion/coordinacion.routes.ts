@@ -35,6 +35,12 @@ export default [
       },
       { path: 'alertas', title: 'Alertas', loadComponent: () => import('./alertas/alertas').then((m) => m.Alertas) },
       { path: 'visitas', title: 'Visitas técnicas', loadComponent: () => import('./visitas/visitas').then((m) => m.Visitas) },
+      { path: 'informes', title: 'Informes confidenciales', loadComponent: () => import('./informes/informes').then((m) => m.Informes) },
+      {
+        path: 'informes/:practica',
+        title: 'Informe confidencial',
+        loadComponent: () => import('./informes/informe-confidencial').then((m) => m.InformeConfidencial),
+      },
       { path: 'visitas/:id/pauta', title: 'Pauta de la visita', loadComponent: () => import('./visitas/pauta-visita').then((m) => m.PautaVisita) },
 
       {

@@ -1,0 +1,98 @@
+<p class="migas">
+  <button type="button" (click)="volver()">Informes confidenciales</button>
+  <span aria-hidden="true">/</span><span>Informe</span>
+</p>
+<header class="encabezado-pagina">
+  <h1>Informe confidencial</h1>
+</header>
+
+@if (cargando()) {
+  <section class="tarjeta"><p class="vacio">Cargando informe…</p></section>
+} @else if (errorCarga(); as mensaje) {
+  <section class="tarjeta">
+    <div class="vacio" role="alert">
+      <p>{{ mensaje }}</p>
+      <button matButton type="button" (click)="volver()">Volver a los informes</button>
+    </div>
+  </section>
+} @else if (datos(); as d) {
+  <section class="tarjeta">
+    <dl class="datos">
+      <div><dt>Estudiante</dt><dd>{{ d.practica.estudiante }}</dd></div>
+      <div><dt>Práctica</dt><dd>{{ d.practica.tipo_practica }}</dd></div>
+      <div><dt>Centro</dt><dd>{{ d.practica.centro }}</dd></div>
+      @if (d.informe.enviada_en) {
+        <div><dt>Enviado</dt><dd>{{ fecha(d.informe.enviada_en) }}</dd></div>
+      }
+    </dl>
+  </section>
+
+  @if (d.informe.enviada_en) {
+    <app-informe-lectura [informe]="d.informe" />
+  } @else {
+    <section class="tarjeta" aria-labelledby="escala-titulo">
+      <div class="tarjeta__cabecera">
+        <h2 id="escala-titulo">Escala</h2>
+      </div>
+      <ol class="escala">
+        @for (opcion of escala(); track opcion.id) {
+          <li><strong>{{ opcion.valor }}</strong> {{ opcion.etiqueta }}</li>
+        }
+      </ol>
+    </section>
+
+    @for (seccion of secciones(); track seccion.clave) {
+      <section class="tarjeta" [attr.aria-labelledby]="'seccion-' + seccion.clave">
+        <div class="tarjeta__cabecera">
+          <h2 [id]="'seccion-' + seccion.clave">{{ seccion.titulo }}</h2>
+        </div>
+        <ol class="criterios">
+          @for (item of seccion.items; track item.id) {
+            <li class="criterio" [class.criterio--falta]="falta(item)">
+              @if (esEscala(item)) {
+                <span class="criterio__enunciado" [id]="'criterio-' + item.id">{{ item.enunciado }}</span>
+                <mat-button-toggle-group
+                  hideSingleSelectionIndicator
+                  [value]="opciones()[item.id]"
+                  (change)="elegir(item.id, $event.value)"
+                  [attr.aria-labelledby]="'criterio-' + item.id"
+                >
+                  @for (opcion of item.opciones; track opcion.id) {
+                    <mat-button-toggle [value]="opcion.id" [aria-label]="opcion.etiqueta">{{ corta(opcion) }}</mat-button-toggle>
+                  }
+                </mat-button-toggle-group>
+              } @else {
+                <mat-form-field class="criterio__campo" subscriptSizing="dynamic">
+                  <mat-label>{{ item.enunciado }}</mat-label>
+                  <textarea
+                    matInput
+                    rows="4"
+                    maxlength="3000"
+                    [required]="item.obligatorio"
+                    [value]="textos()[item.id] ?? ''"
+                    (input)="escribir(item.id, $any($event.target).value)"
+                  ></textarea>
+                </mat-form-field>
+              }
+              @if (falta(item)) {
+                <span class="criterio__falta">Falta responder</span>
+              }
+            </li>
+          }
+        </ol>
+      </section>
+    }
+
+    @if (error()) {
+      <p class="formulario__error" role="alert">{{ error() }}</p>
+    }
+    <div class="formulario__acciones">
+      <button matButton="outlined" type="button" [disabled]="guardando() !== null" (click)="guardar(false)">
+        {{ guardando() === 'borrador' ? 'Guardando…' : 'Guardar borrador' }}
+      </button>
+      <button matButton="filled" type="button" [disabled]="guardando() !== null" (click)="guardar(true)">
+        {{ guardando() === 'envio' ? 'Enviando…' : 'Enviar informe' }}
+      </button>
+    </div>
+  }
+}

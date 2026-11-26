@@ -33,3 +33,28 @@ Artisan::command('alertas:generar', function (AlertaService $alertas) {
 
 // Una vez al día, antes de que empiece la jornada de la Coordinadora
 Schedule::command('alertas:generar')->dailyAt('06:00');
+
+// HU-19: crea la cuenta de los supervisores(as) activos que aún no tienen una (paso obligatorio al desplegar).
+// --sin-correo sirve para ambientes de prueba: crea las cuentas sin enviar la invitación.
+Artisan::command('supervisores:crear-cuentas {--sin-correo}', function (\App\Services\CuentaSupervisorService $cuentas) {
+    $creadas = 0;
+    $fallidas = [];
+    \App\Models\Supervisor::whereNull('user_id')->get()->filter->estaActivo()->each(function ($supervisor) use ($cuentas, &$creadas, &$fallidas) {
+        try {
+            $invitar = \Illuminate\Support\Facades\DB::transaction(fn () => $cuentas->asegurar($supervisor));
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            $fallidas[] = "{$supervisor->nombre} ({$supervisor->correo}): ".collect($e->errors())->flatten()->first();
+
+            return;
+        }
+        $creadas++;
+        if ($invitar && ! $this->option('sin-correo')) {
+            $cuentas->invitar($invitar);
+        }
+    });
+
+    $this->info("Supervisores vinculados a su cuenta: {$creadas}");
+    foreach ($fallidas as $fallida) {
+        $this->warn("Sin cuenta: {$fallida}");
+    }
+})->purpose('Crea o vincula la cuenta de los supervisores activos que no tienen una');
