@@ -21,6 +21,7 @@ export const MENUS_POR_ROL: Record<'coordinadora' | 'secretaria' | 'jefe' | 'est
   jefe: [
     { texto: 'Inicio', icono: 'home', ruta: '/jefatura' },
     { texto: 'Prácticas', icono: 'work', ruta: '/jefatura/asignaciones' },
+    { texto: 'Lista general', icono: 'list_alt', ruta: '/jefatura/practicas' },
     { texto: 'Solicitudes', icono: 'inbox', ruta: '/jefatura/solicitudes' },
     { texto: 'Alertas', icono: 'notifications_active', ruta: '/jefatura/alertas' },
     { texto: 'Visitas', icono: 'event', ruta: '/jefatura/visitas' },

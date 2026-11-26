@@ -1,3 +1,4 @@
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
@@ -8,13 +9,20 @@ import { Usuario } from '../models/usuario';
 import { authGuard, invitadoGuard } from './auth-guard';
 import { Auth } from '../services/auth';
 import { routes } from '../../app.routes';
+import { NotificacionesAlertas } from '../../shared/marco/notificaciones-alertas';
 
 describe('authGuard', () => {
   const ejecutar = (route: Route) => TestBed.runInInjectionContext(() => authGuard(route, []));
 
   beforeEach(() => {
     localStorage.clear();
-    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter(routes, withComponentInputBinding())] });
+    TestBed.configureTestingModule({
+      providers: [
+        provideHttpClient(), provideHttpClientTesting(), provideRouter(routes, withComponentInputBinding()),
+        // La campana de alertas (HU-14) no es parte de estas pruebas: no pide nada al backend
+        { provide: NotificacionesAlertas, useValue: { actualizar: () => {}, mostrar: () => {}, recientes: signal([]), abiertas: signal(0) } },
+      ],
+    });
   });
 
   afterEach(() => {

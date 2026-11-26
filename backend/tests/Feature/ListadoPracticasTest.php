@@ -12,7 +12,6 @@ use Database\Seeders\CatalogoSeeder;
 use Database\Seeders\CentrosDemoSeeder;
 use Database\Seeders\DemoSeeder;
 use Database\Seeders\UsuarioSeeder;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
@@ -99,13 +98,13 @@ class ListadoPracticasTest extends TestCase
             ->getJson('/api/coordinacion/practicas')->assertForbidden();
         $this->getJson('/api/coordinacion/practicas/exportar')->assertForbidden();
 
-        Auth::logout();
+        $this->app['auth']->forgetGuards();
         $this->getJson('/api/coordinacion/practicas')->assertUnauthorized();
     }
 
     public function test_exporta_excel_solo_con_los_resultados_filtrados(): void
     {
-        $respuesta = $this->get('/api/coordinacion/practicas?estado=por_iniciar&q=camila')
+        $respuesta = $this->get('/api/coordinacion/practicas/exportar?estado=por_iniciar&q=camila')
             ->assertOk()
             ->assertDownload('practicas_2026-2.xlsx');
 
