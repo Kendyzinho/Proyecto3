@@ -9,6 +9,7 @@ import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatSelectModule } from '@angular/material/select';
 
 import { AcuerdoCentro } from '../../secretaria/documentos/acuerdo-centro';
+import { FichaEstudiante as DialogoFichaEstudiante } from '../ficha-estudiante/ficha-estudiante';
 
 import {
   CentroPractica,
@@ -540,8 +541,13 @@ export class CentrosPractica {
   }
 
   protected mostrarFichaEstudiante(estudiante: EstudianteCentro): void {
-    this.estudianteSeleccionado.set(estudiante);
-    this.abrir(this.plantillaEstudiante(), '420px');
+    if (!estudiante.id) return;
+    this.dialogo.open(DialogoFichaEstudiante, {
+      data: estudiante.id,
+      width: '820px',
+      maxWidth: 'calc(100vw - 24px)',
+      maxHeight: '94dvh',
+    });
   }
 
   protected abrirAcuerdo(): void {

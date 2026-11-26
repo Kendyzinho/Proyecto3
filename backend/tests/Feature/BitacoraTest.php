@@ -2,27 +2,35 @@
 
 namespace Tests\Feature;
 
-use App\Models\{CentroPractica, Estudiante, Habilitacion, HistorialPractica, Periodo, Practica, Supervisor, TipoPractica, User};
-use Database\Seeders\CatalogoSeeder;
-use Tests\Concerns\BaseDeDatosAislada;
+use App\Models\{CentroPractica, Estudiante, Habilitacion, HistorialPractica, Malla, Periodo, Practica, Supervisor, TipoPractica, User};
+use Tests\Concerns\BaseDeDatosPracticasTransaccional;
 use Tests\TestCase;
 
 class BitacoraTest extends TestCase
 {
-    use BaseDeDatosAislada;
+    use BaseDeDatosPracticasTransaccional;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->iniciarTransaccionEnPracticas();
+    }
 
     public function test_no_permite_informar_una_inasistencia_pasadas_24_horas(): void
     {
         $this->travelTo(now()->setDate(2026, 10, 21)->setTime(10, 1));
-        $this->seed(CatalogoSeeder::class);
-
         $alumno = User::factory()->create(['rol' => null]);
         $estudiante = Estudiante::create(['user_id' => $alumno->id, 'anio_ingreso' => 2024]);
-        $tipo = TipoPractica::where('nombre', 'Laboral I')->firstOrFail();
+        $malla = Malla::query()->firstOrCreate(['nombre' => 'Malla test HU-13'], ['vigente_desde' => '2026-03-01']);
+        $tipo = TipoPractica::query()->firstOrCreate(
+            ['malla_id' => $malla->id, 'nombre' => 'Laboral I'],
+            ['categoria' => 'laboral', 'horas_requeridas' => 64, 'prerrequisito' => 'Dato de prueba'],
+        );
+        $periodo = Periodo::query()->firstOrCreate(['anio' => 2026, 'semestre' => 2]);
         $habilitacion = Habilitacion::create([
             'estudiante_id' => $estudiante->id,
             'tipo_practica_id' => $tipo->id,
-            'periodo_id' => Periodo::where('anio', 2026)->where('semestre', 2)->firstOrFail()->id,
+            'periodo_id' => $periodo->id,
             'cumple_prerrequisito' => true,
             'horas_requeridas' => 64,
         ]);

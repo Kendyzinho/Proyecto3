@@ -90,6 +90,11 @@ export class DocumentosApi {
     return this.http.get(`/api/practicas/${practicaId}/documentos/${tipo}`, { responseType: 'blob' });
   }
 
+  // Descarga de solo lectura desde HU-17 para Coordinación y Jefatura.
+  pdfFicha(practicaId: number, tipo: TipoDocumento): Observable<Blob> {
+    return this.http.get(`/api/coordinacion/practicas/${practicaId}/documentos/${tipo}`, { responseType: 'blob' });
+  }
+
   enviar(practicaId: number): Observable<{ destinatarios: string[] }> {
     return this.http.post<{ destinatarios: string[] }>(`/api/practicas/${practicaId}/documentos/enviar`, {});
   }

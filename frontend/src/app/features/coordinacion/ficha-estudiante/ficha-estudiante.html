@@ -1,0 +1,70 @@
+<h2 mat-dialog-title>Ficha individual del estudiante</h2>
+<mat-dialog-content>
+  @if (cargando()) { <p role="status">Cargando expediente…</p> }
+  @if (error()) { <p class="aviso aviso--error" role="alert">{{ error() }}</p> }
+
+  @if (datos(); as ficha) {
+    <header class="persona">
+      <h3>{{ ficha.estudiante.nombre }}</h3>
+      <div class="persona__datos">
+        <p><strong>Correo:</strong> {{ ficha.estudiante.correo }}</p>
+        <p><strong>RUT:</strong> {{ ficha.estudiante.rut || 'No registrado' }}</p>
+        <p><strong>Año de ingreso:</strong> {{ ficha.estudiante.anio_ingreso || 'No registrado' }}</p>
+      </div>
+    </header>
+
+    <section class="seccion">
+      <h3>Práctica</h3>
+      <dl class="datos">
+        <div><dt>Tipo</dt><dd>{{ ficha.practica.tipo || 'Sin tipo' }}</dd></div>
+        <div><dt>Período</dt><dd>{{ ficha.practica.periodo || 'Sin período' }}</dd></div>
+        <div><dt>Estado</dt><dd>{{ ficha.practica.estado || 'Sin estado' }}</dd></div>
+        <div><dt>Centro</dt><dd>{{ ficha.practica.centro || 'Sin centro' }}</dd></div>
+        <div><dt>Supervisor(a)</dt><dd>{{ ficha.practica.supervisor || 'Sin supervisor' }}</dd></div>
+        <div><dt>Fechas</dt><dd>{{ ficha.practica.fecha_inicio || '—' }} a {{ ficha.practica.fecha_fin || '—' }}</dd></div>
+      </dl>
+    </section>
+
+    <section class="seccion">
+      <h3>Avance de bitácora</h3>
+      <p><strong>{{ ficha.bitacora.horas_confirmadas }}</strong> de {{ ficha.bitacora.horas_requeridas }} horas confirmadas · {{ ficha.bitacora.jornadas }} jornadas registradas</p>
+      <mat-progress-bar mode="determinate" [value]="ficha.bitacora.porcentaje_avance" aria-label="Avance de horas confirmadas"></mat-progress-bar>
+      <p class="secundario">{{ ficha.bitacora.porcentaje_avance }}% completado</p>
+    </section>
+
+    <section class="seccion">
+      <h3>Documentos</h3>
+      <ul class="lista">
+        @for (documento of ficha.documentos; track documento.tipo) {
+          <li>
+            <span>{{ documento.etiqueta }}</span>
+            @if (documento.registrado) {
+              <span class="estado estado--exito">Registrado</span>
+              @if (documento.fecha_envio) { <small>Enviado {{ documento.fecha_envio | date:'dd/MM/yyyy' }}</small> }
+              <button mat-button type="button" [disabled]="descargando() !== null" (click)="descargar(documento.tipo)">{{ descargando() === documento.tipo ? 'Descargando…' : 'Descargar PDF' }}</button>
+            } @else { <span class="estado estado--advertencia">Pendiente</span> }
+          </li>
+        }
+      </ul>
+    </section>
+
+    <section class="seccion">
+      <h3>Visitas</h3>
+      @if (ficha.visitas.length) {
+        <ul class="lista">
+          @for (visita of ficha.visitas; track visita.id) {
+            <li><span>{{ visita.fecha_hora | date:'dd/MM/yyyy HH:mm' }} · {{ visita.modalidad === 'terreno' ? 'Terreno' : 'Virtual' }}</span><span class="estado" [class.estado--error]="visita.cancelada" [class.estado--exito]="!visita.cancelada">{{ visita.cancelada ? 'Cancelada' : 'Realizada/programada' }}</span></li>
+          }
+        </ul>
+      } @else { <p class="secundario">No hay visitas registradas para esta práctica.</p> }
+    </section>
+
+    <section class="seccion">
+      <h3>Evaluación final</h3>
+      <p><span class="estado" [class.estado--exito]="ficha.evaluacion.resultado === 'aprobado'" [class.estado--error]="ficha.evaluacion.resultado === 'reprobado'" [class.estado--advertencia]="!ficha.evaluacion.resultado">{{ ficha.evaluacion.estado }}</span></p>
+      @if (ficha.evaluacion.fecha) { <p class="secundario">Fecha: {{ ficha.evaluacion.fecha | date:'dd/MM/yyyy' }}</p> }
+      @if (ficha.evaluacion.motivo) { <p>{{ ficha.evaluacion.motivo }}</p> }
+    </section>
+  }
+</mat-dialog-content>
+<mat-dialog-actions align="end"><button mat-button type="button" (click)="cerrar()">Cerrar</button></mat-dialog-actions>

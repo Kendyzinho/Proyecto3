@@ -5,6 +5,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
+import { FichaEstudiante } from '../ficha-estudiante/ficha-estudiante';
 
 import { AreaOpcion, CalendarioPractica, CentroAsignable, DIAS_SEMANA, EstudianteAsignable, HorarioPractica, ModalidadPractica } from './asignacion-practicas.model';
 import { AsignacionPracticasService } from './asignacion-practicas.service';
@@ -19,7 +20,7 @@ import { FechasHorario } from './fechas-horario';
 export class AsignacionPracticas {
   private readonly service = inject(AsignacionPracticasService);
   private readonly dialogo = inject(MatDialog);
-  protected readonly columnasCalendario = ['estudiante', 'centro', 'fechas', 'horario', 'accion'];
+  protected readonly columnasCalendario = ['estudiante', 'centro', 'fechas', 'horario', 'accion', 'ficha'];
   protected readonly calendarios = signal<CalendarioPractica[]>([]);
   protected readonly areasDisponibles = signal<AreaOpcion[]>([]);
   protected readonly idsAreas = signal<number[]>([]);
@@ -40,6 +41,10 @@ export class AsignacionPracticas {
   protected readonly supervisorSeleccionado = computed(() => this.centroSeleccionado()?.supervisores.find((item) => item.id === this.supervisorId()) ?? null);
   protected readonly estudiantesSinCentro = computed(() => this.estudiantes());
   protected readonly centrosCompatibles = computed(() => this.centros().slice().sort((a, b) => this.contarCoincidencias(b) - this.contarCoincidencias(a)));
+
+  protected verFicha(practicaId: number): void {
+    this.dialogo.open(FichaEstudiante, { data: practicaId, width: '820px', maxWidth: 'calc(100vw - 24px)', maxHeight: '94dvh' });
+  }
 
   constructor() {
     this.service.listarAreas().subscribe({
