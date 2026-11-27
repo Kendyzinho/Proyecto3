@@ -7,12 +7,14 @@ use App\Models\CentroPractica;
 use App\Models\Periodo;
 use App\Models\RequerimientoCentro;
 use App\Models\Supervisor;
+use App\Models\User;
 use App\Services\CuentaSupervisorService;
 use App\Support\Rut;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -211,6 +213,99 @@ class CentroPracticaController extends Controller
         }
 
         return response()->json(['data' => $this->serializeCentro($this->catalogQuery()->findOrFail($centroPractica->id), true), 'message' => $mensaje]);
+    }
+
+    // Diálogo "Agregar supervisor(a)": dice si el correo ya tiene una cuenta de supervisor(a), p. ej. creada en Usuarios (HU-05)
+    public function cuentaSupervisor(Request $request, CentroPractica $centroPractica): JsonResponse
+    {
+        $this->requireCoordinator($request);
+        $correo = Str::lower(trim((string) $request->query('correo')));
+        $cuenta = $correo === '' ? null : User::where('email', $correo)->first();
+
+        return response()->json(['data' => [
+            'cuenta' => $cuenta?->esSupervisor() ? ['nombre' => $cuenta->name, 'activa' => $cuenta->fecha_baja === null] : null,
+            'interna' => $cuenta !== null && ! $cuenta->esSupervisor(),
+            'en_este_centro' => $correo !== '' && $centroPractica->supervisores()->where('correo', $correo)->exists(),
+        ]]);
+    }
+
+    // Buscador del diálogo: cuentas de supervisor(a) por nombre o correo (como la búsqueda de la nómina, HU-07)
+    public function buscarCuentasSupervisor(Request $request, CentroPractica $centroPractica): JsonResponse
+    {
+        $this->requireCoordinator($request);
+        $texto = trim((string) $request->query('q'));
+        if (mb_strlen($texto) < 2) {
+            return response()->json(['data' => []]);
+        }
+
+        $patron = '%'.addcslashes($texto, '\\%_').'%';
+        $enEsteCentro = $centroPractica->supervisores()->pluck('correo')->map(fn ($correo) => Str::lower($correo));
+        $cuentas = User::where('rol', 'supervisor')
+            ->where(fn ($q) => $q->where('name', 'like', $patron)->orWhere('email', 'like', $patron))
+            ->orderBy('name')
+            ->limit(10)
+            ->get();
+
+        return response()->json(['data' => $cuentas->map(fn (User $cuenta) => [
+            'nombre' => $cuenta->name,
+            'correo' => $cuenta->email,
+            'activa' => $cuenta->fecha_baja === null,
+            'en_este_centro' => $enEsteCentro->contains(Str::lower($cuenta->email)),
+        ])->values()]);
+    }
+
+    // Agrega un supervisor(a) al centro como "Agregar un estudiante" en la nómina: si su cuenta ya existe se le asigna,
+    // si no, se crea. Si el centro ya puede recibir estudiantes queda activo con su cuenta (HU-19);
+    // si no, queda propuesto y se aprueba cuando el centro tenga acuerdo vigente.
+    public function asignarSupervisor(Request $request, CentroPractica $centroPractica, CuentaSupervisorService $cuentas): JsonResponse
+    {
+        $this->requireCoordinator($request);
+        $data = $request->validate([
+            'correo' => ['required', 'email', 'max:255'],
+            'nombre' => ['nullable', 'string', 'max:255'],
+            'telefono' => ['nullable', 'string', 'max:30'],
+            'cargo' => ['nullable', 'string', 'max:255'],
+            'unidad' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        abort_if($centroPractica->fecha_baja && $centroPractica->fecha_baja->lessThanOrEqualTo(today()), 422, 'No se pueden agregar supervisores a un centro dado de baja.');
+        $correo = Str::lower(trim($data['correo']));
+        $cuenta = User::where('email', $correo)->first();
+        if ($cuenta && ! $cuenta->esSupervisor()) {
+            throw ValidationException::withMessages(['correo' => 'El correo pertenece a una cuenta interna de la universidad. Usa su correo del centro.']);
+        }
+        if ($centroPractica->supervisores()->where('correo', $correo)->exists()) {
+            throw ValidationException::withMessages(['correo' => 'Ya existe un supervisor con ese correo en este centro.']);
+        }
+        // Con cuenta existente se usa su nombre, para que el centro y la cuenta digan lo mismo
+        $nombre = $cuenta?->name ?? trim((string) ($data['nombre'] ?? ''));
+        if ($nombre === '') {
+            throw ValidationException::withMessages(['nombre' => 'Ingresa el nombre completo.']);
+        }
+
+        $activar = $this->centroPuedeRecibirEstudiantes($centroPractica);
+        $invitar = DB::transaction(function () use ($centroPractica, $data, $correo, $nombre, $activar, $cuentas) {
+            $supervisor = $centroPractica->supervisores()->create([
+                'nombre' => $nombre,
+                'correo' => $correo,
+                'telefono' => isset($data['telefono']) ? trim($data['telefono']) : null,
+                'cargo' => isset($data['cargo']) ? trim($data['cargo']) : null,
+                'unidad' => isset($data['unidad']) ? trim($data['unidad']) : null,
+                'fecha_alta' => $activar ? today()->toDateString() : null,
+                'fecha_baja' => null,
+            ]);
+
+            return $activar ? $cuentas->asegurar($supervisor) : null;
+        });
+
+        $mensaje = match (true) {
+            ! $activar => 'Supervisor(a) agregado como propuesto: podrás aprobarlo cuando el centro tenga un acuerdo vigente.',
+            $invitar === null => 'Supervisor(a) asignado al centro con su cuenta existente.',
+            $cuentas->invitar($invitar) => 'Supervisor(a) activado. Le enviamos un correo para crear su contraseña.',
+            default => 'Supervisor(a) activado. No se pudo enviar el correo: puede crear su contraseña con "¿Olvidaste tu contraseña?".',
+        };
+
+        return response()->json(['data' => $this->serializeCentro($this->catalogQuery()->findOrFail($centroPractica->id), true), 'message' => $mensaje], 201);
     }
 
     public function darDeBajaSupervisor(Request $request, CentroPractica $centroPractica, Supervisor $supervisor, CuentaSupervisorService $cuentas): JsonResponse

@@ -178,6 +178,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/centros-practica/{centroPractica}/dar-de-baja', [CentroPracticaController::class, 'darDeBaja']);
         Route::post('/centros-practica/{centroPractica}/reactivar', [CentroPracticaController::class, 'reactivar']);
         Route::post('/centros-practica/{centroPractica}/supervisores', [CentroPracticaController::class, 'storeSupervisor']);
+        // Asignar o crear un supervisor(a) desde la ficha del centro, reutilizando su cuenta si ya existe
+        Route::get('/centros-practica/{centroPractica}/supervisores/cuenta', [CentroPracticaController::class, 'cuentaSupervisor']);
+        Route::get('/centros-practica/{centroPractica}/supervisores/cuentas', [CentroPracticaController::class, 'buscarCuentasSupervisor']);
+        Route::post('/centros-practica/{centroPractica}/supervisores/asignar', [CentroPracticaController::class, 'asignarSupervisor']);
         Route::post('/centros-practica/{centroPractica}/supervisores/{supervisor}/activar', [CentroPracticaController::class, 'activarSupervisor']);
         Route::post('/centros-practica/{centroPractica}/supervisores/{supervisor}/dar-de-baja', [CentroPracticaController::class, 'darDeBajaSupervisor']);
     });

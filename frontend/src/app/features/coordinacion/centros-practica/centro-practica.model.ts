@@ -31,6 +31,29 @@ export interface SupervisorCentro {
   estado: 'Propuesto' | 'Activo' | 'De baja';
 }
 
+// Respuesta de la búsqueda por correo del diálogo "Agregar supervisor(a)"
+export interface CuentaSupervisorEncontrada {
+  cuenta: { nombre: string; activa: boolean } | null; // ya tiene cuenta de supervisor(a)
+  interna: boolean; // el correo es de una cuenta de la universidad: no sirve
+  en_este_centro: boolean; // ya está registrado en este centro
+}
+
+// Un resultado del buscador por nombre o correo del diálogo "Agregar supervisor(a)"
+export interface CuentaSupervisorResultado {
+  nombre: string;
+  correo: string;
+  activa: boolean;
+  en_este_centro: boolean;
+}
+
+export interface DatosAsignarSupervisor {
+  correo: string;
+  nombre: string | null; // solo si no tiene cuenta
+  cargo: string | null;
+  unidad: string | null;
+  telefono: string | null;
+}
+
 export interface EstudianteCentro {
   id?: number;
   nombre: string;

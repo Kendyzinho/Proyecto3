@@ -170,36 +170,6 @@
   padding: 10px 0;
 }
 
-.supervisor-nuevo {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding: 20px 24px;
-  background: #f7f9fc;
-
-  h3 {
-    margin: 0;
-    font-size: 16px;
-    font-weight: 600;
-  }
-
-  p {
-    margin: 0;
-  }
-}
-
-.rejilla-supervisor {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
-}
-
-.supervisor-nuevo__acciones {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-}
-
 // Diálogo de nuevo centro
 .formulario-dialogo {
   display: flex;
@@ -291,8 +261,7 @@ mat-dialog-content p {
 @media (max-width: 700px) {
   .fila-direccion,
   .fila-tres,
-  .fila-cupos,
-  .rejilla-supervisor {
+  .fila-cupos {
     grid-template-columns: minmax(0, 1fr);
   }
 }

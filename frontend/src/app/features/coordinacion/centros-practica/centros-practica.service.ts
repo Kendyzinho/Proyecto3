@@ -4,7 +4,10 @@ import { Observable, concatMap, forkJoin, from, map, of, switchMap, toArray } fr
 
 import {
   CentroPractica,
+  CuentaSupervisorEncontrada,
+  CuentaSupervisorResultado,
   CupoCentro,
+  DatosAsignarSupervisor,
   EstadoAcuerdo,
   EstadoCentro,
   EstadoPractica,
@@ -136,10 +139,25 @@ export class CentrosPracticaService {
     return this.http.get(`/api/acuerdos/${acuerdoId}/archivo`, { responseType: 'blob' });
   }
 
-  agregarSupervisor(centroId: number, datos: Omit<SupervisorCentro, 'id' | 'estado'>): Observable<CentroPractica> {
+  // Diálogo "Agregar supervisor(a)": ¿el correo ya tiene cuenta de supervisor(a) (p. ej. creada en Usuarios)?
+  buscarCuentaSupervisor(centroId: number, correo: string): Observable<CuentaSupervisorEncontrada> {
     return this.http
-      .post<Respuesta<CentroApi>>(`/api/centros-practica/${centroId}/supervisores`, datos)
-      .pipe(map(({ data }) => this.mapearCentro(data)));
+      .get<Respuesta<CuentaSupervisorEncontrada>>(`/api/centros-practica/${centroId}/supervisores/cuenta`, { params: { correo } })
+      .pipe(map(({ data }) => data));
+  }
+
+  // Buscador del diálogo: cuentas de supervisor(a) por nombre o correo
+  buscarCuentasSupervisor(centroId: number, texto: string): Observable<CuentaSupervisorResultado[]> {
+    return this.http
+      .get<Respuesta<CuentaSupervisorResultado[]>>(`/api/centros-practica/${centroId}/supervisores/cuentas`, { params: { q: texto } })
+      .pipe(map(({ data }) => data));
+  }
+
+  // Asigna la cuenta existente o la crea; queda activo si el centro ya puede recibir estudiantes
+  asignarSupervisor(centroId: number, datos: DatosAsignarSupervisor): Observable<{ centro: CentroPractica; mensaje: string | null }> {
+    return this.http
+      .post<Respuesta<CentroApi> & { message?: string }>(`/api/centros-practica/${centroId}/supervisores/asignar`, datos)
+      .pipe(map(({ data, message }) => ({ centro: this.mapearCentro(data), mensaje: message ?? null })));
   }
 
   // HU-19: al activarlo se crea su cuenta; el mensaje dice si salió el correo para crear la contraseña

@@ -13,6 +13,7 @@ import { map } from 'rxjs';
 
 import { AcuerdoCentro } from '../../secretaria/documentos/acuerdo-centro';
 import { FichaEstudiante as DialogoFichaEstudiante } from '../ficha-estudiante/ficha-estudiante';
+import { AsignarSupervisor, ResultadoAsignarSupervisor } from './asignar-supervisor';
 
 import {
   CentroPractica,
@@ -86,11 +87,6 @@ export class CentrosPractica {
   protected readonly estudianteSeleccionado = signal<EstudianteCentro | null>(null);
   protected readonly motivoBaja = signal('');
   protected readonly errorBaja = signal('');
-  protected readonly mostrarFormularioSupervisor = signal(false);
-  protected readonly guardandoSupervisor = signal(false);
-  protected readonly intentoGuardarSupervisor = signal(false);
-  protected readonly supervisorFichaError = signal('');
-  protected readonly nuevoSupervisorFicha = signal<SupervisorFormulario>(this.supervisorVacio());
   protected readonly cuposFormulario = signal<CupoCentro[]>([]);
   protected readonly supervisoresFormulario = signal<SupervisorFormulario[]>([]);
   protected periodoNuevoCupoId: number | null = null;
@@ -265,64 +261,18 @@ export class CentrosPractica {
     return centro.estado === 'Activo' && (centro.esInterno || centro.acuerdo === 'Vigente');
   }
 
+  // Asigna una cuenta de supervisor(a) existente (p. ej. creada en Usuarios) o la crea, como la nómina de estudiantes
   protected abrirFormularioSupervisor(): void {
-    this.supervisorFichaError.set('');
-    this.intentoGuardarSupervisor.set(false);
-    this.nuevoSupervisorFicha.set(this.supervisorVacio());
-    this.mostrarFormularioSupervisor.set(true);
-  }
-
-  protected cancelarSupervisorFicha(): void {
-    this.mostrarFormularioSupervisor.set(false);
-    this.supervisorFichaError.set('');
-  }
-
-  protected actualizarSupervisorFicha(campo: keyof SupervisorFormulario, valor: string): void {
-    this.nuevoSupervisorFicha.update((actual) => ({ ...actual, [campo]: valor }));
-    this.supervisorFichaError.set('');
-  }
-
-  protected nombreSupervisorFichaValido(): boolean {
-    return !!this.nuevoSupervisorFicha().nombre.trim();
-  }
-
-  protected correoSupervisorFichaValido(): boolean {
-    const correo = this.nuevoSupervisorFicha().correo.trim();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) return false;
-    return !this.centroSeleccionado()?.supervisores.some((supervisor) => supervisor.correo.toLowerCase() === correo.toLowerCase());
-  }
-
-  protected mostrarErrorSupervisorFicha(valido: boolean): boolean {
-    return this.intentoGuardarSupervisor() && !valido;
-  }
-
-  protected mensajeCorreoSupervisorFicha(): string {
-    const correo = this.nuevoSupervisorFicha().correo.trim();
-    if (!correo) return 'Ingresa el correo del supervisor o supervisora.';
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) return 'Ingresa un correo válido.';
-    return 'Ya existe un supervisor con este correo en el centro.';
-  }
-
-  protected guardarSupervisorFicha(): void {
     const centro = this.centroSeleccionado();
-    const supervisor = this.nuevoSupervisorFicha();
     if (!centro) return;
-    this.intentoGuardarSupervisor.set(true);
-    if (!this.nombreSupervisorFichaValido() || !this.correoSupervisorFichaValido()) return;
-
-    this.guardandoSupervisor.set(true);
-    this.supervisorFichaError.set('');
-    this.centrosService.agregarSupervisor(centro.id, supervisor).subscribe({
-      next: (actualizado) => {
-        this.reemplazarCentro(actualizado);
-        this.cancelarSupervisorFicha();
-      },
-      error: (error: unknown) => {
-        this.guardandoSupervisor.set(false);
-        this.supervisorFichaError.set(this.centrosService.mensajeError(error));
-      },
-      complete: () => this.guardandoSupervisor.set(false),
-    });
+    this.dialogo
+      .open(AsignarSupervisor, { data: centro, width: '560px', maxWidth: 'calc(100vw - 24px)', autoFocus: 'first-tabbable' })
+      .afterClosed()
+      .subscribe((resultado: ResultadoAsignarSupervisor | undefined) => {
+        if (!resultado) return;
+        this.reemplazarCentro(resultado.centro);
+        if (resultado.mensaje) this.aviso.open(resultado.mensaje, 'Cerrar', { duration: 8000 });
+      });
   }
 
   protected cambiarEstadoSupervisor(supervisor: SupervisorCentro): void {

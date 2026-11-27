@@ -75,7 +75,7 @@
       <section class="tarjeta">
         <div class="tarjeta__cabecera">
           <h2>Supervisores(as)</h2>
-          <button matButton type="button" (click)="abrirFormularioSupervisor()" [disabled]="mostrarFormularioSupervisor() || guardandoSupervisor()"><mat-icon>person_add</mat-icon>Agregar</button>
+          <button matButton type="button" (click)="abrirFormularioSupervisor()" [disabled]="guardando() || centro.estado === 'Dado de baja'"><mat-icon>person_add</mat-icon>Agregar</button>
         </div>
         @if (centro.supervisores.length) {
           <div class="tabla-scroll">
@@ -102,31 +102,6 @@
           </div>
         } @else {
           <p class="vacio">Sin supervisores registrados.</p>
-        }
-        @if (mostrarFormularioSupervisor()) {
-          <form class="supervisor-nuevo" (ngSubmit)="guardarSupervisorFicha()" novalidate>
-            <h3>Agregar supervisor(a)</h3>
-            <div class="rejilla-supervisor">
-              <mat-form-field subscriptSizing="dynamic">
-                <mat-label>Nombre completo</mat-label>
-                <input matInput name="supervisorFichaNombre" [ngModel]="nuevoSupervisorFicha().nombre" (ngModelChange)="actualizarSupervisorFicha('nombre', $event)" autocomplete="name" />
-                @if (mostrarErrorSupervisorFicha(nombreSupervisorFichaValido())) { <mat-hint class="error-campo">Ingresa el nombre completo.</mat-hint> }
-              </mat-form-field>
-              <mat-form-field subscriptSizing="dynamic">
-                <mat-label>Correo</mat-label>
-                <input matInput name="supervisorFichaCorreo" type="email" [ngModel]="nuevoSupervisorFicha().correo" (ngModelChange)="actualizarSupervisorFicha('correo', $event)" autocomplete="email" />
-                @if (mostrarErrorSupervisorFicha(correoSupervisorFichaValido())) { <mat-hint class="error-campo">{{ mensajeCorreoSupervisorFicha() }}</mat-hint> }
-              </mat-form-field>
-              <mat-form-field subscriptSizing="dynamic"><mat-label>Cargo</mat-label><input matInput name="supervisorFichaCargo" [ngModel]="nuevoSupervisorFicha().cargo" (ngModelChange)="actualizarSupervisorFicha('cargo', $event)" /></mat-form-field>
-              <mat-form-field subscriptSizing="dynamic"><mat-label>Unidad o área</mat-label><input matInput name="supervisorFichaUnidad" [ngModel]="nuevoSupervisorFicha().unidad" (ngModelChange)="actualizarSupervisorFicha('unidad', $event)" /></mat-form-field>
-              <mat-form-field subscriptSizing="dynamic"><mat-label>Teléfono</mat-label><input matInput name="supervisorFichaTelefono" type="tel" maxlength="30" [ngModel]="nuevoSupervisorFicha().telefono" (ngModelChange)="actualizarSupervisorFicha('telefono', $event)" /></mat-form-field>
-            </div>
-            @if (supervisorFichaError()) { <p class="error-campo" role="alert">{{ supervisorFichaError() }}</p> }
-            <div class="supervisor-nuevo__acciones">
-              <button matButton type="button" (click)="cancelarSupervisorFicha()">Cancelar</button>
-              <button matButton="filled" type="submit" [disabled]="guardandoSupervisor()">{{ guardandoSupervisor() ? 'Guardando…' : 'Guardar supervisor' }}</button>
-            </div>
-          </form>
         }
       </section>
 

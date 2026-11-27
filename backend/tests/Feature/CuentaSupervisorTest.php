@@ -192,6 +192,91 @@ class CuentaSupervisorTest extends TestCase
         $this->assertSame('supervisor', $cuenta->fresh()->rol);
     }
 
+    // Diálogo "Agregar supervisor(a)" de la ficha del centro: asigna la cuenta si existe o la crea
+    private function asignar(array $datos, ?CentroPractica $centro = null)
+    {
+        $centro ??= $this->productora;
+
+        return $this->postJson("/api/centros-practica/{$centro->id}/supervisores/asignar", $datos);
+    }
+
+    public function test_asignar_un_correo_nuevo_lo_crea_activo_con_su_cuenta_e_invitacion(): void
+    {
+        $this->asignar(['correo' => 'Marta.Soto@Example.test', 'nombre' => 'Marta Soto Rivera', 'cargo' => 'Diseñadora senior'])
+            ->assertCreated()
+            ->assertJsonPath('message', 'Supervisor(a) activado. Le enviamos un correo para crear su contraseña.');
+
+        $supervisor = Supervisor::where('centro_id', $this->productora->id)->where('correo', 'marta.soto@example.test')->firstOrFail();
+        $this->assertTrue($supervisor->estaActivo());
+        $this->assertSame('Diseñadora senior', $supervisor->cargo);
+        $this->assertSame('supervisor', $supervisor->usuario->rol);
+        Mail::assertSent(InvitacionSupervisorMail::class, fn ($correo) => $correo->hasTo('marta.soto@example.test'));
+    }
+
+    public function test_asignar_una_cuenta_creada_en_usuarios_la_vincula_sin_crear_otra(): void
+    {
+        $cuenta = User::create(['name' => 'Wilson Pérez', 'email' => 'wperez@example.test', 'rol' => 'supervisor', 'password' => 'x']);
+
+        $this->getJson("/api/centros-practica/{$this->productora->id}/supervisores/cuenta?correo=WPerez@example.test")->assertOk()
+            ->assertJsonPath('data.cuenta.nombre', 'Wilson Pérez')
+            ->assertJsonPath('data.interna', false)
+            ->assertJsonPath('data.en_este_centro', false);
+
+        $this->asignar(['correo' => 'wperez@example.test'])->assertCreated()
+            ->assertJsonPath('message', 'Supervisor(a) asignado al centro con su cuenta existente.');
+
+        $supervisor = Supervisor::where('correo', 'wperez@example.test')->firstOrFail();
+        $this->assertSame($cuenta->id, $supervisor->user_id);
+        $this->assertSame('Wilson Pérez', $supervisor->nombre);
+        $this->assertTrue($supervisor->estaActivo());
+        $this->assertSame(1, User::where('email', 'wperez@example.test')->count());
+        Mail::assertNotSent(InvitacionSupervisorMail::class);
+        $this->getJson("/api/centros-practica/{$this->productora->id}/supervisores/cuenta?correo=wperez@example.test")
+            ->assertJsonPath('data.en_este_centro', true);
+    }
+
+    public function test_busca_cuentas_de_supervisor_por_nombre_o_correo(): void
+    {
+        User::create(['name' => 'Wilson Pérez', 'email' => 'wperez@example.test', 'rol' => 'supervisor', 'password' => 'x']);
+        User::create(['name' => 'Walter Soto', 'email' => 'walter.soto@example.test', 'rol' => 'supervisor', 'password' => 'x']);
+        $buscar = fn (string $texto) => $this->getJson("/api/centros-practica/{$this->productora->id}/supervisores/cuentas?q=".urlencode($texto))->assertOk();
+
+        $buscar('wilson')->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.nombre', 'Wilson Pérez')
+            ->assertJsonPath('data.0.correo', 'wperez@example.test')
+            ->assertJsonPath('data.0.en_este_centro', false);
+        $buscar('soto@')->assertJsonCount(1, 'data')->assertJsonPath('data.0.nombre', 'Walter Soto');
+        $buscar('w')->assertJsonCount(0, 'data'); // mínimo 2 letras
+        $buscar('coordinadora')->assertJsonCount(0, 'data'); // las cuentas internas no aparecen
+
+        $this->asignar(['correo' => 'wperez@example.test'])->assertCreated();
+        $buscar('wilson')->assertJsonPath('data.0.en_este_centro', true);
+    }
+
+    public function test_asignar_rechaza_cuentas_internas_y_correos_repetidos_en_el_centro(): void
+    {
+        $this->asignar(['correo' => 'coordinadora@uta.cl', 'nombre' => 'Otra'])->assertStatus(422)->assertJsonValidationErrors('correo');
+        $this->asignar(['correo' => 'marta@example.test'])->assertStatus(422)->assertJsonValidationErrors('nombre');
+
+        $this->asignar(['correo' => 'marta@example.test', 'nombre' => 'Marta Soto'])->assertCreated();
+        $this->asignar(['correo' => 'marta@example.test', 'nombre' => 'Marta Soto'])->assertStatus(422)->assertJsonValidationErrors('correo');
+
+        $this->assertSame(1, Supervisor::where('correo', 'marta@example.test')->count());
+    }
+
+    public function test_en_un_centro_sin_acuerdo_vigente_queda_propuesto_y_sin_cuenta(): void
+    {
+        $corfo = CentroPractica::where('nombre', 'Corfo Arica y Parinacota')->firstOrFail();
+
+        $this->asignar(['correo' => 'marta@example.test', 'nombre' => 'Marta Soto'], $corfo)->assertCreated()
+            ->assertJsonPath('message', 'Supervisor(a) agregado como propuesto: podrás aprobarlo cuando el centro tenga un acuerdo vigente.');
+
+        $supervisor = Supervisor::where('centro_id', $corfo->id)->where('correo', 'marta@example.test')->firstOrFail();
+        $this->assertNull($supervisor->fecha_alta);
+        $this->assertNull($supervisor->user_id);
+        $this->assertNull(User::where('email', 'marta@example.test')->first());
+    }
+
     public function test_el_supervisor_no_entra_a_rutas_internas(): void
     {
         $this->activar($this->nuevo('marta@example.test'))->assertOk();

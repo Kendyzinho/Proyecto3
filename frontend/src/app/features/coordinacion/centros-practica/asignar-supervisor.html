@@ -1,0 +1,133 @@
+<h2 mat-dialog-title>Agregar supervisor(a)</h2>
+
+<form [formGroup]="form" (ngSubmit)="guardar()" novalidate>
+  <mat-dialog-content class="campos">
+    <p class="nota">{{ centro.nombre }}</p>
+
+    @switch (modo()) {
+      @case ('buscar') {
+        <mat-form-field>
+          <mat-label>Buscar por nombre o correo</mat-label>
+          <mat-icon matPrefix>search</mat-icon>
+          <input matInput type="search" autocomplete="off" [value]="busqueda()" (input)="buscar($any($event.target).value)" />
+          <mat-hint>Busca entre las cuentas de supervisor(a), por ejemplo las creadas en Usuarios.</mat-hint>
+        </mat-form-field>
+
+        @if (resultados().length) {
+          <ul class="resultados">
+            @for (cuenta of resultados(); track cuenta.correo) {
+              <li>
+                <button type="button" [disabled]="cuenta.en_este_centro" (click)="elegir(cuenta)">
+                  <strong>{{ cuenta.nombre }}</strong>
+                  <span>{{ cuenta.correo }}</span>
+                  @if (cuenta.en_este_centro) {
+                    <span class="resultados__aviso">Ya está en este centro</span>
+                  } @else if (!cuenta.activa) {
+                    <span class="resultados__aviso">Cuenta desactivada</span>
+                  }
+                </button>
+              </li>
+            }
+          </ul>
+        } @else if (busqueda().trim().length >= 2 && !buscando() && !errorGeneral()) {
+          <p class="nota">No hay cuentas de supervisor(a) con ese nombre o correo.</p>
+        }
+
+        <button matButton type="button" class="nuevo" (click)="empezarNuevo()">
+          <mat-icon>person_add</mat-icon>
+          Es un supervisor(a) nuevo
+        </button>
+      }
+
+      @case ('elegido') {
+        @if (elegido(); as cuenta) {
+          <div class="cuenta" role="status">
+            <mat-icon>how_to_reg</mat-icon>
+            <div>
+              <strong>{{ cuenta.nombre }}</strong>
+              <span>{{ cuenta.correo }}</span>
+              <span>
+                Ya tiene cuenta de supervisor(a): se asignará a este centro.
+                @if (!cuenta.activa && quedaActivo) { Su cuenta está desactivada y se reactivará. }
+              </span>
+            </div>
+            <button matButton type="button" (click)="volverABuscar()">Cambiar</button>
+          </div>
+        }
+      }
+
+      @case ('nuevo') {
+        <div class="encabezado-nuevo">
+          <strong>Supervisor(a) nuevo</strong>
+          <button matButton type="button" (click)="volverABuscar()">Volver a buscar</button>
+        </div>
+        <mat-form-field>
+          <mat-label>Correo del supervisor(a)</mat-label>
+          <input matInput type="email" formControlName="correo" autocomplete="email" />
+          <mat-hint>El correo del centro de práctica.</mat-hint>
+          @if (form.controls.correo.hasError('email')) {
+            <mat-error>Ingresa un correo válido.</mat-error>
+          }
+        </mat-form-field>
+        @switch (estadoCorreo()) {
+          @case ('buscando') {
+            <p class="nota" role="status">Revisando el correo…</p>
+          }
+          @case ('interna') {
+            <p class="error" role="alert">Ese correo es de una cuenta de la universidad. Usa el correo del centro.</p>
+          }
+          @case ('repetido') {
+            <p class="error" role="alert">Ya hay un supervisor(a) con ese correo en este centro.</p>
+          }
+          @case ('error') {
+            <p class="error" role="alert">No se pudo revisar el correo. Inténtalo de nuevo.</p>
+          }
+        }
+        <mat-form-field>
+          <mat-label>Nombre completo</mat-label>
+          <input matInput formControlName="nombre" autocomplete="name" />
+          @if (form.controls.nombre.hasError('required')) {
+            <mat-error>Ingresa el nombre completo.</mat-error>
+          }
+        </mat-form-field>
+      }
+    }
+
+    @if (modo() !== 'buscar') {
+      <div class="fila">
+        <mat-form-field>
+          <mat-label>Cargo</mat-label>
+          <input matInput formControlName="cargo" />
+        </mat-form-field>
+        <mat-form-field>
+          <mat-label>Unidad o área</mat-label>
+          <input matInput formControlName="unidad" />
+        </mat-form-field>
+      </div>
+      <mat-form-field>
+        <mat-label>Teléfono</mat-label>
+        <input matInput type="tel" maxlength="30" formControlName="telefono" />
+      </mat-form-field>
+      <p class="nota">
+        @if (quedaActivo) {
+          Quedará activo de inmediato y podrás asignarle prácticas.
+        } @else {
+          El centro aún no tiene acuerdo vigente: quedará propuesto hasta que lo apruebes.
+        }
+      </p>
+    }
+
+    @if (errorGeneral(); as mensaje) {
+      <p class="error" role="alert">{{ mensaje }}</p>
+    }
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button matButton type="button" mat-dialog-close>Cancelar</button>
+    @if (modo() !== 'buscar') {
+      <button matButton="filled" type="submit" [disabled]="!puedeGuardar()">
+        {{ enviando() ? 'Guardando…' : modo() === 'elegido' ? 'Asignar al centro' : 'Crear y asignar' }}
+      </button>
+    }
+  </mat-dialog-actions>
+</form>
