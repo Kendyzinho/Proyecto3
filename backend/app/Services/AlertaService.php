@@ -152,7 +152,6 @@ class AlertaService
         $justificado = fn (string $dia): bool => $registros->get($dia)?->justificacion !== null;
         $nuevas = 0;
 
-        // Roja: racha sin marca que termina en el último día esperado (ayer o antes); la referencia es su primer día
         $racha = $this->diasEsperados($practica, $hoy->copy()->subDay())->reverse()->takeWhile(fn ($dia) => ! $conMarca($dia));
         if ($racha->count() >= 3) {
             $nuevas += $this->registrar($practica, 'abandono', $racha->last());
@@ -173,7 +172,6 @@ class AlertaService
             ->filter(fn ($dia) => $registros->has($dia))
             ->map(fn ($dia) => Carbon::parse($dia)->startOfWeek()->toDateString())
             ->unique()
-            ->diff($confirmadas)
             ->last();
         if ($semana !== null) {
             $nuevas += $this->registrar($practica, 'sin_confirmar', $semana);

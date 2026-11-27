@@ -32,7 +32,9 @@ class ConfirmacionSemanalService
             ->whereHas('supervisor.usuario', fn ($q) => $q->whereNull('fecha_baja'))
             ->whereExists(fn (Builder $q) => $q->from('registros_diarios')
                 ->whereColumn('registros_diarios.practica_id', 'practicas.id')
-                ->whereBetween('registros_diarios.fecha', [$desde, $hasta]))
+                ->whereNull('registros_diarios.validacion')
+                ->whereBetween('registros_diarios.fecha', $this->rango($lunes)))
+            ->with(['supervisor.usuario', 'habilitacion.estudiante.usuario'])
             ->get();
 
         foreach ($practicas as $practica) {
@@ -50,6 +52,8 @@ class ConfirmacionSemanalService
     // Semanas con dias registrados de sus practicas; primero las que tienen dias por confirmar
     public function delSupervisor(User $cuenta): Collection
     {
+        $practicas = Practica::formalizadas()
+            ->whereHas('supervisor', fn ($q) => $q->where('user_id', $cuenta->id))
             ->with(['supervisor.centro', 'habilitacion.estudiante.usuario'])
             ->get()->keyBy('id');
 
@@ -99,6 +103,8 @@ class ConfirmacionSemanalService
                 ->pluck('id')->map(fn ($id) => (int) $id)->sort()->values();
             abort_if($pendientes->isEmpty(), 409, 'Esta semana no tiene dias por confirmar.');
 
+            $decisiones = collect($datos['dias'])->mapWithKeys(fn ($dia) => [(int) $dia['id'] => $dia['validacion']]);
+            if ($decisiones->keys()->sort()->values()->all() !== $pendientes->all()) {
                 throw ValidationException::withMessages(['dias' => 'Confirma o rechaza cada dia pendiente de la semana.']);
             }
 
@@ -128,14 +134,13 @@ class ConfirmacionSemanalService
     // 404 si la practica no es de este supervisor o no hay dias registrados esa semana
     private function deSuPractica(User $cuenta, Practica $practica, string $semana): Carbon
     {
-        $practica = Practica::with(['supervisor.centro', 'habilitacion.estudiante.user'])->findOrFail($practicaId);
+        $practica->loadMissing(['supervisor.centro', 'habilitacion.estudiante.usuario']);
         abort_unless($practica->supervisor?->user_id === $cuenta->id && $practica->estaFormalizada(), 404);
 
-        abort_unless($practica->supervisor_id === $supervisorId, 403, 'Este enlace ya no corresponde al supervisor de la práctica.');
         $lunes = Carbon::parse($semana)->startOfWeek();
         abort_if($this->registros($practica, $lunes)->isEmpty(), 404);
 
-        return [$practica, Carbon::parse($semana)->startOfWeek()];
+        return $lunes;
     }
 
     private function detalle(Practica $practica, Carbon $lunes): array
@@ -153,6 +158,7 @@ class ConfirmacionSemanalService
             'pendientes' => $dias->whereNull('validacion')->count(),
             'dias' => $dias->map(fn (RegistroDiario $registro) => [
                 'id' => $registro->id,
+                'fecha' => $registro->fecha->toDateString(),
                 'hora_entrada' => $registro->hora_entrada ? substr($registro->hora_entrada, 0, 5) : null,
                 'hora_salida' => $registro->hora_salida ? substr($registro->hora_salida, 0, 5) : null,
                 'horas' => $this->horas($registro),
@@ -165,8 +171,6 @@ class ConfirmacionSemanalService
 
     private function registros(Practica $practica, Carbon $lunes): Collection
     {
-        app(AlertaService::class)->resolver($practica->id);
-            ->where('practica_id', $practica->id)
         return RegistroDiario::where('practica_id', $practica->id)
             ->whereBetween('fecha', $this->rango($lunes))
             ->orderBy('fecha')

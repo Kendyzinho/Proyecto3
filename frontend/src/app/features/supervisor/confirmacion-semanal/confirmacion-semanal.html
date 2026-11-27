@@ -1,5 +1,3 @@
-<main class="confirmacion">
-  <img class="marca" src="logos/dm-oscuro.svg" alt="Diseño Multimedia UTarapacá" width="138" height="56" />
 <p class="migas">
   <button type="button" (click)="volver()">Asistencia semanal</button>
   <span aria-hidden="true">/</span><span>Semana</span>
@@ -13,9 +11,16 @@
 } @else if (errorCarga(); as mensaje) {
   <section class="tarjeta">
     <div class="vacio" role="alert">
+      <p>{{ mensaje }}</p>
+      <button matButton type="button" (click)="volver()">Volver a la asistencia semanal</button>
+    </div>
+  </section>
+} @else if (datos(); as s) {
+  <section class="tarjeta">
+    <div class="tarjeta__cuerpo">
+      <h2 class="titulo">{{ s.estudiante }}</h2>
+      <p class="texto">{{ s.centro }} · Semana del {{ fecha(s.semana.desde) }} al {{ fecha(s.semana.hasta) }}</p>
 
-        @if (s.confirmada_en) {
-          <div class="aviso aviso--ok" role="status">
       @if (s.pendientes === 0) {
         <div class="aviso aviso--ok" role="status">
           <mat-icon>check_circle</mat-icon>
@@ -40,30 +45,16 @@
             <div class="dia__datos">
               <strong>{{ dia(d.fecha) }}</strong>
               @if (d.justificacion) {
+                <span>Aviso de inasistencia</span>
+                <p>{{ d.justificacion }}</p>
+              } @else {
+                <span>{{ d.hora_entrada ?? '—' }} – {{ d.hora_salida ?? '—' }} · {{ d.horas }} h</span>
                 @if (d.actividades) {
                   <p>{{ d.actividades }}</p>
                 }
-              </div>
-
-              @if (s.confirmada_en) {
-                <span class="resultado" [class.resultado--rechazado]="d.validacion === 'rechazado'">
-                  {{ d.validacion === 'confirmado' ? 'Confirmado' : 'Rechazado' }}
-              } @else {
-                <mat-button-toggle-group [value]="decisiones()[d.id]" (change)="decidir(d.id, $event.value)"
-                                         [attr.aria-label]="'Asistencia del ' + dia(d.fecha)">
-                </mat-button-toggle-group>
               }
-            </li>
-          }
-        </ul>
+            </div>
 
-        @if (s.confirmada_en) {
-          @if (s.observacion) {
-            <p class="texto">Observación: {{ s.observacion }}</p>
-          }
-        } @else {
-          <mat-form-field class="observacion">
-            <mat-label>Observación (opcional)</mat-label>
             @if (d.validacion) {
               <span class="resultado" [class.resultado--rechazado]="d.validacion === 'rechazado'">{{ resultado(d) }}</span>
             } @else {
@@ -73,7 +64,9 @@
                 <mat-button-toggle value="rechazado">Rechazar</mat-button-toggle>
               </mat-button-toggle-group>
             }
+          </li>
         }
+      </ul>
 
       @if (s.observacion) {
         <p class="texto">Observación: {{ s.observacion }}</p>
