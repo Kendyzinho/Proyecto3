@@ -205,6 +205,14 @@ class AlertaService
     // Una alerta abierta por tipo y práctica; tampoco se repite una ya cerrada por la misma fecha o una posterior
     private function registrar(Practica $practica, string $tipo, string $referencia): int
     {
+        // Si la misma alerta se había resuelto sola y la causa volvió, se reabre (una atendida no se toca)
+        $misma = Alerta::where('practica_id', $practica->id)->where('tipo', $tipo)->whereDate('fecha_referencia', $referencia)->first();
+        if ($misma?->fecha_resolucion !== null && $misma->fecha_atencion === null) {
+            $misma->update(['fecha_resolucion' => null]);
+
+            return 1;
+        }
+
         $existe = Alerta::where('practica_id', $practica->id)
             ->where('tipo', $tipo)
             ->where(fn ($q) => $q->where(fn ($abierta) => $abierta->whereNull('fecha_atencion')->whereNull('fecha_resolucion'))

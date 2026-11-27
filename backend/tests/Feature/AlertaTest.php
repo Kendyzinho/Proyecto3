@@ -173,6 +173,20 @@ class AlertaTest extends TestCase
         $this->assertNotNull($alerta->fresh()->fecha_resolucion);
     }
 
+    public function test_si_la_causa_vuelve_se_reabre_la_alerta_que_se_habia_resuelto_sola(): void
+    {
+        $alerta = Alerta::create([
+            'practica_id' => $this->practica->id, 'tipo' => 'sin_confirmar', 'fecha_referencia' => '2026-11-02',
+            'fecha_generada' => now(), 'fecha_resolucion' => now(),
+        ]);
+        $this->marcar(['2026-11-02', '2026-11-04']);
+
+        $this->generar();
+
+        $this->assertNull($alerta->fresh()->fecha_resolucion);
+        $this->assertSame(1, Alerta::where('practica_id', $this->practica->id)->where('tipo', 'sin_confirmar')->count());
+    }
+
     public function test_al_correr_dos_veces_no_repite_alertas(): void
     {
         $this->generar();
