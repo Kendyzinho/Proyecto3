@@ -23,7 +23,7 @@
           }
         </ul>
       } @else if (busqueda().trim().length >= 2 && !buscando() && !errorGeneral()) {
-        <p class="sin-resultados">No hay estudiantes registrados con ese RUT o nombre.</p>
+        <p class="sin-resultados">No hay estudiantes registrados con ese RUT o nombre, o ya están en la nómina de este período.</p>
       }
 
       <button matButton type="button" class="nuevo" (click)="empezarNuevo()">

@@ -1,2 +1,2 @@
 <p>{{ $mensaje }}</p>
-<p>Gestión de Prácticas · UTA</p>
+<p>Coordinación de Prácticas<br>Diseño Multimedia, Universidad de Tarapacá</p>

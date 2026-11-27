@@ -19,7 +19,7 @@
   <section class="tarjeta">
     <div class="tarjeta__cuerpo">
       <h2 class="titulo">{{ s.estudiante }}</h2>
-      <p class="texto">{{ s.centro }} · Semana del {{ fecha(s.semana.desde) }} al {{ fecha(s.semana.hasta) }}</p>
+      <p class="texto">{{ s.centro }}, semana del {{ fecha(s.semana.desde) }} al {{ fecha(s.semana.hasta) }}</p>
 
       @if (s.pendientes === 0) {
         <div class="aviso aviso--ok" role="status">
@@ -48,7 +48,7 @@
                 <span>Aviso de inasistencia</span>
                 <p>{{ d.justificacion }}</p>
               } @else {
-                <span>{{ d.hora_entrada ?? '—' }} – {{ d.hora_salida ?? '—' }} · {{ d.horas }} h</span>
+                <span>{{ d.hora_entrada ?? '—' }} a {{ d.hora_salida ?? '—' }} ({{ d.horas }} h)</span>
                 @if (d.actividades) {
                   <p>{{ d.actividades }}</p>
                 }

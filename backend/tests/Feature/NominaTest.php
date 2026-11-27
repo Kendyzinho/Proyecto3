@@ -229,21 +229,36 @@ class NominaTest extends TestCase
             'correo' => 'ignacia.munoz@alumnos.uta.cl', 'anio_ingreso' => 2025, 'tipo_practica_id' => $laboralI['id'], 'cumple_prerrequisito' => true,
         ])->assertCreated();
 
+        // Se busca para otro período: en el actual ya está en la nómina
+        $otro = Periodo::where('anio', 2026)->where('semestre', 1)->firstOrFail();
         foreach (['Ignacia', 'munoz@alumnos', '21', '21556302', '21.556.302-2'] as $texto) {
-            $this->getJson('/api/nomina/estudiantes?buscar='.urlencode($texto))->assertOk()
+            $this->getJson("/api/nomina/estudiantes?periodo_id={$otro->id}&buscar=".urlencode($texto))->assertOk()
                 ->assertJsonPath('data.0.rut', '21.556.302-2')
                 ->assertJsonPath('data.0.nombre', 'Ignacia Muñoz Vega')
                 ->assertJsonPath('data.0.anio_ingreso', 2025);
         }
         // El personal no aparece y una búsqueda de una letra no trae nada
-        $this->getJson('/api/nomina/estudiantes?buscar=secretaria')->assertOk()->assertJsonCount(0, 'data');
-        $this->getJson('/api/nomina/estudiantes?buscar=I')->assertOk()->assertJsonCount(0, 'data');
+        $this->getJson("/api/nomina/estudiantes?periodo_id={$otro->id}&buscar=secretaria")->assertOk()->assertJsonCount(0, 'data');
+        $this->getJson("/api/nomina/estudiantes?periodo_id={$otro->id}&buscar=I")->assertOk()->assertJsonCount(0, 'data');
+    }
+
+    public function test_la_busqueda_no_muestra_a_quien_ya_esta_en_la_nomina_del_periodo(): void
+    {
+        $catalogo = $this->actingAs($this->secretaria)->getJson('/api/nomina/catalogo')->assertOk();
+        $laboralI = collect($catalogo->json('practicas'))->firstWhere('nombre', 'Laboral I');
+        $this->postJson('/api/nomina/estudiantes', [
+            'periodo_id' => $this->periodo->id, 'rut' => '21556302-2', 'nombre' => 'Ignacia Muñoz Vega',
+            'correo' => 'ignacia.munoz@alumnos.uta.cl', 'anio_ingreso' => 2025, 'tipo_practica_id' => $laboralI['id'], 'cumple_prerrequisito' => true,
+        ])->assertCreated();
+
+        $this->getJson("/api/nomina/estudiantes?periodo_id={$this->periodo->id}&buscar=Ignacia")->assertOk()->assertJsonCount(0, 'data');
+        $this->getJson('/api/nomina/estudiantes?buscar=Ignacia')->assertStatus(422)->assertJsonValidationErrors('periodo_id');
     }
 
     public function test_solo_la_secretaria_y_el_jefe_buscan_estudiantes(): void
     {
         $this->actingAs(User::factory()->create(['rol' => 'coordinadora']))
-            ->getJson('/api/nomina/estudiantes?buscar=Ignacia')->assertForbidden();
+            ->getJson("/api/nomina/estudiantes?periodo_id={$this->periodo->id}&buscar=Ignacia")->assertForbidden();
     }
 
     public function test_descarga_la_plantilla(): void
