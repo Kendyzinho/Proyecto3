@@ -3,24 +3,30 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ConfirmarSemanaRequest;
+use App\Models\Practica;
 use App\Services\ConfirmacionSemanalService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
+// HU-26: el supervisor confirma con su cuenta la asistencia semanal de sus estudiantes
 class ConfirmacionSemanalController extends Controller
 {
-    public function show(Request $request, int $practica, string $semana, ConfirmacionSemanalService $service): JsonResponse
-    {
-        [$modelo, $lunes] = $service->delEnlace($practica, $semana, $request->integer('supervisor'));
+    public function __construct(private readonly ConfirmacionSemanalService $service) {}
 
-        return response()->json(['data' => $service->detalle($modelo, $lunes)]);
+    public function index(Request $request): JsonResponse
+    {
+        return response()->json(['data' => $this->service->delSupervisor($request->user())]);
     }
 
-    public function store(ConfirmarSemanaRequest $request, int $practica, string $semana, ConfirmacionSemanalService $service): JsonResponse
+    public function show(Request $request, Practica $practica, string $semana): JsonResponse
     {
-        [$modelo, $lunes] = $service->delEnlace($practica, $semana, $request->integer('supervisor'));
-        $service->confirmar($modelo, $lunes, $request->validated());
+        return response()->json(['data' => $this->service->paraSupervisor($request->user(), $practica, $semana)]);
+    }
 
-        return response()->json(['data' => $service->detalle($modelo, $lunes), 'message' => 'Confirmación enviada.'], 201);
+    public function store(ConfirmarSemanaRequest $request, Practica $practica, string $semana): JsonResponse
+    {
+        $detalle = $this->service->confirmar($request->user(), $practica, $semana, $request->validated());
+
+        return response()->json(['data' => $detalle, 'message' => 'Confirmación enviada.']);
     }
 }

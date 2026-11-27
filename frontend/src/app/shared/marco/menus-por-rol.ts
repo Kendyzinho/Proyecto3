@@ -42,6 +42,8 @@ export const MENUS_POR_ROL: Record<Rol, OpcionMenu[]> = {
   // HU-19: el supervisor(a) solo ve los informes que le pidieron
   supervisor: [
     { texto: 'Informes confidenciales', icono: 'assignment', ruta: '/supervisor' },
+    { texto: 'Asistencia semanal', icono: 'fact_check', ruta: '/supervisor/asistencia' },
+
   ],
 };
 

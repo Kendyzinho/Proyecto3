@@ -5,13 +5,8 @@ import { Marco } from '../../shared/marco/marco';
 import { MENUS_POR_ROL } from '../../shared/marco/menus-por-rol';
 
 export default [
-  // HU-26: confirmación semanal de asistencia desde el enlace firmado del correo (sin sesión)
-  {
-    path: 'asistencia/:practica/:semana',
-    title: 'Confirmar asistencia',
-    loadComponent: () => import('./confirmacion-semanal/confirmacion-semanal').then((m) => m.ConfirmacionSemanal),
-  },
-  // HU-19: el supervisor(a) entra con su cuenta
+
+  // HU-19: el supervisor entra con su cuenta
   {
     path: '',
     canMatch: [authGuard],
@@ -24,6 +19,20 @@ export default [
         title: 'Informe confidencial',
         loadComponent: () => import('./informes/informe-supervisor').then((m) => m.InformeSupervisor),
       },
+            // HU-26: asistencia semanal 
+      {
+        path: 'asistencia',
+        title: 'Asistencia semanal',
+        loadComponent: () => import('./confirmacion-semanal/asistencia-supervisor').then((m) => m.AsistenciaSupervisor),
+      },
+      {
+        path: 'asistencia/:practica/:semana',
+        title: 'Confirmar asistencia',
+        loadComponent: () => import('./confirmacion-semanal/confirmacion-semanal').then((m) => m.ConfirmacionSemanal),
+      },
+    
     ],
+    
   },
+  
 ] satisfies Routes;

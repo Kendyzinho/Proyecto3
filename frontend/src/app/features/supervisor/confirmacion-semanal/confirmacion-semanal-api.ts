@@ -1,8 +1,13 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
 
 export type Validacion = 'confirmado' | 'rechazado';
+
+export interface Rango {
+  desde: string;
+  hasta: string;
+}
 
 export interface DiaRegistrado {
   id: number;
@@ -11,23 +16,29 @@ export interface DiaRegistrado {
   hora_salida: string | null;
   horas: number;
   actividades: string | null;
+  justificacion: string | null;
   validacion: Validacion | null;
 }
 
 export interface SemanaPorConfirmar {
+  practica_id: number;
   estudiante: string;
   centro: string;
-  supervisor: string;
-  semana: { desde: string; hasta: string };
+  semana: Rango;
   confirmada_en: string | null;
   observacion: string | null;
+  pendientes: number;
   dias: DiaRegistrado[];
 }
 
-export interface Firma {
-  expires: string;
-  supervisor: string;
-  signature: string;
+export interface FilaSemana {
+  practica_id: number;
+  estudiante: string;
+  centro: string;
+  semana: Rango;
+  dias: number;
+  pendientes: number;
+  confirmada_en: string | null;
 }
 
 export interface Decision {
@@ -35,27 +46,29 @@ export interface Decision {
   observacion: string | null;
 }
 
-// HU-26: el supervisor no tiene sesión; cada petición lleva la firma del enlace
+// HU-26: el supervisor confirma con su sesión 
 @Injectable({ providedIn: 'root' })
 export class ConfirmacionSemanalApi {
   private readonly http = inject(HttpClient);
 
-  ver(practica: string, semana: string, firma: Firma): Observable<SemanaPorConfirmar> {
-    return this.http.get<{ data: SemanaPorConfirmar }>(ruta(practica, semana), { params: parametros(firma) })
-      .pipe(map((r) => r.data));
+  listar(): Observable<FilaSemana[]> {
+    return this.http.get<{ data: FilaSemana[] }>('/api/supervisor/asistencia').pipe(map((r) => r.data));
   }
 
-  confirmar(practica: string, semana: string, firma: Firma, decision: Decision): Observable<SemanaPorConfirmar> {
-    return this.http.post<{ data: SemanaPorConfirmar }>(ruta(practica, semana), decision, { params: parametros(firma) })
-      .pipe(map((r) => r.data));
+  ver(practica: number, semana: string): Observable<SemanaPorConfirmar> {
+    return this.http.get<{ data: SemanaPorConfirmar }>(ruta(practica, semana)).pipe(map((r) => r.data));
+  }
+
+  confirmar(practica: number, semana: string, decision: Decision): Observable<SemanaPorConfirmar> {
+    return this.http.post<{ data: SemanaPorConfirmar }>(ruta(practica, semana), decision).pipe(map((r) => r.data));
   }
 }
 
-function ruta(practica: string, semana: string): string {
-  return `/api/supervision/practicas/${practica}/semanas/${semana}`;
+function ruta(practica: number, semana: string): string {
+  return `/api/supervisor/asistencia/${practica}/${semana}`;
 }
 
-// Laravel firma la query en este orden exacto: expires, supervisor, signature
-function parametros(firma: Firma): HttpParams {
-  return new HttpParams().set('expires', firma.expires).set('supervisor', firma.supervisor).set('signature', firma.signature);
+
+export function fechaCorta(fecha: string): string {
+  return fecha.split('-').reverse().join('/');
 }

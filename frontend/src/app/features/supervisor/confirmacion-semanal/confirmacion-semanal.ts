@@ -1,20 +1,20 @@
 import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, computed, effect, inject, input, numberAttribute, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { ActivatedRoute } from '@angular/router';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { Router } from '@angular/router';
 
-import { ConfirmacionSemanalApi, Firma, SemanaPorConfirmar, Validacion } from './confirmacion-semanal-api';
-
-type Estado = 'cargando' | 'formulario' | 'enviada' | 'enlace_invalido' | 'error';
+import { ConfirmacionSemanalApi, DiaRegistrado, SemanaPorConfirmar, Validacion, fechaCorta } from './confirmacion-semanal-api';
 
 const DIAS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
-// HU-26: el supervisor confirma o rechaza cada día registrado, sin crear una cuenta
+// HU-26: el supervisor confirma o rechaza cada dia pendiente de la semana
 @Component({
   selector: 'app-confirmacion-semanal',
   imports: [DatePipe, MatButtonModule, MatButtonToggleModule, MatFormFieldModule, MatIconModule, MatInputModule],
@@ -22,33 +22,35 @@ const DIAS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', '
   styleUrl: './confirmacion-semanal.scss',
 })
 export class ConfirmacionSemanal {
-  private readonly api = inject(ConfirmacionSemanalApi);
-  private readonly ruta = inject(ActivatedRoute).snapshot;
-  private readonly practica = this.ruta.paramMap.get('practica') ?? '';
-  private readonly semanaId = this.ruta.paramMap.get('semana') ?? '';
-  private readonly firma: Firma = {
-    expires: this.ruta.queryParamMap.get('expires') ?? '',
-    supervisor: this.ruta.queryParamMap.get('supervisor') ?? '',
-    signature: this.ruta.queryParamMap.get('signature') ?? '',
-  };
+  readonly practica = input.required({ transform: numberAttribute });
+  readonly semana = input.required<string>();
 
-  protected readonly estado = signal<Estado>('cargando');
-  protected readonly semana = signal<SemanaPorConfirmar | null>(null);
+  private readonly api = inject(ConfirmacionSemanalApi);
+  private readonly aviso = inject(MatSnackBar);
+  private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
+
+  protected readonly datos = signal<SemanaPorConfirmar | null>(null);
+  protected readonly cargando = signal(true);
+  protected readonly errorCarga = signal<string | null>(null);
   protected readonly decisiones = signal<Record<number, Validacion>>({});
   protected readonly observacion = signal('');
   protected readonly enviando = signal(false);
   protected readonly error = signal<string | null>(null);
-  protected readonly completa = computed(() => {
-    const semana = this.semana();
-    return !!semana && semana.dias.every((dia) => !!this.decisiones()[dia.id]);
-  });
+
+  // Días que faltan por decidir: los nuevos y los corregidos tras un rechazo
+  protected readonly pendientes = computed(() => (this.datos()?.dias ?? []).filter((d) => d.validacion === null));
+  protected readonly completa = computed(
+    () => this.pendientes().length > 0 && this.pendientes().every((d) => !!this.decisiones()[d.id]),
+  );
+  protected readonly fecha = fechaCorta;
 
   constructor() {
-    if (!this.firma.signature) {
-      this.estado.set('enlace_invalido');
-      return;
-    }
-    this.cargar();
+    effect(() => this.cargar(this.practica(), this.semana()));
+  }
+
+  protected volver(): void {
+    this.router.navigate(['/supervisor/asistencia']);
   }
 
   protected decidir(id: number, validacion: Validacion): void {
@@ -56,21 +58,31 @@ export class ConfirmacionSemanal {
   }
 
   protected enviar(): void {
-    const semana = this.semana();
-    if (!semana || !this.completa()) return;
+    if (!this.completa()) return;
     this.error.set(null);
     this.enviando.set(true);
 
-    this.api.confirmar(this.practica, this.semanaId, this.firma, {
-      dias: semana.dias.map((dia) => ({ id: dia.id, validacion: this.decisiones()[dia.id] })),
+    this.api.confirmar(this.practica(), this.semana(), {
+      dias: this.pendientes().map((d) => ({ id: d.id, validacion: this.decisiones()[d.id] })),
       observacion: this.observacion().trim() || null,
-    }).subscribe({
-      next: (respuesta) => this.mostrar(respuesta),
+    }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (datos) => {
+        this.enviando.set(false);
+        this.mostrar(datos);
+        this.aviso.open('Confirmación enviada.', 'Cerrar', { duration: 5000 });
+      },
       error: (e: HttpErrorResponse) => {
         this.enviando.set(false);
-        // 409: alguien ya la envió (otra pestaña); se muestra lo que quedó guardado
-        if (e.status === 409) this.cargar();
-        else this.fallo(e);
+        // 409: ya no quedan días pendientes (otra pestaña); se muestra lo que quedó guardado
+        if (e.status === 409) {
+          this.cargar(this.practica(), this.semana());
+          return;
+        }
+        this.error.set(
+          e.status === 422 ? 'Confirma o rechaza cada día pendiente antes de enviar.'
+            : e.status === 0 ? 'No se pudo conectar con el servidor.'
+              : 'Ocurrió un error inesperado. Inténtalo de nuevo.',
+        );
       },
     });
   }
@@ -80,31 +92,29 @@ export class ConfirmacionSemanal {
     return `${DIAS[new Date(anio, mes - 1, dia).getDay()]} ${String(dia).padStart(2, '0')}/${String(mes).padStart(2, '0')}`;
   }
 
-  protected fecha(fecha: string): string {
-    return fecha.split('-').reverse().join('/');
+  protected resultado(d: DiaRegistrado): string {
+    return d.validacion === 'confirmado' ? 'Confirmado' : 'Rechazado';
   }
 
-  private cargar(): void {
-    this.api.ver(this.practica, this.semanaId, this.firma).subscribe({
-      next: (semana) => this.mostrar(semana),
-      error: (e: HttpErrorResponse) => this.fallo(e),
+  private cargar(practica: number, semana: string): void {
+    this.cargando.set(true);
+    this.errorCarga.set(null);
+    this.api.ver(practica, semana).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (datos) => this.mostrar(datos),
+      error: (e: HttpErrorResponse) => {
+        this.cargando.set(false);
+        this.errorCarga.set(
+          e.status === 404 ? 'Esta semana no existe o no corresponde a una práctica que supervises.'
+            : 'No se pudo cargar la semana. Inténtalo de nuevo.',
+        );
+      },
     });
   }
 
-  private mostrar(semana: SemanaPorConfirmar): void {
-    this.semana.set(semana);
-    this.estado.set(semana.confirmada_en ? 'enviada' : 'formulario');
-  }
-
-  private fallo(e: HttpErrorResponse): void {
-    if (e.status === 403 || e.status === 404) {
-      this.estado.set('enlace_invalido');
-      return;
-    }
-    const mensaje = e.status === 422
-      ? 'Confirma o rechaza cada día antes de enviar.'
-      : e.status === 0 ? 'No se pudo conectar con el servidor.' : 'Ocurrió un error inesperado. Inténtalo de nuevo.';
-    this.error.set(mensaje);
-    if (this.estado() === 'cargando') this.estado.set('error');
+  private mostrar(datos: SemanaPorConfirmar): void {
+    this.datos.set(datos);
+    this.decisiones.set({});
+    this.observacion.set('');
+    this.cargando.set(false);
   }
 }

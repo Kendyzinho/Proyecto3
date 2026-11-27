@@ -21,12 +21,12 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-// HU-14: revisa las prácticas en curso y crea las alertas tempranas
+// HU-14: revisa las practicas en curso y crea las alertas tempranas
 Artisan::command('alertas:generar', function (AlertaService $alertas) {
     $this->info("Alertas nuevas: {$alertas->generar()}");
 })->purpose('Genera las alertas de abandono, inasistencia y semanas sin confirmar');
 
-// Una vez al día, antes de que empiece la jornada de la Coordinadora
+// Una vez al dia, antes de que empiece la jornada de la Coordinadora
 Schedule::command('alertas:generar')->dailyAt('06:00');
 
 // HU-19: crea la cuenta de los supervisores(as) activos que aún no tienen una (paso obligatorio al desplegar).

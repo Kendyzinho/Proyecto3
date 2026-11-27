@@ -39,8 +39,18 @@ describe('rutas del supervisor(a)', () => {
     expect(harness.routeNativeElement?.textContent).toContain('No tienes informes por responder.');
   });
 
-  it('el enlace de asistencia de HU-26 sigue sin pedir sesión', async () => {
-    await RouterTestingHarness.create('/supervisor/asistencia/3/2026-11-16?expires=1&signature=x');
-    expect(TestBed.inject(Router).url).toContain('/supervisor/asistencia/3/2026-11-16');
+  it('la asistencia semanal pide sesión', async () => {
+    await RouterTestingHarness.create('/supervisor/asistencia/3/2026-11-16');
+    expect(TestBed.inject(Router).url).toBe('/auth');
+  });
+
+  it('el supervisor entra a su asistencia semanal', async () => {
+    localStorage.setItem('token', 't');
+    localStorage.setItem('usuario', JSON.stringify({ id: 9, name: 'Sergio', email: 's@example.test', rol: 'supervisor' }));
+    const harness = await RouterTestingHarness.create('/supervisor/asistencia');
+    expect(TestBed.inject(Router).url).toBe('/supervisor/asistencia');
+    TestBed.inject(HttpTestingController).expectOne('/api/supervisor/asistencia').flush({ data: [] });
+    await harness.fixture.whenStable();
+    expect(harness.routeNativeElement?.textContent).toContain('No tienes semanas por confirmar.');
   });
 });

@@ -7,12 +7,11 @@ use Illuminate\Validation\Rule;
 
 class ConfirmarSemanaRequest extends FormRequest
 {
-    // La firma del enlace (middleware signed) ya autoriza al supervisor
+
     public function authorize(): bool
     {
-        return true;
+        return (bool) $this->user()?->esSupervisor();
     }
-
     public function rules(): array
     {
         return [

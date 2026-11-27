@@ -158,7 +158,6 @@ class AlertaService
             $nuevas += $this->registrar($practica, 'abandono', $racha->last());
         }
 
-        // Inasistencia: el día sin marca ni justificación más reciente cuyo plazo de 24 h ya terminó
         $falta = $this->diasEsperados($practica, $hoy->copy()->subDays(2))
             ->reject(fn ($dia) => $conMarca($dia) || $justificado($dia))
             ->last();
@@ -183,11 +182,9 @@ class AlertaService
         return $nuevas;
     }
 
-    // Días (Y-m-d) en que el horario vigente ese día esperaba marca, desde el inicio hasta $hasta o el término
     private function diasEsperados(Practica $practica, Carbon $hasta): Collection
     {
         $fin = $practica->fecha_fin !== null && $practica->fecha_fin->lt($hasta) ? $practica->fecha_fin : $hasta;
-        // Cada cambio de horario guarda una versión completa desde su fecha
         $versiones = $practica->horarios->groupBy(fn ($horario) => $horario->vigente_desde->toDateString())->sortKeys();
         $dias = collect();
 

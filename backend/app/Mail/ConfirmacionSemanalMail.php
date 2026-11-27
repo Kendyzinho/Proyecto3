@@ -5,8 +5,11 @@ namespace App\Mail;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Content;
+use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
+// HU-26 aviso del lunes,el supervisor confirma entrando con su cuenta
 class ConfirmacionSemanalMail extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
@@ -22,9 +25,13 @@ class ConfirmacionSemanalMail extends Mailable implements ShouldQueue
         public string $enlace,
     ) {}
 
-    public function build(): self
+    public function envelope(): Envelope
     {
-        return $this->subject("Confirma la asistencia de {$this->estudiante}")
-            ->view('emails.confirmacion-semanal');
+        return new Envelope(subject: "Confirma la asistencia de {$this->estudiante}");
+    }
+
+    public function content(): Content
+    {
+        return new Content(view: 'emails.confirmacion-semanal');
     }
 }
