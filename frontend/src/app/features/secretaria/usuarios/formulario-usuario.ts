@@ -9,7 +9,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 
 import { Rol } from '../../../core/models/usuario';
-import { Cuenta, DatosCuenta, ROLES, UsuariosApi } from './usuarios-api';
+import { Cuenta, DatosCuenta, ROLES, UsuariosApi, grupoDeRol } from './usuarios-api';
 
 // HU-05: alta y edición de una cuenta con su rol. Recibe la cuenta a editar, o null para crear
 @Component({
@@ -31,19 +31,19 @@ export class FormularioUsuario {
     anio_ingreso: [this.cuenta?.anio_ingreso ?? new Date().getFullYear()],
   });
 
-  // Al editar, un estudiante sigue siendo estudiante y el personal solo cambia entre roles del personal
-  protected readonly roles = ROLES.filter(
-    (r) => !this.cuenta || (r.valor === 'estudiante') === (this.cuenta.rol === 'estudiante'),
-  );
+  // Al editar, un estudiante sigue siendo estudiante, un supervisor(a) sigue siendo supervisor(a)
+  // y el personal solo cambia entre roles del personal
+  protected readonly roles = ROLES.filter((r) => !this.cuenta || grupoDeRol(r.valor) === grupoDeRol(this.cuenta.rol));
 
   private readonly rol = toSignal(this.form.controls.rol.valueChanges, { initialValue: this.form.controls.rol.value });
   protected readonly esEstudiante = computed(() => this.rol() === 'estudiante');
+  protected readonly esSupervisor = computed(() => this.rol() === 'supervisor');
 
   protected readonly enviando = signal(false);
   protected readonly errorGeneral = signal<string | null>(null);
 
   constructor() {
-    if (this.cuenta?.rol === 'estudiante') {
+    if (this.cuenta && this.roles.length === 1) {
       this.form.controls.rol.disable();
     }
   }

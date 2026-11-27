@@ -16,9 +16,10 @@ class UsuarioService
     // Primero las cuentas activas y después las desactivadas, cada grupo por nombre
     public function listar(): Collection
     {
-        // HU-19: las cuentas de supervisor(a) no se administran aquí; las maneja el registro del centro
+        // HU-19: la cuenta de un supervisor(a) ya vinculado a un centro la maneja el registro del centro;
+        // aquí solo aparecen las creadas desde Usuarios que aún no tienen centro
         return User::with('estudiante')
-            ->where(fn ($q) => $q->whereNull('rol')->orWhere('rol', '!=', 'supervisor'))
+            ->where(fn ($q) => $q->whereNull('rol')->orWhere('rol', '!=', 'supervisor')->orWhereDoesntHave('supervisores'))
             ->orderBy('name')
             ->get()
             ->sortBy(fn (User $u) => $u->fecha_baja !== null)
@@ -53,6 +54,10 @@ class UsuarioService
         // El estudiante tiene datos propios (nómina, prácticas); no se convierte en personal ni al revés
         if ($esEstudiante !== ($datos['rol'] === 'estudiante')) {
             throw ValidationException::withMessages(['rol' => 'Un estudiante no puede pasar a ser personal ni al revés.']);
+        }
+        // El supervisor(a) es externo a la universidad: no pasa a tener un rol interno ni al revés
+        if ($usuario->esSupervisor() !== ($datos['rol'] === 'supervisor')) {
+            throw ValidationException::withMessages(['rol' => 'Un supervisor(a) no puede pasar a ser personal ni al revés.']);
         }
         if ($usuario->is($responsable) && $datos['rol'] !== $responsable->rol) {
             throw ValidationException::withMessages(['rol' => 'No puedes cambiar tu propio rol.']);
@@ -97,9 +102,10 @@ class UsuarioService
         return $usuario->load('estudiante');
     }
 
+    // Solo se bloquea si ya está vinculado a un centro; la cuenta creada aquí, sin centro, se administra aquí
     private function noEsSupervisor(User $usuario): void
     {
-        if ($usuario->esSupervisor()) {
+        if ($usuario->esSupervisor() && $usuario->supervisores()->exists()) {
             throw ValidationException::withMessages([
                 'usuario' => 'La cuenta de un supervisor(a) se activa o se da de baja desde la ficha de su centro de práctica.',
             ]);

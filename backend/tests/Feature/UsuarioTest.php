@@ -96,6 +96,39 @@ class UsuarioTest extends TestCase
         $this->assertDatabaseCount('estudiantes', 0);
     }
 
+    public function test_crea_un_supervisor_sin_centro_y_lo_administra_desde_usuarios(): void
+    {
+        $this->actingAs($this->secretaria);
+
+        $id = $this->postJson('/api/usuarios', ['rol' => 'supervisor', 'name' => 'Wilson Pérez', 'rut' => null, 'email' => 'wperez@example.test'])
+            ->assertCreated()
+            ->assertJsonPath('data.rol', 'supervisor')
+            ->json('data.id');
+
+        $this->assertDatabaseCount('estudiantes', 0);
+        $this->assertContains('wperez@example.test', array_column($this->getJson('/api/usuarios')->assertOk()->json('data'), 'email'));
+
+        $this->putJson("/api/usuarios/{$id}", ['rol' => 'supervisor', 'name' => 'Wilson Pérez Soto', 'rut' => null, 'email' => 'wperez@example.test'])
+            ->assertOk()->assertJsonPath('data.name', 'Wilson Pérez Soto');
+        $this->postJson("/api/usuarios/{$id}/desactivar", ['motivo' => 'Ya no supervisa'])->assertOk()->assertJsonPath('data.activo', false);
+        $this->postJson("/api/usuarios/{$id}/reactivar")->assertOk()->assertJsonPath('data.activo', true);
+    }
+
+    public function test_un_supervisor_no_puede_pasar_a_ser_personal_ni_al_reves(): void
+    {
+        $supervisor = User::factory()->create(['rol' => 'supervisor', 'email' => 'wperez@example.test']);
+        $coordinadora = User::factory()->create(['rol' => 'coordinadora', 'email' => 'diana@uta.cl']);
+        $this->actingAs($this->secretaria);
+
+        $this->putJson("/api/usuarios/{$supervisor->id}", ['rol' => 'coordinadora', 'name' => 'Wilson Pérez', 'rut' => null, 'email' => 'wperez@example.test'])
+            ->assertStatus(422)->assertJsonValidationErrors('rol');
+        $this->putJson("/api/usuarios/{$coordinadora->id}", ['rol' => 'supervisor', 'name' => 'Diana Henry', 'rut' => null, 'email' => 'diana@uta.cl'])
+            ->assertStatus(422)->assertJsonValidationErrors('rol');
+
+        $this->assertSame('supervisor', $supervisor->fresh()->rol);
+        $this->assertSame('coordinadora', $coordinadora->fresh()->rol);
+    }
+
     public function test_edita_el_rol_del_personal(): void
     {
         $coordinadora = User::factory()->create(['rol' => 'coordinadora', 'email' => 'diana@uta.cl']);

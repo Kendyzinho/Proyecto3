@@ -13,6 +13,8 @@ const CUENTAS: Cuenta[] = [
     anio_ingreso: 2023, activo: true, fecha_baja: null, motivo_baja: null },
   { id: 3, rut: '19.776.203-5', name: 'Felipe Araya Soto', email: 'felipe.araya@alumnos.uta.cl', rol: 'estudiante',
     anio_ingreso: 2019, activo: false, fecha_baja: '2026-03-01', motivo_baja: 'Egresado' },
+  { id: 4, rut: null, name: 'Wilson Pérez', email: 'wperez@example.test', rol: 'supervisor',
+    anio_ingreso: null, activo: true, fecha_baja: null, motivo_baja: null },
 ];
 
 describe('Usuarios', () => {
@@ -45,9 +47,25 @@ describe('Usuarios', () => {
 
   it('muestra todas las cuentas con su rol y estado', () => {
     const texto = (fixture.nativeElement as HTMLElement).textContent ?? '';
-    expect(filas()).toBe(3);
+    expect(filas()).toBe(4);
     expect(texto).toContain('Secretaria de Jefatura');
+    expect(texto).toContain('Supervisor(a) de Práctica');
     expect(texto).toContain('Desactivada');
+  });
+
+  it('separa a los supervisores del personal', async () => {
+    const boton = (texto: string) => Array.from((fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('.filtro'))
+      .find((b) => b.textContent?.includes(texto))!;
+
+    boton('Supervisores').click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(filas()).toBe(1);
+
+    boton('Personal').click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(filas()).toBe(1);
   });
 
   it('filtra las desactivadas', async () => {

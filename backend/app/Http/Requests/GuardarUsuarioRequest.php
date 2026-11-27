@@ -34,7 +34,8 @@ class GuardarUsuarioRequest extends FormRequest
         $esEstudiante = $this->input('rol') === 'estudiante';
 
         return [
-            'rol' => ['required', Rule::in(['estudiante', 'secretaria', 'coordinadora', 'jefe'])],
+            // HU-19/HU-26: también se puede crear la cuenta de un supervisor(a), sin centro
+            'rol' => ['required', Rule::in(['estudiante', 'secretaria', 'coordinadora', 'jefe', 'supervisor'])],
             'name' => ['required', 'string', 'max:255'],
             'rut' => [
                 'bail',

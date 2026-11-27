@@ -17,7 +17,7 @@ import { DesactivarUsuario } from './desactivar-usuario';
 import { FormularioUsuario } from './formulario-usuario';
 import { Cuenta, NOMBRE_ROL_CUENTA, UsuariosApi, mensajeDeError } from './usuarios-api';
 
-type Filtro = 'todos' | 'estudiantes' | 'personal' | 'desactivados';
+type Filtro = 'todos' | 'estudiantes' | 'personal' | 'supervisores' | 'desactivados';
 
 // HU-05: la Secretaria administra las cuentas de estudiantes, coordinación y jefatura (pantalla 05)
 @Component({
@@ -46,6 +46,7 @@ export class Usuarios {
     { valor: 'todos', texto: 'Todos' },
     { valor: 'estudiantes', texto: 'Estudiantes' },
     { valor: 'personal', texto: 'Personal' },
+    { valor: 'supervisores', texto: 'Supervisores' },
     { valor: 'desactivados', texto: 'Desactivados' },
   ];
 
@@ -139,7 +140,9 @@ function coincideFiltro(cuenta: Cuenta, filtro: Filtro): boolean {
     case 'estudiantes':
       return cuenta.rol === 'estudiante';
     case 'personal':
-      return cuenta.rol !== 'estudiante';
+      return cuenta.rol !== 'estudiante' && cuenta.rol !== 'supervisor';
+    case 'supervisores':
+      return cuenta.rol === 'supervisor';
     case 'desactivados':
       return !cuenta.activo;
     default:

@@ -31,7 +31,14 @@ export const ROLES: { valor: Rol; texto: string }[] = [
   { valor: 'secretaria', texto: 'Secretaria de Jefatura' },
   { valor: 'coordinadora', texto: 'Coordinadora de Prácticas' },
   { valor: 'jefe', texto: 'Jefe de Carrera' },
+  // HU-19/HU-26: cuenta externa; ve prácticas cuando la Coordinadora lo agrega a un centro con este correo
+  { valor: 'supervisor', texto: 'Supervisor(a) de Práctica' },
 ];
+
+// Estudiante, personal de la carrera o supervisor(a) externo: al editar, una cuenta no cambia de grupo
+export function grupoDeRol(rol: Rol): 'estudiante' | 'supervisor' | 'personal' {
+  return rol === 'estudiante' || rol === 'supervisor' ? rol : 'personal';
+}
 
 export const NOMBRE_ROL_CUENTA = Object.fromEntries(ROLES.map((r) => [r.valor, r.texto])) as Record<Rol, string>;
 

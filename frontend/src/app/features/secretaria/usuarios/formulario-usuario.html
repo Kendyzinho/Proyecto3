@@ -35,10 +35,12 @@
 
     <div class="fila">
       <mat-form-field class="ancho">
-        <mat-label>Correo institucional</mat-label>
+        <mat-label>{{ esSupervisor() ? 'Correo' : 'Correo institucional' }}</mat-label>
         <input matInput type="email" formControlName="email" />
         @if (esEstudiante()) {
           <mat-hint>Debe terminar en &#64;alumnos.uta.cl</mat-hint>
+        } @else if (esSupervisor()) {
+          <mat-hint>El correo del centro de práctica</mat-hint>
         }
         @if (form.controls.email.hasError('required')) {
           <mat-error>Ingresa el correo.</mat-error>
@@ -61,6 +63,9 @@
 
     @if (!cuenta) {
       <p class="nota">La cuenta se crea con una contraseña al azar. La persona define la suya con «¿Olvidaste tu contraseña?».</p>
+    }
+    @if (esSupervisor()) {
+      <p class="nota">La cuenta queda sin centro: verá prácticas cuando la Coordinadora lo agregue con este mismo correo en la ficha de su centro de práctica.</p>
     }
 
     @if (errorGeneral(); as mensaje) {
