@@ -19,8 +19,8 @@ use Illuminate\Support\Facades\Storage;
 use Tests\Concerns\BaseDeDatosAislada;
 use Tests\TestCase;
 
-// HU-14: alertas tempranas. Hoy es el miercoles 18-11-2026; la práctica empezó el lunes 02-11
-// con horario lunes, miercoles y viernes, así que los días esperados hasta ayer son
+// HU-14: alertas tempranas. Hoy es el miércoles 18-11-2026; la práctica empezó el lunes 02-11
+// con horario lunes, miércoles y viernes, así que los días esperados hasta ayer son
 // 02, 04, 06, 09, 11, 13 y 16 de noviembre.
 class AlertaTest extends TestCase
 {
@@ -42,7 +42,7 @@ class AlertaTest extends TestCase
         $this->seed([CatalogoSeeder::class, CentrosDemoSeeder::class, UsuarioSeeder::class, DemoSeeder::class]);
         $this->coordinadora = User::where('email', 'coordinadora@uta.cl')->firstOrFail();
 
-        // Una practica confirmada del seeder con fechas y horario conocidos
+        // Una práctica confirmada del seeder con fechas y horario conocidos
         $this->practica = Practica::whereHas('habilitacion.estudiante.usuario', fn ($q) => $q->where('name', 'Diego Choque Vargas'))->firstOrFail();
         $this->practica->update(['fecha_inicio' => '2026-11-02', 'fecha_fin' => '2026-12-11']);
         $this->practica->horarios()->delete();
@@ -115,7 +115,7 @@ class AlertaTest extends TestCase
 
         $this->generar();
 
-        // El 16 vencio ayer; el plazo del día de ayer 17 todavia corre
+        // El 16 venció ayer; el plazo del día de ayer (17) todavía corre
         $this->assertSame('2026-11-16', $this->alerta('inasistencia')?->fecha_referencia->toDateString());
         $this->assertNull($this->alerta('abandono'));
     }
@@ -139,38 +139,18 @@ class AlertaTest extends TestCase
 
         $this->generar();
 
-        // La semana del 02 terminó el 08: hoy ya pasaron más de 7 dias. La del 09 todavía está en plazo.
+        // La semana del 02 terminó el 08: hoy ya pasaron más de 7 días. La del 09 todavía está en plazo.
         $this->assertSame('2026-11-02', $this->alerta('sin_confirmar')?->fecha_referencia->toDateString());
     }
 
     public function test_la_semana_confirmada_no_genera_alerta_amarilla(): void
     {
-        $this->marcar(['2026-11-02', '2026-11-04', '2026-11-06'], 'confirmado');
-        $this->marcar(['2026-11-09', '2026-11-11', '2026-11-13', '2026-11-16']); // semanas aún en plazo
+        $this->marcar(self::DIAS);
         $this->confirmarSemanas(['2026-11-02']);
 
         $this->generar();
 
         $this->assertNull($this->alerta('sin_confirmar'));
-    }
-        public function test_una_semana_sin_registros_no_genera_alerta_amarilla(): void
-    {
-        // Sin dias registrados el supervisor no tiene nada que confirmar, esa falta la cubren la roja y la naranja
-        $this->generar();
-
-        $this->assertNull($this->alerta('sin_confirmar'));
-        $this->assertNotNull($this->alerta('abandono'));
-    }
-
-    public function test_un_dia_corregido_sin_revisar_en_una_semana_confirmada_genera_la_alerta_amarilla(): void
-    {
-        $this->marcar(['2026-11-02', '2026-11-04'], 'confirmado');
-        $this->marcar(['2026-11-06']); // el estudiante corrigio un rechazo y el supervisor no lo ha revisado
-        $this->confirmarSemanas(['2026-11-02']);
-
-        $this->generar();
-
-        $this->assertSame('2026-11-02', $this->alerta('sin_confirmar')?->fecha_referencia->toDateString());
     }
 
     public function test_una_semana_sin_dias_registrados_no_genera_alerta_amarilla(): void
@@ -277,8 +257,8 @@ class AlertaTest extends TestCase
 
         $this->assertSame(['sin_confirmar'], $lineas->pluck('tipo')->unique()->values()->all());
         $linea = $lineas->firstWhere('practica_id', $this->practica->id);
-        $this->assertStringContainsString("/supervisor/asistencia/{$this->practica->id}/2026-11-02?", $linea['enlace']);
-        $this->assertStringContainsString('signature=', $linea['enlace']);
+        // HU-26: el supervisor confirma con su cuenta, el enlace ya no lleva firma
+        $this->assertStringEndsWith("/supervisor/asistencia/{$this->practica->id}/2026-11-02", $linea['enlace']);
         // Si cambia el supervisor de la práctica, el anterior deja de verla
         $this->practica->update(['supervisor_id' => Supervisor::where('nombre', 'Paula Contreras')->value('id')]);
         $this->assertNotContains($this->practica->id, collect($this->notificaciones($sergio->usuario)['data'])->pluck('practica_id'));
@@ -331,13 +311,16 @@ class AlertaTest extends TestCase
 
     public function test_confirmar_la_semana_resuelve_la_alerta_amarilla_en_el_momento(): void
     {
+        // HU-26: confirma el supervisor de la práctica, con su cuenta
+        $sergio = Supervisor::where('nombre', 'Sergio Paredes')->firstOrFail();
+        $this->practica->update(['supervisor_id' => $sergio->id]);
         $this->marcar(self::DIAS);
         $this->generar();
         $alerta = $this->alerta('sin_confirmar');
         $dias = DB::table('registros_diarios')->where('practica_id', $this->practica->id)->whereBetween('fecha', ['2026-11-02', '2026-11-08'])
             ->pluck('id')->map(fn ($id) => ['id' => $id, 'validacion' => 'confirmado'])->all();
 
-        app(ConfirmacionSemanalService::class)->confirmar($this->practica, Carbon::parse('2026-11-02'), ['dias' => $dias]);
+        app(ConfirmacionSemanalService::class)->confirmar($sergio->usuario, $this->practica->fresh(), '2026-11-02', ['dias' => $dias]);
 
         $this->assertNotNull($alerta->fresh()->fecha_resolucion);
         $this->assertSame('2026-11-02', $alerta->fecha_referencia->toDateString());

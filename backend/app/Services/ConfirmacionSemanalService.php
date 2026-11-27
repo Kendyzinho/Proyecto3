@@ -13,19 +13,16 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\URL;
 use Illuminate\Validation\ValidationException;
 
-// HU-26: el supervisor entra con su cuenta  y confirma o rechaza cada dia que registro su estudiante (HU-13).
-// La alerta por dias sin confirmar la genera la HU-14 .
+// HU-26: el supervisor entra con su cuenta y confirma o rechaza cada dia que registro su estudiante (HU-13).
+// La alerta por dias sin confirmar la genera la HU-14 y se cierra al confirmar.
 class ConfirmacionSemanalService
 {
-    // Lunes a las 08:00: enlace por cada práctica con días registrados la semana anterior y sin confirmar
     // Lunes a las 08:00: aviso por cada practica con dias sin validar en la semana indicada
     public function enviarEnlaces(CarbonInterface $lunes): int
     {
         $lunes = Carbon::parse($lunes)->startOfWeek();
-        [$desde, $hasta] = $this->rango($lunes);
 
         $practicas = Practica::formalizadas()
             // Solo si su cuenta está abierta: es con ella que confirma
@@ -42,11 +39,19 @@ class ConfirmacionSemanalService
                 supervisor: $practica->supervisor->nombre,
                 estudiante: $practica->habilitacion->estudiante->usuario->name,
                 semana: 'del '.$lunes->format('d/m').' al '.$lunes->copy()->endOfWeek()->format('d/m/Y'),
-                enlace: rtrim(config('app.frontend_url'), '/')."/supervisor/asistencia/{$practica->id}/{$lunes->toDateString()}",
+                enlace: $this->enlace($practica, $lunes),
             ));
         }
 
         return $practicas->count();
+    }
+
+    // Pagina donde el supervisor confirma la semana; la usan el correo del lunes y la campana (HU-14)
+    public function enlace(Practica $practica, CarbonInterface $lunes): string
+    {
+        $semana = Carbon::parse($lunes)->startOfWeek()->toDateString();
+
+        return rtrim(config('app.frontend_url'), '/')."/supervisor/asistencia/{$practica->id}/{$semana}";
     }
 
     // Semanas con dias registrados de sus practicas; primero las que tienen dias por confirmar
@@ -127,6 +132,9 @@ class ConfirmacionSemanalService
                 ]);
             }
         });
+
+        // HU-14: la semana ya revisada cierra su alerta amarilla en el momento
+        app(AlertaService::class)->resolver($practica->id);
 
         return $this->detalle($practica, $lunes);
     }

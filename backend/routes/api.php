@@ -95,15 +95,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/informes', [SupervisorInformeController::class, 'index']);
         Route::get('/informes/{practica}', [SupervisorInformeController::class, 'show'])->whereNumber('practica');
         Route::put('/informes/{practica}', [SupervisorInformeController::class, 'update'])->whereNumber('practica');
-     // HU-26: asistencia semanal de sus estudiantes
+
+        // HU-26: asistencia semanal de sus estudiantes
         Route::get('/asistencia', [ConfirmacionSemanalController::class, 'index']);
         Route::get('/asistencia/{practica}/{semana}', [ConfirmacionSemanalController::class, 'show'])
             ->whereNumber('practica')->where('semana', '\d{4}-\d{2}-\d{2}');
         Route::post('/asistencia/{practica}/{semana}', [ConfirmacionSemanalController::class, 'store'])
             ->whereNumber('practica')->where('semana', '\d{4}-\d{2}-\d{2}');
-        Route::post('/logout', [AuthController::class, 'logout']);
-        Route::get('/me', [AuthController::class, 'me']);
-        Route::put('/me/password', [AuthController::class, 'cambiarContrasena'])->middleware('throttle:6,1');
     });
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);

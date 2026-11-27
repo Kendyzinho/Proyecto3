@@ -41,7 +41,8 @@ describe('rutas del supervisor(a)', () => {
 
   it('la asistencia semanal pide sesión', async () => {
     await RouterTestingHarness.create('/supervisor/asistencia/3/2026-11-16');
-    expect(TestBed.inject(Router).url).toBe('/auth');
+    // Tras el login vuelve a la semana pedida (el enlace del correo del lunes)
+    expect(TestBed.inject(Router).url).toBe('/auth?volver=%2Fsupervisor%2Fasistencia%2F3%2F2026-11-16');
   });
 
   it('el supervisor entra a su asistencia semanal', async () => {
