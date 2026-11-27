@@ -73,6 +73,33 @@ describe('Nomina', () => {
     expect(texto).toContain('Confirmar carga de 2');
   });
 
+  it('busca en la tabla por nombre sin tildes o por RUT sin formato', async () => {
+    const el = fixture.nativeElement as HTMLElement;
+    expect(el.querySelector('input[type=search]')).toBeNull(); // sin estudiantes no hay buscador
+
+    const entrada = el.querySelector<HTMLInputElement>('input[type=file]')!;
+    Object.defineProperty(entrada, 'files', { value: [new File(['x'], 'nomina.csv', { type: 'text/csv' })] });
+    entrada.dispatchEvent(new Event('change'));
+    http.expectOne('/api/nomina/revisar').flush(REVISION);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const buscar = async (texto: string) => {
+      const campo = el.querySelector<HTMLInputElement>('input[type=search]')!;
+      campo.value = texto;
+      campo.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+      await fixture.whenStable();
+      return [...el.querySelectorAll('tr.mat-mdc-row')].map((fila) => fila.textContent ?? '');
+    };
+
+    expect(await buscar('munoz')).toEqual([expect.stringContaining('Ignacia Muñoz Vega')]);
+    expect(await buscar('21902330')).toEqual([expect.stringContaining('Benjamín Castro Ríos')]);
+    expect(await buscar('Pedro')).toEqual([]);
+    expect(el.textContent).toContain('Ningún estudiante coincide con "Pedro".');
+    expect(await buscar('')).toHaveLength(3);
+  });
+
   it('cambia "aprobada" por "pendiente" cuando no cumple', () => {
     expect(textoPrerrequisito('Laboral I aprobada', false)).toBe('Laboral I pendiente');
     expect(textoPrerrequisito('Primer año aprobado', true)).toBe('Primer año aprobado');

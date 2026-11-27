@@ -2,18 +2,22 @@ import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
 
+import { PROVEEDORES_FECHA, fechaIso } from '../../../core/i18n/fechas';
 import { BitacoraApi } from './bitacora-api';
 import { GuardarJornada, InformarInasistencia, PracticaBitacora, RegistroDiario, TipoRegistroDiario } from './bitacora.model';
 
 @Component({
   selector: 'app-bitacora',
-  imports: [FormsModule, MatButtonModule, MatFormFieldModule, MatIconModule, MatInputModule, MatProgressBarModule, MatSelectModule],
+  imports: [FormsModule, MatButtonModule, MatDatepickerModule, MatFormFieldModule, MatIconModule, MatInputModule, MatProgressBarModule, MatSelectModule],
+  // Mismo calendario en español que el resto del sistema
+  providers: PROVEEDORES_FECHA,
   templateUrl: './bitacora.html',
   styleUrl: './bitacora.scss',
 })
@@ -29,12 +33,13 @@ export class Bitacora {
   readonly registroEditado = signal<number | null>(null);
 
   practicaId: number | null = null;
-  fecha = fechaLocal();
+  // El calendario entrega un Date; a la API siempre va como texto "2026-11-27" (fechaIso)
+  fecha: string | Date = fechaLocal();
   horaEntrada = '';
   horaSalida = '';
   actividades = '';
   justificacion = '';
-  recuperacionProgramada = '';
+  recuperacionProgramada: string | Date = '';
 
   constructor() {
     this.api.listar().subscribe({
@@ -95,11 +100,11 @@ export class Bitacora {
 
     const datos: GuardarJornada | InformarInasistencia = this.modo() === 'jornada'
       ? { tipo: 'jornada', hora_entrada: this.horaEntrada, hora_salida: this.horaSalida, actividades: this.actividades.trim() }
-      : { tipo: 'inasistencia', justificacion: this.justificacion.trim(), recuperacion_programada: this.recuperacionProgramada };
+      : { tipo: 'inasistencia', justificacion: this.justificacion.trim(), recuperacion_programada: fechaIso(this.recuperacionProgramada) };
 
     this.guardando.set(true);
     this.limpiarAvisos();
-    this.api.guardar(this.practicaId, this.fecha, datos).subscribe({
+    this.api.guardar(this.practicaId, fechaIso(this.fecha), datos).subscribe({
       next: () => {
         this.guardando.set(false);
         this.registroEditado.set(null);
@@ -147,7 +152,7 @@ export class Bitacora {
   }
 
   fechaMinRecuperacion(): string {
-    return sumarDias(this.fecha, 1);
+    return sumarDias(fechaIso(this.fecha), 1);
   }
 
   private mensajeError(error: unknown): string {

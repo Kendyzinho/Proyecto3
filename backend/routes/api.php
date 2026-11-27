@@ -150,6 +150,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/exportar', [NominaController::class, 'exportar']);
         Route::post('/revisar', [NominaController::class, 'revisar']);
         Route::post('/confirmar', [NominaController::class, 'confirmar']);
+        Route::get('/estudiantes', [NominaController::class, 'buscar']);
         Route::post('/estudiantes', [NominaController::class, 'agregar']);
     });
 

@@ -69,6 +69,16 @@ export interface EstudianteNomina {
   origen: 'planilla' | 'manual';
 }
 
+// Un estudiante que ya tiene cuenta, para agregarlo sin volver a escribir sus datos
+export interface EstudianteRegistrado {
+  rut: string;
+  nombre: string;
+  correo: string;
+  anio_ingreso: number;
+  area_ids: number[];
+  activo: boolean;
+}
+
 export interface NuevoEstudiante {
   periodo_id: number;
   rut: string;
@@ -107,6 +117,10 @@ export class NominaApi {
 
   confirmar(archivo: File, periodoId: number): Observable<Resumen & { carga_id: number }> {
     return this.http.post<Resumen & { carga_id: number }>('/api/nomina/confirmar', formulario(archivo, periodoId));
+  }
+
+  buscarEstudiantes(texto: string): Observable<{ data: EstudianteRegistrado[] }> {
+    return this.http.get<{ data: EstudianteRegistrado[] }>('/api/nomina/estudiantes', { params: { buscar: texto } });
   }
 
   agregar(estudiante: NuevoEstudiante): Observable<{ id: number }> {

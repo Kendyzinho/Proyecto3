@@ -219,6 +219,33 @@ class NominaTest extends TestCase
             ->assertJsonPath('errors.tipo_practica_id.0', 'Falta la práctica');
     }
 
+    // HU-07: el diálogo busca primero entre los estudiantes ya registrados
+    public function test_busca_estudiantes_registrados_por_nombre_o_rut_con_o_sin_formato(): void
+    {
+        $catalogo = $this->actingAs($this->secretaria)->getJson('/api/nomina/catalogo')->assertOk();
+        $laboralI = collect($catalogo->json('practicas'))->firstWhere('nombre', 'Laboral I');
+        $this->postJson('/api/nomina/estudiantes', [
+            'periodo_id' => $this->periodo->id, 'rut' => '21556302-2', 'nombre' => 'Ignacia Muñoz Vega',
+            'correo' => 'ignacia.munoz@alumnos.uta.cl', 'anio_ingreso' => 2025, 'tipo_practica_id' => $laboralI['id'], 'cumple_prerrequisito' => true,
+        ])->assertCreated();
+
+        foreach (['Ignacia', 'munoz@alumnos', '21', '21556302', '21.556.302-2'] as $texto) {
+            $this->getJson('/api/nomina/estudiantes?buscar='.urlencode($texto))->assertOk()
+                ->assertJsonPath('data.0.rut', '21.556.302-2')
+                ->assertJsonPath('data.0.nombre', 'Ignacia Muñoz Vega')
+                ->assertJsonPath('data.0.anio_ingreso', 2025);
+        }
+        // El personal no aparece y una búsqueda de una letra no trae nada
+        $this->getJson('/api/nomina/estudiantes?buscar=secretaria')->assertOk()->assertJsonCount(0, 'data');
+        $this->getJson('/api/nomina/estudiantes?buscar=I')->assertOk()->assertJsonCount(0, 'data');
+    }
+
+    public function test_solo_la_secretaria_y_el_jefe_buscan_estudiantes(): void
+    {
+        $this->actingAs(User::factory()->create(['rol' => 'coordinadora']))
+            ->getJson('/api/nomina/estudiantes?buscar=Ignacia')->assertForbidden();
+    }
+
     public function test_descarga_la_plantilla(): void
     {
         $this->actingAs($this->secretaria)->get('/api/nomina/plantilla')

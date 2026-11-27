@@ -92,6 +92,32 @@ class NominaService
         return DB::transaction(fn () => $this->habilitar($fila, $periodo, null));
     }
 
+    // Hasta 8 estudiantes registrados cuyo nombre, correo o RUT (con o sin puntos y guion) contiene el texto
+    public function buscarEstudiantes(string $texto): Collection
+    {
+        $rut = preg_replace('/[^0-9kK]/', '', $texto);
+
+        return Estudiante::with(['usuario', 'areas'])
+            ->whereHas('usuario', fn ($q) => $q->whereNull('rol')->where(function ($q) use ($texto, $rut) {
+                $q->where('name', 'like', "%{$texto}%")->orWhere('email', 'like', "%{$texto}%");
+                if ($rut !== '') {
+                    $q->orWhereRaw("REPLACE(REPLACE(rut, '.', ''), '-', '') LIKE ?", ["%{$rut}%"]);
+                }
+            }))
+            ->get()
+            ->sortBy(fn (Estudiante $e) => $e->usuario->name)
+            ->take(8)
+            ->values()
+            ->map(fn (Estudiante $e) => [
+                'rut' => $e->usuario->rut,
+                'nombre' => $e->usuario->name,
+                'correo' => $e->usuario->email,
+                'anio_ingreso' => $e->anio_ingreso,
+                'area_ids' => $e->areas->pluck('id')->all(),
+                'activo' => $e->usuario->fecha_baja === null,
+            ]);
+    }
+
     // Nómina guardada del período
     public function listar(Periodo $periodo): Collection
     {

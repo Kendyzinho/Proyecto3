@@ -4,6 +4,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -27,6 +28,7 @@ const ENCABEZADOS_CSV = ['RUT', 'Nombre', 'Correo', 'Año de ingreso', 'Práctic
   imports: [
     MatButtonModule,
     MatFormFieldModule,
+    MatInputModule,
     MatIconModule,
     MatPaginatorModule,
     MatSelectModule,
@@ -52,6 +54,16 @@ export class Nomina {
 
   protected readonly filas = new MatTableDataSource<FilaTabla>([]);
   private readonly paginador = viewChild(MatPaginator);
+  // Buscador de la tabla: nombre, correo o RUT (con o sin puntos y guion)
+  protected readonly busqueda = signal('');
+  protected readonly todas = computed<FilaTabla[]>(() => {
+    const revision = this.revision();
+    return revision ? revision.filas.map(filaDeRevision) : this.nomina();
+  });
+  protected readonly visibles = computed(() => {
+    const texto = this.busqueda().trim();
+    return texto ? this.todas().filter((fila) => coincide(fila, texto)) : this.todas();
+  });
 
   protected readonly periodo = computed(() => this.catalogo()?.periodos.find((p) => p.id === this.periodoId()) ?? null);
   protected readonly porGuardar = computed(() => {
@@ -69,14 +81,16 @@ export class Nomina {
       this.cargarNomina();
     });
 
-    // La tabla muestra la revisión mientras hay una planilla subida; si no, la nómina guardada
+    // La tabla muestra la revisión mientras hay una planilla subida; si no, la nómina guardada.
+    // El buscador filtra esas filas y vuelve a la primera página
     effect(() => {
-      const revision = this.revision();
-      this.filas.data = revision ? revision.filas.map(filaDeRevision) : this.nomina();
+      this.filas.data = this.visibles();
+      this.filas.paginator?.firstPage();
     });
     effect(() => {
       this.filas.paginator = this.paginador() ?? null;
     });
+
   }
 
   protected cambiarPeriodo(id: number): void {
@@ -229,4 +243,16 @@ function mensajeDeError(e: HttpErrorResponse): string {
     return Object.values(errores)[0][0];
   }
   return e.status === 0 ? 'No se pudo conectar con el servidor.' : 'Ocurrió un error inesperado. Inténtalo de nuevo.';
+}
+
+// Sin mayúsculas ni tildes: "munoz" encuentra a "Muñoz" y "21502611" a "21.502.611-6"
+function normalizar(texto: string): string {
+  return texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+}
+
+function coincide(fila: FilaTabla, texto: string): boolean {
+  const buscado = normalizar(texto);
+  if (normalizar(`${fila.nombre} ${fila.correo}`).includes(buscado)) return true;
+  const rut = buscado.replace(/[^0-9k]/g, '');
+  return rut.length > 0 && normalizar(fila.rut).replace(/[^0-9k]/g, '').includes(rut);
 }

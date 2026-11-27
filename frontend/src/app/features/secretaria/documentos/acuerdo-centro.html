@@ -3,7 +3,7 @@
     <div class="acuerdo__estado">
       <span>Estado</span>
       <span class="estado" [class.estado--exito]="actual.estado === 'vigente'"
-            [class.estado--advertencia]="actual.estado === 'en_tramite'" [class.estado--error]="actual.estado === 'vencido'">
+            [class.estado--advertencia]="actual.estado === 'en_tramite' || actual.estado === 'programado'" [class.estado--error]="actual.estado === 'vencido'">
         {{ textoAcuerdo[actual.estado] }}
       </span>
     </div>

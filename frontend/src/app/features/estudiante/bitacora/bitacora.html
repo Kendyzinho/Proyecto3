@@ -1,9 +1,5 @@
 <header class="encabezado-pagina">
-  <div>
-    <p class="eyebrow">ESTUDIANTE</p>
-    <h1>Bitácora de práctica</h1>
-    <p>Registra tus jornadas y revisa las horas confirmadas por tu supervisor.</p>
-  </div>
+  <h1>Bitácora de práctica</h1>
 </header>
 
 @if (cargando()) { <p role="status">Cargando tu bitácora…</p> }
@@ -46,8 +42,9 @@
           <div class="campos">
             <mat-form-field>
               <mat-label>Fecha de la jornada</mat-label>
-              <input #fechaJornada matInput type="date" name="fecha" [(ngModel)]="fecha" [min]="actual.fecha_inicio" [max]="fechaMaxima()" [disabled]="registroEditado() !== null || guardando()" required />
-              <button mat-icon-button matSuffix type="button" aria-label="Abrir calendario de la jornada" title="Abrir calendario" [disabled]="registroEditado() !== null || guardando()" (click)="abrirSelector(fechaJornada)"><mat-icon>calendar_month</mat-icon></button>
+              <input matInput [matDatepicker]="calendarioJornada" name="fecha" [(ngModel)]="fecha" [min]="actual.fecha_inicio" [max]="fechaMaxima()" [disabled]="registroEditado() !== null || guardando()" required />
+              <mat-datepicker-toggle matIconSuffix [for]="calendarioJornada" />
+              <mat-datepicker #calendarioJornada />
             </mat-form-field>
 
             @if (modo() === 'jornada') {
@@ -64,8 +61,9 @@
             } @else {
               <mat-form-field>
                 <mat-label>Recuperación programada</mat-label>
-                <input #fechaRecuperacion matInput type="date" name="recuperacion" [(ngModel)]="recuperacionProgramada" [min]="fechaMinRecuperacion()" [max]="actual.fecha_fin" aria-describedby="ayuda-recuperacion" required />
-                <button mat-icon-button matSuffix type="button" aria-label="Abrir calendario de recuperación" title="Abrir calendario" (click)="abrirSelector(fechaRecuperacion)"><mat-icon>calendar_month</mat-icon></button>
+                <input matInput [matDatepicker]="calendarioRecuperacion" name="recuperacion" [(ngModel)]="recuperacionProgramada" [min]="fechaMinRecuperacion()" [max]="actual.fecha_fin" aria-describedby="ayuda-recuperacion" required />
+                <mat-datepicker-toggle matIconSuffix [for]="calendarioRecuperacion" />
+                <mat-datepicker #calendarioRecuperacion />
               </mat-form-field>
             }
           </div>
