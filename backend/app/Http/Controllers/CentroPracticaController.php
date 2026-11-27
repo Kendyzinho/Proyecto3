@@ -295,7 +295,10 @@ class CentroPracticaController extends Controller
                 : $acuerdo->only(['id', 'tipo', 'fecha_inicio', 'fecha_termino']);
 
             return [...$fields, 'estado' => $agreementStatus];
-        })->values()->all();
+        })
+            // El que rige hoy va primero aunque ya haya una renovación con fecha de inicio posterior
+            ->sortBy(fn (array $acuerdo) => $acuerdo['estado'] === 'vigente' ? 0 : 1)
+            ->values()->all();
         $data['estado_acuerdo'] = $centro->es_interno
             ? 'exento'
             : ($data['acuerdos'][0]['estado'] ?? 'sin_acuerdo');

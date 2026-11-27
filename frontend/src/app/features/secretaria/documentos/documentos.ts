@@ -11,7 +11,7 @@ import { iniciales } from '../../../shared/marco/marco';
 import { descargar } from '../nomina/nomina-api';
 import { AcuerdoCentro } from './acuerdo-centro';
 import {
-  DetallePractica, DocumentosApi, PeriodoActual, PracticaPorFormalizar, TipoDocumento, abrirPdf, claseEstado, fechaCorta, textoEstado,
+  Acuerdo, DetallePractica, DocumentosApi, PeriodoActual, PracticaPorFormalizar, TipoDocumento, abrirPdf, claseEstado, fechaCorta, textoEstado,
 } from './documentos-api';
 
 const NOMBRES_PDF: Record<TipoDocumento, string> = {
@@ -101,12 +101,15 @@ export class Documentos {
     });
   }
 
-  protected abrirAcuerdo(): void {
+  // Acuerdo que se abre en el formulario: el que se completa o corrige, o ninguno para registrar uno nuevo
+  protected readonly acuerdoEnFormulario = signal<Acuerdo | null>(null);
+
+  protected abrirAcuerdo(acuerdo: Acuerdo | null): void {
+    this.acuerdoEnFormulario.set(acuerdo);
     this.dialogoAcuerdo = this.dialogo.open(this.plantillaAcuerdo(), { width: '640px', maxWidth: 'calc(100vw - 24px)', maxHeight: '94dvh' });
   }
 
-  protected verAcuerdo(): void {
-    const acuerdo = this.detalle()?.acuerdo;
+  protected verAcuerdo(acuerdo: Acuerdo | null | undefined): void {
     if (acuerdo?.tiene_archivo) {
       abrirPdf(this.api.archivoAcuerdo(acuerdo.id), (texto) => this.aviso.open(texto, 'Cerrar', { duration: 6000 }));
     }

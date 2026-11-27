@@ -68,6 +68,8 @@ describe('Marco', () => {
     const solicitud = http.expectOne('/api/logout');
     expect(solicitud.request.headers.get('Authorization')).toBe('Bearer sesion-marco');
     solicitud.flush(null, { status: 204, statusText: 'No Content' });
+    // La campana también pregunta por las notificaciones de la secretaria (vienen vacías)
+    http.match('/api/notificaciones').filter((peticion) => !peticion.cancelled).forEach((peticion) => peticion.flush({ data: [], meta: { total: 0 } }));
     http.verify();
   });
 

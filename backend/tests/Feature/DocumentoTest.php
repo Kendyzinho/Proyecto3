@@ -134,6 +134,59 @@ class DocumentoTest extends TestCase
         $this->actingAs($this->secretaria)->get("/api/practicas/{$this->practicaDe('Diego')->id}/documentos/carta")->assertOk();
     }
 
+    // Un acuerdo firmado no se edita: guardar sobre un centro con acuerdo vigente registra la renovación
+    public function test_renovar_no_toca_el_acuerdo_vigente_ni_bloquea_al_centro(): void
+    {
+        $productora = CentroPractica::where('nombre', 'Productora Norte Visual')->first();
+        $vigente = $productora->acuerdoVigente();
+        $antonia = $this->practicaDe('Antonia');
+
+        $this->actingAs($this->secretaria)->post("/api/centros/{$productora->id}/acuerdo", [
+            'tipo' => 'con_equipamiento', 'representante_legal' => 'Sergio Paredes',
+            'fecha_inicio' => '2028-01-01', 'fecha_termino' => '2030-12-31',
+            'archivo' => UploadedFile::fake()->create('renovacion.pdf', 200, 'application/pdf'),
+        ])->assertOk()->assertJsonPath('estado', 'programado');
+
+        $this->assertEquals($vigente->only(['tipo', 'fecha_inicio', 'fecha_termino', 'archivo_pdf']), $vigente->fresh()->only(['tipo', 'fecha_inicio', 'fecha_termino', 'archivo_pdf']));
+        $this->assertCount(2, $productora->acuerdos()->get());
+        $this->getJson("/api/practicas/{$antonia->id}/documentos")->assertOk()
+            ->assertJsonPath('con_acuerdo', true)
+            ->assertJsonPath('acuerdo.id', $vigente->id)
+            ->assertJsonPath('acuerdo.estado', 'vigente')
+            ->assertJsonPath('renovacion.estado', 'programado')
+            ->assertJsonPath('renovacion.fecha_inicio', '2028-01-01');
+        $this->get("/api/practicas/{$antonia->id}/documentos/carta")->assertOk();
+    }
+
+    public function test_la_renovacion_se_corrige_sin_crear_otra(): void
+    {
+        $productora = CentroPractica::where('nombre', 'Productora Norte Visual')->first();
+        $datos = ['tipo' => 'tradicional', 'representante_legal' => 'Sergio Paredes', 'fecha_inicio' => '2028-01-01', 'fecha_termino' => '2030-12-31'];
+        $primera = $this->actingAs($this->secretaria)->post("/api/centros/{$productora->id}/acuerdo", $datos)->assertOk()->assertJsonPath('estado', 'en_tramite');
+
+        $this->post("/api/centros/{$productora->id}/acuerdo", [...$datos, 'fecha_inicio' => '2027-12-31'])->assertOk()
+            ->assertJsonPath('id', $primera->json('id'));
+
+        $this->assertCount(2, $productora->acuerdos()->get());
+    }
+
+    public function test_un_acuerdo_vencido_se_conserva_al_renovarlo(): void
+    {
+        $productora = CentroPractica::where('nombre', 'Productora Norte Visual')->first();
+        $anterior = $productora->acuerdoVigente();
+        $anterior->update(['fecha_inicio' => '2023-01-01', 'fecha_termino' => '2025-12-31']);
+        $this->assertFalse($productora->puedeRecibirEstudiantes());
+
+        $this->actingAs($this->secretaria)->post("/api/centros/{$productora->id}/acuerdo", [
+            'tipo' => 'tradicional', 'representante_legal' => 'Sergio Paredes',
+            'fecha_inicio' => now()->toDateString(), 'fecha_termino' => '2029-12-31',
+            'archivo' => UploadedFile::fake()->create('renovado.pdf', 200, 'application/pdf'),
+        ])->assertOk()->assertJsonPath('estado', 'vigente');
+
+        $this->assertSame('2025-12-31', $anterior->fresh()->fecha_termino->toDateString());
+        $this->assertTrue($productora->puedeRecibirEstudiantes());
+    }
+
     public function test_el_acuerdo_debe_ser_un_pdf(): void
     {
         $corfo = CentroPractica::where('nombre', 'Corfo Arica y Parinacota')->first();

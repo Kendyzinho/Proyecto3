@@ -34,3 +34,58 @@
   color: #b91c1c;
   font-size: 14px;
 }
+
+.resultados {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  button {
+    display: grid;
+    gap: 2px;
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    background: #fff;
+    color: #26354b;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+
+    &:hover:not(:disabled), &:focus-visible { border-color: #355085; background: #f5f8fc; }
+    &:disabled { cursor: default; opacity: 0.6; }
+    span { color: #5b6b80; font-size: 13px; }
+  }
+}
+
+.resultados__aviso { color: #b45309 !important; }
+
+.sin-resultados {
+  margin: 0 0 4px;
+  color: #5b6b80;
+  font-size: 14px;
+}
+
+.nuevo { align-self: flex-start; margin-top: 8px; }
+
+.elegido {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+  padding: 14px 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+}
+
+.elegido__datos {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+
+  span { color: #5b6b80; font-size: 13px; overflow-wrap: anywhere; }
+}

@@ -46,10 +46,27 @@ class CentroPractica extends Model
         return $this->acuerdos()->latest('id')->first();
     }
 
+    // El acuerdo firmado que rige hoy. Puede haber uno más nuevo (la renovación) que todavía no empieza
+    public function acuerdoVigente(): ?AcuerdoColaboracion
+    {
+        return $this->acuerdos()->whereNotNull('archivo_pdf')->whereNotNull('fecha_inicio')->whereDate('fecha_inicio', '<=', today())
+            ->where(fn ($q) => $q->whereNull('fecha_termino')->orWhereDate('fecha_termino', '>=', today()))
+            ->orderByDesc('fecha_inicio')->orderByDesc('id')->first();
+    }
+
+    // Renovación registrada después del vigente, en trámite o firmada para más adelante
+    public function acuerdoRenovacion(): ?AcuerdoColaboracion
+    {
+        $vigente = $this->acuerdoVigente();
+        $ultimo = $this->acuerdoActual();
+
+        return $vigente && $ultimo && $ultimo->isNot($vigente) && $ultimo->esEditable() ? $ultimo : null;
+    }
+
     // Art. 15: sin acuerdo vigente el centro no recibe estudiantes. El centro interno (UTA) no lo necesita
     public function puedeRecibirEstudiantes(): bool
     {
-        return $this->es_interno || $this->acuerdoActual()?->estado() === 'vigente';
+        return $this->es_interno || $this->acuerdoVigente() !== null;
     }
 
     public function requerimientos(): HasMany

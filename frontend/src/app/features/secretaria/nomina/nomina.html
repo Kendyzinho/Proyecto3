@@ -72,10 +72,22 @@
     </div>
   }
 
+  @if (todas().length > 0) {
+    <div class="barra-filtros">
+      <mat-form-field class="buscador" subscriptSizing="dynamic">
+        <mat-icon matPrefix>search</mat-icon>
+        <input matInput type="search" placeholder="Buscar por nombre, RUT o correo" aria-label="Buscar estudiante"
+               [value]="busqueda()" (input)="busqueda.set($any($event.target).value)" />
+      </mat-form-field>
+    </div>
+  }
+
   @if (ocupado() && !revision()) {
     <p class="vacio">Revisando la planilla…</p>
-  } @else if (filas.data.length === 0) {
+  } @else if (todas().length === 0) {
     <p class="vacio">Todavía no hay estudiantes en la nómina de este período.</p>
+  } @else if (visibles().length === 0) {
+    <p class="vacio">Ningún estudiante coincide con "{{ busqueda().trim() }}".</p>
   } @else {
     <table mat-table class="tabla" [dataSource]="filas">
       <ng-container matColumnDef="rut">
@@ -128,7 +140,7 @@
     </table>
   }
 
-  <div class="pie" [hidden]="filas.data.length === 0">
+  <div class="pie" [hidden]="visibles().length === 0">
     <mat-paginator [pageSize]="10" [hidePageSize]="true" />
     @if (revision(); as actual) {
       <div class="pie__acciones">

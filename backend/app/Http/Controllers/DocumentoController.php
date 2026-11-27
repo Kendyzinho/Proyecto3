@@ -63,8 +63,10 @@ class DocumentoController extends Controller
             $datos['archivo_pdf'] = $request->file('archivo')->store("acuerdos/{$centro->id}");
         }
 
-        // Se actualiza el acuerdo actual; si el centro no tiene, se crea
-        $acuerdo = $centro->acuerdoActual() ?? new AcuerdoColaboracion(['centro_id' => $centro->id]);
+        // Se corrige el último acuerdo mientras no rija (en trámite o firmado para más adelante).
+        // Uno vigente o vencido no se toca: lo firmado queda como historial y se registra uno nuevo (renovación)
+        $ultimo = $centro->acuerdoActual();
+        $acuerdo = $ultimo?->esEditable() ? $ultimo : new AcuerdoColaboracion(['centro_id' => $centro->id]);
         DB::transaction(function () use ($acuerdo, $datos, $centro) {
             $acuerdo->fill($datos)->save();
 

@@ -44,36 +44,59 @@
 
       @if (!actual.centro_interno) {
         <div class="franja-acuerdo" [class.franja-acuerdo--bloqueo]="!actual.con_acuerdo">
-          @switch (actual.acuerdo?.estado) {
-            @case ('vigente') {
-              <p>
-                Acuerdo con {{ actual.centro }} vigente@if (actual.acuerdo?.fecha_termino; as termino) { hasta el {{ fechaCorta(termino) }}}
+          <div>
+            @switch (actual.acuerdo?.estado) {
+              @case ('vigente') {
+                <p>
+                  Acuerdo con {{ actual.centro }} vigente@if (actual.acuerdo?.fecha_termino; as termino) { hasta el {{ fechaCorta(termino) }}}.
+                </p>
+              }
+              @case ('programado') {
+                <p>
+                  El acuerdo con {{ actual.centro }} está firmado y rige desde el {{ fechaCorta(actual.acuerdo?.fecha_inicio ?? '') }}.
+                  Hasta esa fecha no se generan la carta ni el seguro.
+                </p>
+              }
+              @case ('vencido') {
+                <p>
+                  El acuerdo con {{ actual.centro }} venció el {{ fechaCorta(actual.acuerdo?.fecha_termino ?? '') }}.
+                  Sin un acuerdo vigente no se generan la carta ni el seguro.
+                </p>
+              }
+              @case ('en_tramite') {
+                <p>El acuerdo con {{ actual.centro }} está en trámite. Sin un acuerdo vigente no se generan la carta ni el seguro.</p>
+              }
+              @default {
+                <p>{{ actual.centro }} no tiene un acuerdo de colaboración. Sin él no se generan la carta ni el seguro.</p>
+              }
+            }
+            @if (actual.renovacion; as renovacion) {
+              <p class="franja-acuerdo__renovacion">
+                @if (renovacion.estado === 'programado') {
+                  Renovación firmada, rige desde el {{ fechaCorta(renovacion.fecha_inicio ?? '') }}.
+                } @else {
+                  Renovación en trámite.
+                }
               </p>
             }
-            @case ('vencido') {
-              <p>
-                El acuerdo con {{ actual.centro }} venció el {{ fechaCorta(actual.acuerdo?.fecha_termino ?? '') }}.
-                Sin un acuerdo vigente no se generan la carta ni el seguro.
-              </p>
-            }
-            @case ('en_tramite') {
-              <p>El acuerdo con {{ actual.centro }} está en trámite. Sin un acuerdo vigente no se generan la carta ni el seguro.</p>
-            }
-            @default {
-              <p>{{ actual.centro }} no tiene un acuerdo de colaboración. Sin él no se generan la carta ni el seguro.</p>
-            }
-          }
+          </div>
           <div class="franja-acuerdo__acciones">
             @if (actual.acuerdo?.tiene_archivo) {
-              <button matButton type="button" (click)="verAcuerdo()">Ver PDF</button>
+              <button matButton type="button" (click)="verAcuerdo(actual.acuerdo)">Ver PDF</button>
             }
-            @if (actual.con_acuerdo) {
-              <button matButton type="button" (click)="abrirAcuerdo()">Editar</button>
+            @if (actual.acuerdo?.estado === 'vigente') {
+              <!-- Lo firmado no se edita: se renueva sin tocar el vigente -->
+              @if (actual.renovacion; as renovacion) {
+                <button matButton type="button" (click)="abrirAcuerdo(renovacion)">Ver renovación</button>
+              } @else {
+                <button matButton type="button" (click)="abrirAcuerdo(null)">Renovar</button>
+              }
             } @else {
-              <button matButton="filled" type="button" (click)="abrirAcuerdo()">
+              <button matButton="filled" type="button" (click)="abrirAcuerdo(actual.acuerdo?.estado === 'vencido' ? null : actual.acuerdo)">
                 @switch (actual.acuerdo?.estado) {
                   @case ('vencido') { Renovar acuerdo }
                   @case ('en_tramite') { Completar acuerdo }
+                  @case ('programado') { Editar acuerdo }
                   @default { Registrar acuerdo }
                 }
               </button>
@@ -162,9 +185,9 @@
 
 <ng-template #plantillaAcuerdo>
   @if (detalle(); as actual) {
-    <h2 mat-dialog-title>Acuerdo con {{ actual.centro }}</h2>
+    <h2 mat-dialog-title>{{ actual.acuerdo?.estado === 'vigente' ? 'Renovación del acuerdo' : 'Acuerdo' }} con {{ actual.centro }}</h2>
     <mat-dialog-content>
-      <app-acuerdo-centro [centroId]="actual.centro_id" [acuerdo]="actual.acuerdo" (guardado)="acuerdoGuardado()" />
+      <app-acuerdo-centro [centroId]="actual.centro_id" [acuerdo]="acuerdoEnFormulario()" (guardado)="acuerdoGuardado()" />
     </mat-dialog-content>
   }
 </ng-template>

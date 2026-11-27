@@ -76,7 +76,7 @@ export class Marco {
     effect(() => {
       const rol = this.auth.usuario()?.rol;
       if (rol === 'coordinadora' || rol === 'jefe') this.contador.actualizar();
-      if (rol && rol !== 'secretaria') this.notificaciones.actualizar();
+      if (rol) this.notificaciones.actualizar();
     });
   }
 
@@ -92,7 +92,7 @@ export class Marco {
   // Abre o cierra el panel; al abrirlo vuelve a pedir las alertas por si salieron nuevas
   protected alternarNotificaciones(): void {
     this.notificacionesAbiertas.update((abiertas) => !abiertas);
-    if (this.notificacionesAbiertas() && this.rol() !== 'secretaria') this.notificaciones.actualizar();
+    if (this.notificacionesAbiertas()) this.notificaciones.actualizar();
   }
 
   protected sinNotificaciones(): string {

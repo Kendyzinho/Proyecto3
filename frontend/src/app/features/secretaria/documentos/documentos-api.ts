@@ -4,7 +4,8 @@ import { Observable } from 'rxjs';
 
 export type TipoDocumento = 'carta' | 'seguro';
 export type EstadoDocumento = 'por_generar' | 'generada' | 'enviada' | 'sin_acuerdo' | 'en_espera';
-export type EstadoAcuerdo = 'vigente' | 'en_tramite' | 'vencido';
+// programado: firmado, pero rige desde una fecha futura
+export type EstadoAcuerdo = 'vigente' | 'en_tramite' | 'programado' | 'vencido';
 
 export interface PeriodoActual {
   id: number;
@@ -57,7 +58,8 @@ export interface DetallePractica extends PracticaPorFormalizar {
   textos: { carta: ContenidoCarta; seguro: ContenidoSeguro };
   centro_id: number;
   centro_interno: boolean;
-  acuerdo: Acuerdo | null;
+  acuerdo: Acuerdo | null;     // el que rige hoy o, si no hay, el último registrado
+  renovacion: Acuerdo | null;  // el siguiente, registrado mientras el vigente sigue en vigor
 }
 
 export interface DatosAcuerdo {
@@ -172,5 +174,6 @@ export function fechaCorta(fecha: string): string {
 export const TEXTO_ACUERDO: Record<EstadoAcuerdo, string> = {
   vigente: 'Vigente',
   en_tramite: 'En trámite',
+  programado: 'Firmado, aún no rige',
   vencido: 'Vencido',
 };

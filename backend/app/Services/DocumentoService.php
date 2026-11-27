@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Mail\DocumentosPractica;
+use App\Models\AcuerdoColaboracion;
 use App\Models\CentroPractica;
 use App\Models\Documento;
 use App\Models\Malla;
@@ -44,7 +45,8 @@ class DocumentoService
     {
         $practica->loadMissing(['habilitacion.estudiante.usuario', 'habilitacion.tipoPractica', 'supervisor.centro']);
         $centro = $practica->supervisor->centro;
-        $acuerdo = $centro->acuerdoActual();
+        // El que rige hoy; si no hay, el último registrado (en trámite, firmado para más adelante o vencido)
+        $acuerdo = $centro->acuerdoVigente() ?? $centro->acuerdoActual();
 
         return $this->resumen($practica) + [
             'textos' => [
@@ -53,16 +55,22 @@ class DocumentoService
             ],
             'centro_id' => $centro->id,
             'centro_interno' => $centro->es_interno,
-            'acuerdo' => $acuerdo ? [
-                'id' => $acuerdo->id,
-                'tipo' => $acuerdo->tipo,
-                'representante_legal' => $acuerdo->representante_legal,
-                'fecha_inicio' => $acuerdo->fecha_inicio?->toDateString(),
-                'fecha_termino' => $acuerdo->fecha_termino?->toDateString(),
-                'estado' => $acuerdo->estado(),
-                'tiene_archivo' => $acuerdo->archivo_pdf !== null,
-            ] : null,
+            'acuerdo' => $this->datosAcuerdo($acuerdo),
+            'renovacion' => $this->datosAcuerdo($centro->acuerdoRenovacion()),
         ];
+    }
+
+    private function datosAcuerdo(?AcuerdoColaboracion $acuerdo): ?array
+    {
+        return $acuerdo ? [
+            'id' => $acuerdo->id,
+            'tipo' => $acuerdo->tipo,
+            'representante_legal' => $acuerdo->representante_legal,
+            'fecha_inicio' => $acuerdo->fecha_inicio?->toDateString(),
+            'fecha_termino' => $acuerdo->fecha_termino?->toDateString(),
+            'estado' => $acuerdo->estado(),
+            'tiene_archivo' => $acuerdo->archivo_pdf !== null,
+        ] : null;
     }
 
     // Genera el PDF y lo registra; cada generación queda como un documento nuevo
