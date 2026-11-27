@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\URL;
 use Illuminate\Validation\ValidationException;
 
 // HU-26: el supervisor confirma cada semana, sin cuenta, desde un enlace firmado.
-// Lee registros_diarios (HU-13) y escribe alertas (HU-14) por tabla, sin depender de sus modelos.
+// Lee registros_diarios (HU-13) por tabla, sin depender de su modelo.
 class ConfirmacionSemanalService
 {
     public const VIGENCIA_DIAS = 30;
@@ -97,7 +97,7 @@ class ConfirmacionSemanalService
 
     public function confirmar(Practica $practica, CarbonInterface $lunes, array $datos): ConfirmacionSemanal
     {
-        return DB::transaction(function () use ($practica, $lunes, $datos) {
+        $confirmacion = DB::transaction(function () use ($practica, $lunes, $datos) {
             // Bloquea la práctica para que dos envíos simultáneos no se crucen
             Practica::whereKey($practica->id)->lockForUpdate()->first();
 
@@ -122,33 +122,11 @@ class ConfirmacionSemanalService
                 'observacion' => $datos['observacion'] ?? null,
             ]);
         });
-    }
 
-    // HU-14: pasó más de una semana desde el envío del enlace y sigue sin respuesta
-    public function alertarSinConfirmar(): int
-    {
-        // El enlace sale el lunes siguiente a la semana; una semana después ya corresponde alertar
-        $ultimoDia = now()->startOfWeek()->subWeeks(2)->endOfWeek()->toDateString();
+        // HU-14: la semana confirmada cierra su alerta amarilla
+        app(AlertaService::class)->resolver($practica->id);
 
-        $practicas = Practica::formalizadas()
-            ->whereExists(fn (Builder $q) => $q->from('registros_diarios')
-                ->whereColumn('registros_diarios.practica_id', 'practicas.id')
-                ->whereNull('registros_diarios.validacion')
-                ->where('registros_diarios.fecha', '<=', $ultimoDia))
-            ->whereNotExists(fn (Builder $q) => $q->from('alertas')
-                ->whereColumn('alertas.practica_id', 'practicas.id')
-                ->where('alertas.tipo', 'sin_confirmar')
-                ->whereNull('alertas.fecha_atencion'))
-            ->pluck('id');
-
-        foreach ($practicas as $id) {
-            DB::table('alertas')->insert([
-                'practica_id' => $id, 'tipo' => 'sin_confirmar', 'fecha_generada' => now(),
-                'created_at' => now(), 'updated_at' => now(),
-            ]);
-        }
-
-        return $practicas->count();
+        return $confirmacion;
     }
 
     private function registros(Practica $practica, CarbonInterface $lunes): Collection

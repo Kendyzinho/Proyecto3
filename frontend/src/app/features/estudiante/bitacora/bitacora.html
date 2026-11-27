@@ -15,7 +15,7 @@
     <mat-label>Práctica</mat-label>
     <mat-select [value]="practicaId" (selectionChange)="seleccionarPractica($event.value)">
       @for (item of practicas(); track item.id) {
-        <mat-option [value]="item.id">{{ item.tipo_practica }} · {{ item.centro || 'Centro pendiente' }}</mat-option>
+        <mat-option [value]="item.id">{{ item.tipo_practica }} en {{ item.centro || 'centro por definir' }}</mat-option>
       }
     </mat-select>
   </mat-form-field>
@@ -31,7 +31,6 @@
       <span class="progreso__porcentaje">{{ actual.porcentaje_avance }}%</span>
     </div>
     <mat-progress-bar mode="determinate" [value]="actual.porcentaje_avance" aria-label="Porcentaje de horas confirmadas"></mat-progress-bar>
-    <p class="nota">Las jornadas pendientes o rechazadas no se suman al avance. El supervisor confirma los registros en su revisión semanal.</p>
   </section>
 
   @if (actual.puede_registrar || registroEditado() !== null) {

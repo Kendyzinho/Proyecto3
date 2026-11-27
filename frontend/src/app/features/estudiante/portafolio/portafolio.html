@@ -9,14 +9,13 @@
       <p>Pega el enlace de tu portafolio publicado en UTAMed para la revisión académica.</p>
       <mat-form-field><mat-label>Práctica</mat-label>
         <mat-select [value]="seleccion" (selectionChange)="seleccionar($event.value)" [disabled]="guardando()">
-          @for (p of practicas(); track p.id) { <mat-option [value]="p.id">#{{ p.id }} · {{ p.tipo }} · {{ p.centro || 'Centro pendiente' }}</mat-option> }
+          @for (p of practicas(); track p.id) { <mat-option [value]="p.id">{{ p.tipo }} en {{ p.centro || 'centro por definir' }}</mat-option> }
         </mat-select>
       </mat-form-field>
       @if (seleccion !== null) {
         <form (ngSubmit)="guardar()">
           <mat-form-field><mat-label>Enlace del portafolio en UTAMed</mat-label>
             <input matInput type="url" name="url" [(ngModel)]="url" required maxlength="255" [disabled]="guardando()" placeholder="https://" />
-            <mat-hint>Solo se registra el enlace. No se suben archivos.</mat-hint>
             <mat-error>Ingresa el enlace de tu portafolio.</mat-error>
           </mat-form-field>
           <div class="acciones"><button mat-flat-button type="submit" [disabled]="guardando()">{{ guardando() ? 'Guardando…' : 'Guardar enlace' }}</button>

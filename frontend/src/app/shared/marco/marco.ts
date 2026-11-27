@@ -5,16 +5,18 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatPaginatorIntl } from '@angular/material/paginator';
 import { MatSidenavModule } from '@angular/material/sidenav';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { MatDialog } from '@angular/material/dialog';
+import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
 import { PaginadorEnEspanol } from '../../core/i18n/paginador';
 import { NOMBRE_ROL } from '../../core/models/usuario';
 import { Auth } from '../../core/services/auth';
-import { TIPOS_ALERTA, fechaLegible } from '../../features/coordinacion/alertas/alertas-api';
+import { LUZ_ALERTA, fechaCorta, textoAlerta } from '../../core/models/alerta';
+import { FichaEstudiante } from '../../features/coordinacion/ficha-estudiante/ficha-estudiante';
 import { MenuUsuario } from '../menu-usuario/menu-usuario';
 import { ContadorSolicitudes } from './contador-solicitudes';
 import { GRUPOS_POR_ROL, MENUS_POR_ROL } from './menus-por-rol';
-import { NotificacionesAlertas } from './notificaciones-alertas';
+import { Notificacion, NotificacionesAlertas } from './notificaciones-alertas';
 
 export interface OpcionMenu {
   texto: string;
@@ -46,11 +48,13 @@ export class Marco {
 
   protected readonly auth = inject(Auth);
   protected readonly contador = inject(ContadorSolicitudes);
-  // HU-14: la campana muestra las alertas abiertas a la Coordinadora
+  // HU-14: la campana muestra a cada rol las alertas que le tocan
   protected readonly notificaciones = inject(NotificacionesAlertas);
-  protected readonly tiposAlerta = TIPOS_ALERTA;
-  protected readonly fechaLegible = fechaLegible;
-  protected readonly esCoordinadora = computed(() => this.auth.usuario()?.rol === 'coordinadora');
+  protected readonly luces = LUZ_ALERTA;
+  private readonly dialogo = inject(MatDialog);
+  private readonly router = inject(Router);
+  private readonly rol = computed(() => this.auth.usuario()?.rol);
+  private readonly gestiona = computed(() => this.rol() === 'coordinadora' || this.rol() === 'jefe');
 
   protected readonly nombreRol = computed(() => {
     const usuario = this.auth.usuario();
@@ -72,7 +76,7 @@ export class Marco {
     effect(() => {
       const rol = this.auth.usuario()?.rol;
       if (rol === 'coordinadora' || rol === 'jefe') this.contador.actualizar();
-      if (rol === 'coordinadora') this.notificaciones.actualizar();
+      if (rol && rol !== 'secretaria') this.notificaciones.actualizar();
     });
   }
 
@@ -88,7 +92,46 @@ export class Marco {
   // Abre o cierra el panel; al abrirlo vuelve a pedir las alertas por si salieron nuevas
   protected alternarNotificaciones(): void {
     this.notificacionesAbiertas.update((abiertas) => !abiertas);
-    if (this.notificacionesAbiertas() && this.esCoordinadora()) this.notificaciones.actualizar();
+    if (this.notificacionesAbiertas() && this.rol() !== 'secretaria') this.notificaciones.actualizar();
+  }
+
+  protected sinNotificaciones(): string {
+    if (this.gestiona()) return 'No hay alertas abiertas.';
+    if (this.rol() === 'supervisor') return 'No tienes semanas por confirmar.';
+    if (this.rol() === 'estudiante') return 'Tu bitácora está al día.';
+    return 'No tienes notificaciones.';
+  }
+
+  protected titulo(linea: Notificacion): string {
+    if (this.rol() === 'estudiante') {
+      return linea.tipo === 'abandono' ? 'Llevas 3 días sin marcar tu bitácora' : 'Tienes una falta sin justificar';
+    }
+    return linea.estudiante;
+  }
+
+  protected detalle(linea: Notificacion): string {
+    const dia = fechaCorta(linea.fecha_referencia);
+    if (this.rol() === 'estudiante') return linea.tipo === 'abandono' ? `Desde el ${dia}` : `Del ${dia}`;
+    if (this.rol() === 'supervisor') return `Semana del ${dia} sin confirmar`;
+    const texto = textoAlerta(linea.tipo, linea.fecha_referencia);
+    if (linea.otras === 0) return texto;
+    return `${texto}, y ${linea.otras} ${linea.otras === 1 ? 'alerta' : 'alertas'} más`;
+  }
+
+  // Coordinación abre la ficha del estudiante, el estudiante va a su bitácora
+  // y el supervisor(a) a la página para confirmar la semana
+  protected abrir(linea: Notificacion): void {
+    this.notificacionesAbiertas.set(false);
+    if (this.gestiona()) {
+      this.dialogo
+        .open(FichaEstudiante, { data: linea.practica_id, width: '820px', maxWidth: 'calc(100vw - 24px)', maxHeight: '94dvh' })
+        .afterClosed()
+        .subscribe(() => this.notificaciones.actualizar());
+    } else if (this.rol() === 'estudiante') {
+      this.router.navigateByUrl('/estudiante/bitacora');
+    } else if (linea.enlace) {
+      this.router.navigateByUrl(linea.enlace.replace(/^https?:\/\/[^/]+/, ''));
+    }
   }
 }
 

@@ -31,7 +31,6 @@ export default [
         title: 'Centros de práctica',
         loadComponent: () => import('../coordinacion/centros-practica/centros-practica').then((m) => m.CentrosPractica),
       },
-      { path: 'alertas', title: 'Alertas', loadComponent: () => import('../coordinacion/alertas/alertas').then((m) => m.Alertas) },
       { path: 'visitas', title: 'Visitas técnicas', loadComponent: () => import('../coordinacion/visitas/visitas').then((m) => m.Visitas) },
       {
         path: 'visitas/:id/pauta',

@@ -20,7 +20,7 @@ describe('authGuard', () => {
       providers: [
         provideHttpClient(), provideHttpClientTesting(), provideRouter(routes, withComponentInputBinding()),
         // La campana de alertas (HU-14) no es parte de estas pruebas: no pide nada al backend
-        { provide: NotificacionesAlertas, useValue: { actualizar: () => {}, mostrar: () => {}, recientes: signal([]), abiertas: signal(0) } },
+        { provide: NotificacionesAlertas, useValue: { actualizar: () => {}, lineas: signal([]), total: signal(0) } },
       ],
     });
   });

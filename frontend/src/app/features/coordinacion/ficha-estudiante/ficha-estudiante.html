@@ -13,6 +13,8 @@
       </div>
     </header>
 
+    <app-alertas-practica [practicaId]="ficha.practica.id" />
+
     <section class="seccion">
       <h3>Práctica</h3>
       <dl class="datos">
@@ -27,7 +29,7 @@
 
     <section class="seccion">
       <h3>Avance de bitácora</h3>
-      <p><strong>{{ ficha.bitacora.horas_confirmadas }}</strong> de {{ ficha.bitacora.horas_requeridas }} horas confirmadas · {{ ficha.bitacora.jornadas }} jornadas registradas</p>
+      <p><strong>{{ ficha.bitacora.horas_confirmadas }}</strong> de {{ ficha.bitacora.horas_requeridas }} horas confirmadas en {{ ficha.bitacora.jornadas }} jornadas</p>
       <mat-progress-bar mode="determinate" [value]="ficha.bitacora.porcentaje_avance" aria-label="Avance de horas confirmadas"></mat-progress-bar>
       <p class="secundario">{{ ficha.bitacora.porcentaje_avance }}% completado</p>
     </section>
@@ -53,7 +55,7 @@
       @if (ficha.visitas.length) {
         <ul class="lista">
           @for (visita of ficha.visitas; track visita.id) {
-            <li><span>{{ visita.fecha_hora | date:'dd/MM/yyyy HH:mm' }} · {{ visita.modalidad === 'terreno' ? 'Terreno' : 'Virtual' }}</span><span class="estado" [class.estado--error]="visita.cancelada" [class.estado--exito]="!visita.cancelada">{{ visita.cancelada ? 'Cancelada' : 'Realizada/programada' }}</span></li>
+            <li><span>{{ visita.fecha_hora | date:'dd/MM/yyyy HH:mm' }}, {{ visita.modalidad === 'terreno' ? 'en terreno' : 'virtual' }}</span><span class="estado" [class.estado--error]="visita.cancelada" [class.estado--exito]="!visita.cancelada">{{ visita.cancelada ? 'Cancelada' : esPasada(visita.fecha_hora) ? 'Realizada' : 'Programada' }}</span></li>
           }
         </ul>
       } @else { <p class="secundario">No hay visitas registradas para esta práctica.</p> }

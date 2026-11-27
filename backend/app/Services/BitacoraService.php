@@ -71,6 +71,8 @@ class BitacoraService
 
             return $registro->fresh();
         });
+        // HU-14: la jornada marcada cierra las alertas que ya no corresponden
+        app(AlertaService::class)->resolver($registro->practica_id);
 
         return $this->serializarRegistro($registro);
     }
@@ -129,6 +131,7 @@ class BitacoraService
         if ($debeNotificar) {
             $this->notificarInasistencia($usuario, $registro);
         }
+        app(AlertaService::class)->resolver($registro->practica_id);
 
         return $this->serializarRegistro($registro);
     }

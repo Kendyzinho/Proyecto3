@@ -215,7 +215,7 @@
   z-index: 5;
   top: calc(100% + 12px);
   right: 0;
-  width: min(300px, calc(100vw - 32px));
+  width: min(340px, calc(100vw - 32px));
   box-sizing: border-box;
   padding: 16px;
   border: 1px solid #e2e8f0;
@@ -255,7 +255,7 @@
   .barra { height: 64px; padding: 0 12px; }
   .barra__acciones { gap: 4px; }
 }
-// HU-14: contador y lista de alertas en la campana
+// HU-14: contador y lista de la campana
 .notificaciones > button {
   position: relative;
   overflow: visible;   
@@ -282,20 +282,27 @@
 }
 
 .notificaciones__lista {
+  max-height: min(420px, 65vh);
   margin: 8px -8px 0;
   padding: 0;
+  overflow-y: auto;
   list-style: none;
 
-  a {
+  button {
     display: flex;
     align-items: flex-start;
     gap: 10px;
+    width: 100%;
     padding: 8px;
+    border: 0;
     border-radius: 8px;
+    background: none;
     color: inherit;
-    text-decoration: none;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
 
-    &:hover { background: #f1f5f9; }
+    &:hover, &:focus-visible { background: #f1f5f9; }
   }
 }
 
@@ -305,14 +312,6 @@
   font-size: 13px;
 
   span { color: #5b6b80; }
-}
-
-.notificaciones__todas {
-  display: inline-block;
-  margin-top: 8px;
-  color: #26354b;
-  font-size: 13px;
-  font-weight: 600;
 }
 
 .luz {

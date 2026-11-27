@@ -57,7 +57,7 @@ class ListadoPracticasService
             'habilitacion.tipoPractica',
             'supervisor.centro',
             'historiales',
-            'alertas' => fn ($consulta) => $consulta->where('tipo', 'abandono')->whereNull('fecha_atencion'),
+            'alertas' => fn ($consulta) => $consulta->where('tipo', 'abandono')->pendientes(),
         ])
             ->whereHas('habilitacion', fn ($consulta) => $consulta->where('periodo_id', $periodo->id))
             ->get()

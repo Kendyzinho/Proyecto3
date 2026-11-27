@@ -147,17 +147,4 @@ class ConfirmacionSemanalTest extends TestCase
 
         $this->getJson($ruta)->assertForbidden();
     }
-
-    public function test_sin_respuesta_por_mas_de_una_semana_genera_la_alerta(): void
-    {
-        $this->artisan('supervision:alertar-sin-confirmar')->assertSuccessful();
-        $this->assertDatabaseCount('alertas', 0); // el enlace recién sale hoy
-
-        $this->travelTo(Carbon::parse('2026-11-30 08:30'));
-        $this->artisan('supervision:alertar-sin-confirmar')->assertSuccessful();
-        $this->artisan('supervision:alertar-sin-confirmar')->assertSuccessful(); // no duplica
-
-        $this->assertDatabaseCount('alertas', 1);
-        $this->assertDatabaseHas('alertas', ['practica_id' => $this->practica->id, 'tipo' => 'sin_confirmar']);
-    }
 }

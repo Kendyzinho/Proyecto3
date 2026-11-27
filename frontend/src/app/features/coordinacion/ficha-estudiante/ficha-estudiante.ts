@@ -5,12 +5,13 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 
 import { DocumentosApi, TipoDocumento } from '../../secretaria/documentos/documentos-api';
+import { AlertasPractica } from './alertas-practica';
 import { FichaEstudianteApi } from './ficha-estudiante-api';
 import { FichaEstudianteDatos } from './ficha-estudiante.model';
 
 @Component({
   selector: 'app-ficha-estudiante',
-  imports: [DatePipe, MatButtonModule, MatDialogModule, MatProgressBarModule],
+  imports: [AlertasPractica, DatePipe, MatButtonModule, MatDialogModule, MatProgressBarModule],
   templateUrl: './ficha-estudiante.html',
   styleUrl: './ficha-estudiante.scss',
 })
@@ -47,6 +48,8 @@ export class FichaEstudiante {
       error: () => { this.error.set('No se pudo descargar el documento.'); this.descargando.set(null); },
     });
   }
+
+  protected esPasada(fechaHora: string): boolean { return new Date(fechaHora).getTime() < Date.now(); }
 
   protected cerrar(): void { this.ref.close(); }
 }

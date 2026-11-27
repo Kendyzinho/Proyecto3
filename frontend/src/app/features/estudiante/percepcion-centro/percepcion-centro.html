@@ -8,7 +8,7 @@
     <mat-label>Práctica</mat-label>
     <mat-select (selectionChange)="seleccionar($event.value)">
       @for (practica of practicas(); track practica.id) {
-        <mat-option [value]="practica.id" [disabled]="!['confirmada', 'en_curso', 'finalizada'].includes(practica.estado)">{{ practica.tipo }} · {{ practica.centro || 'Centro pendiente' }} ({{ practica.estado || 'pendiente' }})</mat-option>
+        <mat-option [value]="practica.id" [disabled]="!['confirmada', 'en_curso', 'finalizada'].includes(practica.estado)">{{ practica.tipo }} en {{ practica.centro || 'centro por definir' }} ({{ practica.estado || 'pendiente' }})</mat-option>
       }
     </mat-select>
   </mat-form-field>

@@ -15,11 +15,6 @@ Artisan::command('supervision:enviar-enlaces {--semana= : Lunes de la semana (Y-
     $this->info('Enlaces enviados: '.$service->enviarEnlaces($lunes));
 })->purpose('Envía a cada supervisor el enlace para confirmar la asistencia de la semana');
 
-// HU-26: alerta a la Coordinadora si el supervisor no responde el enlace en una semana
-Artisan::command('supervision:alertar-sin-confirmar', function (ConfirmacionSemanalService $service) {
-    $this->info('Alertas nuevas: '.$service->alertarSinConfirmar());
-})->purpose('Genera la alerta de las prácticas cuyo supervisor no confirmó la semana a tiempo');
-
 Schedule::command('supervision:enviar-enlaces')->weeklyOn(1, '08:00');
 
 Artisan::command('inspire', function () {

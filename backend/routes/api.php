@@ -71,9 +71,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Fechas y horario de las prácticas confirmadas (Art. 17)
         Route::get('/calendarios', [CalendarioPracticaController::class, 'index']);
-                // HU-14: alertas tempranas (luces rojas y amarillas)
-        Route::get('/alertas', [AlertaController::class, 'index']);
-        Route::post('/alertas/{alerta}/atender', [AlertaController::class, 'atender']);
+        // HU-14: alertas de la práctica en la ficha del estudiante
+        Route::get('/practicas/{practica}/alertas', [AlertaController::class, 'dePractica'])->whereNumber('practica');
+        Route::post('/alertas/{alerta}/atender', [AlertaController::class, 'atender'])->whereNumber('alerta');
         Route::put('/calendarios/{practica}', [CalendarioPracticaController::class, 'update']);
 
         Route::get('/practicas', [ListadoPracticasController::class, 'index']);
@@ -105,6 +105,8 @@ Route::middleware('auth:sanctum')->group(function () {
     });
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
+    // HU-14: campana de notificaciones; cada rol recibe lo suyo
+    Route::get('/notificaciones', [AlertaController::class, 'notificaciones']);
     Route::put('/me/password', [AuthController::class, 'cambiarContrasena'])->middleware('throttle:6,1');
 
     // HU-19: el supervisor(a) externo no entra a estas rutas (cada controlador revisa además el rol exacto)

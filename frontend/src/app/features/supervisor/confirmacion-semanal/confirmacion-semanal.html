@@ -20,7 +20,7 @@
     @default {
       @if (semana(); as s) {
         <h1>Asistencia de {{ s.estudiante }}</h1>
-        <p class="texto">{{ s.centro }} · Semana del {{ fecha(s.semana.desde) }} al {{ fecha(s.semana.hasta) }}</p>
+        <p class="texto">{{ s.centro }}, semana del {{ fecha(s.semana.desde) }} al {{ fecha(s.semana.hasta) }}</p>
 
         @if (s.confirmada_en) {
           <div class="aviso aviso--ok" role="status">
@@ -40,7 +40,7 @@
             <li class="dia">
               <div class="dia__datos">
                 <strong>{{ dia(d.fecha) }}</strong>
-                <span>{{ d.hora_entrada ?? '—' }} – {{ d.hora_salida ?? '—' }} · {{ d.horas }} h</span>
+                <span>{{ d.hora_entrada ?? '—' }} a {{ d.hora_salida ?? '—' }} ({{ d.horas }} h)</span>
                 @if (d.actividades) {
                   <p>{{ d.actividades }}</p>
                 }
