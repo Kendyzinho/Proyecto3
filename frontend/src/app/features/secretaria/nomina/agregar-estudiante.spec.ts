@@ -50,7 +50,7 @@ describe('AgregarEstudiante', () => {
   it('agrega a un estudiante registrado sin volver a escribir sus datos', async () => {
     const { fixture, el, http } = await crear();
     await buscar(fixture, 'Antonia');
-    http.expectOne('/api/nomina/estudiantes?buscar=Antonia').flush({ data: [antonia] });
+    http.expectOne('/api/nomina/estudiantes?periodo_id=3&buscar=Antonia').flush({ data: [antonia] });
     fixture.detectChanges();
 
     el.querySelector<HTMLButtonElement>('.resultados button')!.click();
@@ -73,10 +73,10 @@ describe('AgregarEstudiante', () => {
   it('avisa si no hay resultados y deja llenar uno nuevo', async () => {
     const { fixture, el, http } = await crear();
     await buscar(fixture, '21999');
-    http.expectOne('/api/nomina/estudiantes?buscar=21999').flush({ data: [] });
+    http.expectOne('/api/nomina/estudiantes?periodo_id=3&buscar=21999').flush({ data: [] });
     fixture.detectChanges();
 
-    expect(el.textContent).toContain('No hay estudiantes registrados con ese RUT o nombre.');
+    expect(el.textContent).toContain('No hay estudiantes registrados con ese RUT o nombre, o ya están en la nómina de este período.');
     [...el.querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent?.includes('Es un estudiante nuevo'))!.click();
     fixture.detectChanges();
 
@@ -87,12 +87,12 @@ describe('AgregarEstudiante', () => {
   it('sigue buscando después de un error', async () => {
     const { fixture, el, http } = await crear();
     await buscar(fixture, 'Anto');
-    http.expectOne('/api/nomina/estudiantes?buscar=Anto').flush(null, { status: 500, statusText: 'Error' });
+    http.expectOne('/api/nomina/estudiantes?periodo_id=3&buscar=Anto').flush(null, { status: 500, statusText: 'Error' });
     fixture.detectChanges();
     expect(el.textContent).toContain('No se pudo buscar.');
 
     await buscar(fixture, 'Antonia');
-    http.expectOne('/api/nomina/estudiantes?buscar=Antonia').flush({ data: [antonia] });
+    http.expectOne('/api/nomina/estudiantes?periodo_id=3&buscar=Antonia').flush({ data: [antonia] });
     fixture.detectChanges();
 
     expect(el.querySelector('.resultados')?.textContent).toContain('Antonia Vega Muñoz');

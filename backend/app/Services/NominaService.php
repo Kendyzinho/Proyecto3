@@ -92,12 +92,14 @@ class NominaService
         return DB::transaction(fn () => $this->habilitar($fila, $periodo, null));
     }
 
-    // Hasta 8 estudiantes registrados cuyo nombre, correo o RUT (con o sin puntos y guion) contiene el texto
-    public function buscarEstudiantes(string $texto): Collection
+    // Hasta 8 estudiantes registrados cuyo nombre, correo o RUT (con o sin puntos y guion) contiene el texto.
+    // Quien ya está en la nómina del período no aparece: no hay nada que agregarle
+    public function buscarEstudiantes(string $texto, Periodo $periodo): Collection
     {
         $rut = preg_replace('/[^0-9kK]/', '', $texto);
 
         return Estudiante::with(['usuario', 'areas'])
+            ->whereDoesntHave('habilitaciones', fn ($q) => $q->where('periodo_id', $periodo->id))
             ->whereHas('usuario', fn ($q) => $q->whereNull('rol')->where(function ($q) use ($texto, $rut) {
                 $q->where('name', 'like', "%{$texto}%")->orWhere('email', 'like', "%{$texto}%");
                 if ($rut !== '') {

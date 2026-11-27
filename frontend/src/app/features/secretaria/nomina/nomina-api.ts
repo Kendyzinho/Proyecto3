@@ -119,8 +119,9 @@ export class NominaApi {
     return this.http.post<Resumen & { carga_id: number }>('/api/nomina/confirmar', formulario(archivo, periodoId));
   }
 
-  buscarEstudiantes(texto: string): Observable<{ data: EstudianteRegistrado[] }> {
-    return this.http.get<{ data: EstudianteRegistrado[] }>('/api/nomina/estudiantes', { params: { buscar: texto } });
+  // No trae a quienes ya están en la nómina del período
+  buscarEstudiantes(texto: string, periodoId: number): Observable<{ data: EstudianteRegistrado[] }> {
+    return this.http.get<{ data: EstudianteRegistrado[] }>('/api/nomina/estudiantes', { params: { periodo_id: periodoId, buscar: texto } });
   }
 
   agregar(estudiante: NuevoEstudiante): Observable<{ id: number }> {

@@ -69,7 +69,7 @@ export class AgregarEstudiante {
         switchMap((texto) =>
           texto.length < 2
             ? of({ data: [] })
-            : this.api.buscarEstudiantes(texto).pipe(
+            : this.api.buscarEstudiantes(texto, this.datos.periodo.id).pipe(
                 catchError(() => {
                   this.errorGeneral.set('No se pudo buscar. Inténtalo de nuevo.');
                   return of({ data: [] });

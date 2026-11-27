@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 // HU-05: una fila de la pantalla Usuarios
+/** @mixin \App\Models\User */
 class CuentaResource extends JsonResource
 {
     public function toArray(Request $request): array

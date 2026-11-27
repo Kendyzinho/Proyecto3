@@ -76,9 +76,11 @@ class NominaController extends Controller
     // Estudiantes ya registrados, para agregarlos sin volver a escribir sus datos
     public function buscar(Request $request): JsonResponse
     {
+        $request->validate(['periodo_id' => ['required', 'integer', 'exists:periodos,id']]);
         $texto = trim((string) $request->query('buscar', ''));
+        $periodo = Periodo::findOrFail($request->integer('periodo_id'));
 
-        return response()->json(['data' => mb_strlen($texto) < 2 ? [] : $this->nomina->buscarEstudiantes($texto)]);
+        return response()->json(['data' => mb_strlen($texto) < 2 ? [] : $this->nomina->buscarEstudiantes($texto, $periodo)]);
     }
 
     public function agregar(AgregarEstudianteRequest $request): JsonResponse
