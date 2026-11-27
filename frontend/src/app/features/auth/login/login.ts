@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, input, signal } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -19,6 +19,8 @@ import { Auth } from '../../../core/services/auth';
 export class Login {
   protected readonly auth = inject(Auth);
   private readonly router = inject(Router);
+  // ?volver= que deja el authGuard al pedir una página sin sesión
+  readonly volver = input<string>();
 
   protected readonly form = inject(NonNullableFormBuilder).group({
     email: ['', [Validators.required, Validators.email]],
@@ -38,7 +40,7 @@ export class Login {
 
     const { email, password } = this.form.getRawValue();
     this.auth.login(email, password).subscribe({
-      next: () => this.router.navigateByUrl(this.auth.inicio()),
+      next: () => this.router.navigateByUrl(this.auth.destinoTrasLogin(this.volver())),
       error: (e: HttpErrorResponse) => {
         this.enviando.set(false);
         this.error.set(mensajeDeError(e.status));

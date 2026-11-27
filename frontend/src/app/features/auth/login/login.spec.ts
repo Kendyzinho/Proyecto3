@@ -80,4 +80,27 @@ describe('Login', () => {
     expect(TestBed.inject(Auth).estadoCierre()).toBe('ninguno');
     expect(TestBed.inject(Router).navigateByUrl).toHaveBeenLastCalledWith(inicio);
   });
+
+  // Enlace de un correo (ej. el informe confidencial del supervisor) abierto sin sesión
+  it.each([
+    ['/supervisor/informes/2', '/supervisor/informes/2'],
+    ['//otro-sitio.com', '/supervisor'],
+    ['/\\otro-sitio.com', '/supervisor'],
+    ['https://otro-sitio.com', '/supervisor'],
+    ['/auth/recuperar', '/supervisor'],
+  ])('después del login va a ?volver=%s solo si es una ruta interna', (volver, destino) => {
+    fixture.componentRef.setInput('volver', volver);
+    const el = fixture.nativeElement as HTMLElement;
+    const correo = el.querySelector<HTMLInputElement>('input[type=email]')!;
+    const clave = el.querySelector<HTMLInputElement>('input[type=password]')!;
+    correo.value = 'sparedes@example.test';
+    clave.value = 'clave-de-prueba';
+    correo.dispatchEvent(new Event('input'));
+    clave.dispatchEvent(new Event('input'));
+    el.querySelector('form')!.dispatchEvent(new Event('submit'));
+    TestBed.inject(HttpTestingController).expectOne('/api/login').flush({
+      token: 'sesion-nueva', usuario: { id: 5, name: 'Sergio Paredes', email: correo.value, rut: null, rol: 'supervisor' },
+    });
+    expect(TestBed.inject(Router).navigateByUrl).toHaveBeenLastCalledWith(destino);
+  });
 });

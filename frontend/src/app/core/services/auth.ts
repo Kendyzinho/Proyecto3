@@ -104,6 +104,13 @@ export class Auth {
     const usuario = this.usuarioActual();
     return usuario ? INICIO_POR_ROL[usuario.rol] : '/auth';
   }
+
+  // Después del login: la página pedida si es una ruta interna del sistema, si no el inicio del rol.
+  // Rechaza "//otro.sitio" y "/\otro.sitio", que el navegador trataría como otro dominio.
+  destinoTrasLogin(volver?: string | null): string {
+    const interna = !!volver && volver.startsWith('/') && !/^\/[/\\]/.test(volver) && !volver.startsWith('/auth');
+    return interna ? volver : this.inicio();
+  }
 }
 
 function leerUsuarioGuardado(): Usuario | null {

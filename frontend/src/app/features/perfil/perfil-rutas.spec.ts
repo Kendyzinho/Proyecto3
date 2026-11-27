@@ -34,7 +34,7 @@ describe('Navegación del perfil', () => {
 
   it('protege el acceso directo sin sesión', async () => {
     await RouterTestingHarness.create('/perfil');
-    expect(TestBed.inject(Router).url).toBe('/auth');
+    expect(TestBed.inject(Router).url).toBe('/auth?volver=%2Fperfil');
     TestBed.inject(HttpTestingController).expectNone('/api/me');
   });
 
@@ -91,6 +91,6 @@ describe('Navegación del perfil', () => {
     await harness.fixture.whenStable();
     expect(TestBed.inject(Router).url).toBe('/auth');
     await harness.navigateByUrl('/perfil');
-    expect(TestBed.inject(Router).url).toBe('/auth');
+    expect(TestBed.inject(Router).url).toBe('/auth?volver=%2Fperfil');
   });
 });

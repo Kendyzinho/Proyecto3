@@ -35,6 +35,17 @@ describe('authGuard', () => {
     expect(TestBed.inject(Router).serializeUrl(resultado)).toBe('/auth');
   });
 
+  it('sin sesión guarda la página pedida para volver a ella después del login', async () => {
+    const harness = await RouterTestingHarness.create('/supervisor/informes/2');
+    expect(TestBed.inject(Router).url).toBe('/auth?volver=%2Fsupervisor%2Finformes%2F2');
+    expect(harness.routeNativeElement?.textContent).toContain('Iniciar sesión');
+  });
+
+  it('sin sesión no agrega ?volver= al pedir el inicio de un rol', async () => {
+    await RouterTestingHarness.create('/coordinacion');
+    expect(TestBed.inject(Router).url).toBe('/auth');
+  });
+
   it('con otro rol manda al inicio de su propio rol', () => {
     const estudiante: Usuario = { id: 4, name: 'Matías', rut: null, email: 'estudiante@alumnos.uta.cl', rol: 'estudiante' };
     localStorage.setItem('usuario', JSON.stringify(estudiante));

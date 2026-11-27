@@ -2,7 +2,7 @@ import { inject } from '@angular/core';
 import { CanMatchFn, Router } from '@angular/router';
 
 import { Rol } from '../models/usuario';
-import { Auth } from '../services/auth';
+import { Auth, INICIO_POR_ROL } from '../services/auth';
 
 // Pide sesión iniciada y, si la ruta define data.rol, que el usuario tenga ese rol.
 export const authGuard: CanMatchFn = (route) => {
@@ -11,7 +11,11 @@ export const authGuard: CanMatchFn = (route) => {
   const usuario = auth.usuario();
 
   if (!usuario || !auth.token) {
-    return router.createUrlTree(['/auth']);
+    // Guarda la página pedida (ej. el enlace de un correo) para volver a ella después del login
+    const pedida = router.currentNavigation()?.extractedUrl;
+    const volver = pedida ? router.serializeUrl(pedida) : '/';
+    const esInicio = volver === '/' || Object.values(INICIO_POR_ROL).includes(volver);
+    return router.createUrlTree(['/auth'], esInicio ? {} : { queryParams: { volver } });
   }
   const rol = route.data?.['rol'] as Rol | undefined;
   if (rol && usuario.rol !== rol) {
